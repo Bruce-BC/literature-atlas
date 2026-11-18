@@ -18,7 +18,7 @@ export function categoryGroups(snapshot, eligibleIds, palette = {}) {
 function svgElement(tag, attributes = {}) { const node = document.createElementNS(NS, tag); for (const [key,value] of Object.entries(attributes)) node.setAttribute(key, String(value)); return node; }
 
 export function renderCategoryExplorer(container, snapshot, eligibleIds, expanded, callbacks) {
-  const computed = getComputedStyle(document.getElementById('atlas-app') || document.documentElement); const palette = {series: Array.from({length:6}, (_, index) => computed.getPropertyValue(`--atlas-series-${index+1}-hex`).trim() || '#64748b')};
+  const computed = getComputedStyle(document.getElementById('atlas-app') || document.documentElement); const palette = callbacks.palette || {series: Array.from({length:6}, (_, index) => computed.getPropertyValue(`--atlas-series-${index+1}-hex`).trim() || '#64748b')};
   const groups = categoryGroups(snapshot, eligibleIds, palette); container.replaceChildren();
   let remaining = CATEGORY_TOTAL_LIMIT;
   const counts = new Map();

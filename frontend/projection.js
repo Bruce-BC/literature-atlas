@@ -3,6 +3,7 @@ import {stableHash} from './sampling.js';
 import {categoryForConcept, categoryForPaper, fieldPresentation} from './network-style.js';
 
 const keywordCache = new WeakMap();
+export const PAPER_EDGE_CAP = 1000;
 export function fieldFamily(field, fields = [field]) { return fieldPresentation(field, {fields}).family; }
 
 export function overviewProjection(snapshotInput, relationType = 'semantic') {
@@ -56,7 +57,13 @@ export function graphProjection(snapshotInput, detail, options = {}) {
   const papers = detail?.papers || snapshot.papers;
   const paperIds = new Set(papers.map(paper => paper.id)); const categoryPalette = options.categoryPalette || {};
   const edges = (detail?.edges || snapshot.edges);
-  const paperEdges = edges.filter(edge => (edge.type !== 'keyword' || (paperIds.has(edge.source) && paperIds.has(edge.target))) && paperIds.has(edge.source) && paperIds.has(edge.target));
+  const candidateEdges = edges.filter(edge => (edge.type !== 'keyword' || (paperIds.has(edge.source) && paperIds.has(edge.target))) && paperIds.has(edge.source) && paperIds.has(edge.target));
+  // Lower paper network edge budget: <= 1000 displayed, deterministic. Priority: selected edge, edges touching the selected paper or forced endpoints, then strongest score, then ID.
+  // Types and direction are preserved; only the DISPLAY is capped (full aggregates/density are computed elsewhere from all eligible edges).
+  const forcedPapers = new Set([...(options.forcedPaperIds || []), ...(options.selectedPaperId ? [options.selectedPaperId] : [])]);
+  const edgeRank = edge => (edge.id === options.selectedEdgeId ? 0 : (forcedPapers.has(edge.source) || forcedPapers.has(edge.target)) ? 1 : 2);
+  const paperEdges = candidateEdges.length <= PAPER_EDGE_CAP ? candidateEdges : [...candidateEdges].sort((a, b) => edgeRank(a) - edgeRank(b) || Number(b.score ?? 0) - Number(a.score ?? 0) || String(a.id).localeCompare(String(b.id))).slice(0, PAPER_EDGE_CAP);
+  const paperStats = {cap: PAPER_EDGE_CAP, candidateEdges: candidateEdges.length, displayedEdges: paperEdges.length, hiddenEdges: candidateEdges.length - paperEdges.length, eligibleEdges: Number(detail?.eligibleEdges ?? candidateEdges.length), displayedNodes: papers.length, eligibleNodes: Number(detail?.eligiblePapers ?? papers.length), selectedEdgeRetained: options.selectedEdgeId ? paperEdges.some(edge => edge.id === options.selectedEdgeId) : null};
   const allConcepts = snapshot.concepts; const conceptIds = new Set(allConcepts.map(concept => concept.id)); const aggregate = snapshot.overview.keywordAggregate;
   let cached = keywordCache.get(snapshot);
   if (!cached || cached.aggregate !== aggregate || cached.edges !== snapshot.edges || cached.concepts !== snapshot.concepts) {
@@ -94,7 +101,8 @@ export function graphProjection(snapshotInput, detail, options = {}) {
   inducedKeyword.sort((a, b) => Number(Boolean(selectedSpoke(b))) - Number(Boolean(selectedSpoke(a))) || Number(b.cooccurrenceCount || b.count || b.score || 1) - Number(a.cooccurrenceCount || a.count || a.score || 1) || a.id.localeCompare(b.id));
   const shownKeyword = inducedKeyword.slice(0, 600);
   const paperCategories = new Map(papers.map(paper => [paper.id, categoryForPaper(paper, snapshot, categoryPalette)]));
-  const papersByConcept = new Map(); for (const paper of papers) for (const id of paper.conceptIds || []) { const rows = papersByConcept.get(id) || []; rows.push(paper); papersByConcept.set(id, rows); }
+  // Concept category comes from the FULL eligible paper set, never from the display sample.
+  const eligibleSet = detail?.eligiblePaperIds ? new Set(detail.eligiblePaperIds) : null; const categoryPapers = eligibleSet ? snapshot.papers.filter(paper => eligibleSet.has(paper.id)) : snapshot.papers; const papersByConcept = new Map(); for (const paper of categoryPapers) for (const id of paper.conceptIds || []) { const rows = papersByConcept.get(id) || []; rows.push(paper); papersByConcept.set(id, rows); }
   return {
     paperNodes: papers.map(paper => { const category = paperCategories.get(paper.id); return {data: {id: paper.id, label: paper.title, kind: 'paper', year: paper.year, textStatus: paper.textStatus, categoryId: category.id, categoryLabel: category.label, categoryPath: category.path.join(' / '), categoryColor: category.color, categoryInferred: category.inferred}}; }),
     paperEdges: paperEdges.map(edge => ({classes: edge.directed ? 'directed' : 'undirected', data: {id: edge.id, source: edge.source, target: edge.target, relation: edge.type, directed: edge.directed, score: edge.score, provenance: edge.provenance?.provider || '', evidenceTier: edge.evidenceTier}})),
@@ -104,7 +112,7 @@ export function graphProjection(snapshotInput, detail, options = {}) {
       ...shownMembership,
       ...shownKeyword.map(edge => ({data: {id: edge.id, source: edge.source, target: edge.target, relation: 'concept-cooccurrence', directed: false, count: edge.cooccurrenceCount || 1}}))
     ],
-    paperById, fieldById, conceptById, conceptStats: {totalNodes: allConcepts.length, eligibleNodes: eligibleConcepts.size, neighborCandidates: neighbors.size, visibleNeighbors, directPaperCandidates: detail?.filterActive && origins.size ? detail.eligiblePapers : priorityPapers.length, visibleConceptPapers: visibleConceptPapers.length, hiddenNeighbors: Math.max(0, neighbors.size - visibleNeighbors), visibleNodes: concepts.length, hiddenNodes: Math.max(0, allConcepts.length - concepts.length), totalEdges: conceptEdgesAll.length, inducedEdges: inducedKeyword.length, visibleEdges: shownKeyword.length, hiddenEdges: inducedKeyword.length - shownKeyword.length, inducedMembershipEdges: membershipEdges.length, visibleMembershipEdges: shownMembership.length, hiddenMembershipEdges: membershipEdges.length - shownMembership.length, maxNodes: maxConceptNodes}
+    paperStats, paperById, fieldById, conceptById, conceptStats: {totalNodes: allConcepts.length, eligibleNodes: eligibleConcepts.size, neighborCandidates: neighbors.size, visibleNeighbors, directPaperCandidates: detail?.filterActive && origins.size ? detail.eligiblePapers : priorityPapers.length, visibleConceptPapers: visibleConceptPapers.length, hiddenNeighbors: Math.max(0, neighbors.size - visibleNeighbors), visibleNodes: concepts.length, hiddenNodes: Math.max(0, allConcepts.length - concepts.length), totalEdges: conceptEdgesAll.length, inducedEdges: inducedKeyword.length, visibleEdges: shownKeyword.length, hiddenEdges: inducedKeyword.length - shownKeyword.length, inducedMembershipEdges: membershipEdges.length, visibleMembershipEdges: shownMembership.length, hiddenMembershipEdges: membershipEdges.length - shownMembership.length, maxNodes: maxConceptNodes}
   };
 }
 

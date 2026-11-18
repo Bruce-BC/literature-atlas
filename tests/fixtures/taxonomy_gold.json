@@ -1,0 +1,1555 @@
+[
+ {
+  "id": "g001",
+  "title": "QIIME 2 microbiome amplicon analysis of soil samples",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "bioinformatics",
+   "subjects": [
+    "bioinformatics"
+   ],
+   "methods": [
+    "amplicon"
+   ],
+   "tools": [
+    "qiime2"
+   ],
+   "applications": [
+    "microbiome"
+   ]
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g002",
+  "title": "Reproducible 16S rRNA amplicon sequence processing with QIIME2",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "bioinformatics",
+   "subjects": [
+    "bioinformatics"
+   ],
+   "methods": [
+    "amplicon"
+   ],
+   "tools": [
+    "qiime2"
+   ],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g003",
+  "title": "Marker gene profiling of gut communities",
+  "abstract": "We analyse 16S amplicon sequencing data and microbial community diversity.",
+  "keywords": [],
+  "expected": {
+   "primary": "bioinformatics",
+   "subjects": [
+    "bioinformatics"
+   ],
+   "methods": [
+    "amplicon"
+   ],
+   "tools": [],
+   "applications": [
+    "microbiome"
+   ]
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g004",
+  "title": "Gut microbiome diversity analysis",
+  "abstract": "Sequencing data were processed with QIIME 2 and amplicon sequence variants were called.",
+  "keywords": [],
+  "expected": {
+   "primary": "bioinformatics",
+   "subjects": [
+    "bioinformatics"
+   ],
+   "methods": [
+    "amplicon"
+   ],
+   "tools": [
+    "qiime2"
+   ],
+   "applications": [
+    "microbiome"
+   ]
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g005",
+  "title": "Denoising amplicon reads into ASVs",
+  "abstract": "16S marker gene sequences are analysed with q2-dada2.",
+  "keywords": [],
+  "expected": {
+   "primary": "bioinformatics",
+   "subjects": [
+    "bioinformatics"
+   ],
+   "methods": [
+    "amplicon"
+   ],
+   "tools": [
+    "qiime2"
+   ],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g006",
+  "title": "Taxonomic classification of ITS region sequences",
+  "abstract": "ITS region amplicon sequencing and QIIME2 classifiers.",
+  "keywords": [],
+  "expected": {
+   "primary": "bioinformatics",
+   "subjects": [
+    "bioinformatics"
+   ],
+   "methods": [
+    "amplicon"
+   ],
+   "tools": [
+    "qiime2"
+   ],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g007",
+  "title": "Oral microbiota amplicon study",
+  "abstract": "Sequence analysis of 16S amplicon libraries from saliva.",
+  "keywords": [],
+  "expected": {
+   "primary": "bioinformatics",
+   "subjects": [
+    "bioinformatics"
+   ],
+   "methods": [
+    "amplicon"
+   ],
+   "tools": [],
+   "applications": [
+    "microbiome"
+   ]
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g008",
+  "title": "A q2-plugin for diversity metrics",
+  "abstract": "We present a q2-diversity plugin for sequence data.",
+  "keywords": [],
+  "expected": {
+   "primary": "bioinformatics",
+   "subjects": [
+    "bioinformatics"
+   ],
+   "methods": [],
+   "tools": [
+    "qiime2"
+   ],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g009",
+  "title": "A new QIIME 2 plugin for functional prediction",
+  "abstract": "We present an extensible plugin and open-source software package.",
+  "keywords": [],
+  "expected": {
+   "primary": "bioinformatics",
+   "subjects": [
+    "bioinformatics"
+   ],
+   "methods": [],
+   "tools": [
+    "qiime2"
+   ],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g010",
+  "title": "Extending QIIME2 with a feature classifier plugin",
+  "abstract": "We introduce a plugin that wraps a naive Bayes classifier.",
+  "keywords": [],
+  "expected": {
+   "primary": "bioinformatics",
+   "subjects": [
+    "bioinformatics"
+   ],
+   "methods": [],
+   "tools": [
+    "qiime2"
+   ],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g011",
+  "title": "q2-longitudinal: a QIIME 2 plugin",
+  "abstract": "We describe a plugin for longitudinal microbiome data.",
+  "keywords": [],
+  "expected": {
+   "primary": "bioinformatics",
+   "subjects": [
+    "bioinformatics"
+   ],
+   "methods": [],
+   "tools": [
+    "qiime2"
+   ],
+   "applications": [
+    "microbiome"
+   ]
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g012",
+  "title": "An open-source toolkit built on QIIME 2",
+  "abstract": "We develop a toolkit for sequence analysis.",
+  "keywords": [],
+  "expected": {
+   "primary": "bioinformatics",
+   "subjects": [
+    "bioinformatics"
+   ],
+   "methods": [],
+   "tools": [
+    "qiime2"
+   ],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g013",
+  "title": "QIIME 1 pipeline for amplicon data",
+  "abstract": "We present an open-source pipeline for amplicon sequencing.",
+  "keywords": [],
+  "expected": {
+   "primary": "bioinformatics",
+   "subjects": [
+    "bioinformatics"
+   ],
+   "methods": [
+    "amplicon"
+   ],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g014",
+  "title": "QIIME: a pipeline for marker gene analysis",
+  "abstract": "We present software for 16S amplicon sequence analysis.",
+  "keywords": [],
+  "expected": {
+   "primary": "bioinformatics",
+   "subjects": [
+    "bioinformatics"
+   ],
+   "methods": [
+    "amplicon"
+   ],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g015",
+  "title": "Legacy QIIME workflow for bioinformatics sequence analysis",
+  "abstract": "We develop a toolkit for sequence analysis.",
+  "keywords": [],
+  "expected": {
+   "primary": "bioinformatics",
+   "subjects": [
+    "bioinformatics"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g016",
+  "title": "Phage therapy outcomes tracked with QIIME2",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "phage-biology",
+   "subjects": [
+    "phage-biology"
+   ],
+   "methods": [],
+   "tools": [
+    "qiime2"
+   ],
+   "applications": [
+    "phage-therapy"
+   ]
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g017",
+  "title": "Bacteriophage treatment of infections",
+  "abstract": "Phage treatment of Pseudomonas, with microbiome profiling in QIIME2.",
+  "keywords": [],
+  "expected": {
+   "primary": "phage-biology",
+   "subjects": [
+    "phage-biology"
+   ],
+   "methods": [],
+   "tools": [
+    "qiime2"
+   ],
+   "applications": [
+    "phage-therapy",
+    "microbiome"
+   ]
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g018",
+  "title": "Phage cocktail design",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "phage-biology",
+   "subjects": [
+    "phage-biology"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": [
+    "phage-therapy"
+   ]
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g019",
+  "title": "Bacteriophage lysis kinetics",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "phage-biology",
+   "subjects": [
+    "phage-biology"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g020",
+  "title": "Prophage induction in Escherichia coli",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "phage-biology",
+   "subjects": [
+    "phage-biology"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g021",
+  "title": "Lytic phages of Klebsiella",
+  "abstract": "Isolation and host range of bacteriophages.",
+  "keywords": [],
+  "expected": {
+   "primary": "phage-biology",
+   "subjects": [
+    "phage-biology"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g022",
+  "title": "Therapeutic phage preparation",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "phage-biology",
+   "subjects": [
+    "phage-biology"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": [
+    "phage-therapy"
+   ]
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g023",
+  "title": "Phage-based therapy and the gut microbiota",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "phage-biology",
+   "subjects": [
+    "phage-biology"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": [
+    "phage-therapy",
+    "microbiome"
+   ]
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g024",
+  "title": "Marker gene survey of phage communities with QIIME 2",
+  "abstract": "Bacteriophages in sewage were surveyed.",
+  "keywords": [],
+  "expected": {
+   "primary": "phage-biology",
+   "subjects": [
+    "phage-biology"
+   ],
+   "methods": [
+    "amplicon"
+   ],
+   "tools": [
+    "qiime2"
+   ],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g025",
+  "title": "Shotgun metagenomics workflow benchmark",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "bioinformatics",
+   "subjects": [
+    "bioinformatics"
+   ],
+   "methods": [
+    "metagenomics"
+   ],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g026",
+  "title": "Metagenome assembly of river sediments",
+  "abstract": "Sequence analysis and genome assembly of metagenomes.",
+  "keywords": [],
+  "expected": {
+   "primary": "bioinformatics",
+   "subjects": [
+    "bioinformatics"
+   ],
+   "methods": [
+    "metagenomics"
+   ],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g027",
+  "title": "Metagenomic profiling with MOSHPIT in QIIME 2",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "bioinformatics",
+   "subjects": [
+    "bioinformatics"
+   ],
+   "methods": [
+    "metagenomics"
+   ],
+   "tools": [
+    "qiime2"
+   ],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g028",
+  "title": "Shotgun sequencing of the infant gut microbiome",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "bioinformatics",
+   "subjects": [
+    "bioinformatics"
+   ],
+   "methods": [
+    "metagenomics"
+   ],
+   "tools": [],
+   "applications": [
+    "microbiome"
+   ]
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g029",
+  "title": "Metagenomics of hot springs",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "bioinformatics",
+   "subjects": [
+    "bioinformatics"
+   ],
+   "methods": [
+    "metagenomics"
+   ],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g030",
+  "title": "Benchmarking metagenomic binning tools",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "bioinformatics",
+   "subjects": [
+    "bioinformatics"
+   ],
+   "methods": [
+    "metagenomics"
+   ],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g031",
+  "title": "16S rRNA gene sequencing of wastewater",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "bioinformatics",
+   "subjects": [
+    "bioinformatics"
+   ],
+   "methods": [
+    "amplicon"
+   ],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g032",
+  "title": "Amplicon sequence variants versus OTUs",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "bioinformatics",
+   "subjects": [
+    "bioinformatics"
+   ],
+   "methods": [
+    "amplicon"
+   ],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g033",
+  "title": "Fungal marker gene surveys",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "bioinformatics",
+   "subjects": [
+    "bioinformatics"
+   ],
+   "methods": [
+    "amplicon"
+   ],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g034",
+  "title": "Bioinformatics tools for genome assembly",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "bioinformatics",
+   "subjects": [
+    "bioinformatics"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g035",
+  "title": "Phylogenetic reconstruction pipelines",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "bioinformatics",
+   "subjects": [
+    "bioinformatics"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g036",
+  "title": "Variant calling in clinical genomes",
+  "abstract": "A bioinformatics approach to variant calling.",
+  "keywords": [],
+  "expected": {
+   "primary": "bioinformatics",
+   "subjects": [
+    "bioinformatics"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g037",
+  "title": "Computational biology of protein families",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "bioinformatics",
+   "subjects": [
+    "bioinformatics"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g038",
+  "title": "Sequence alignment heuristics",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "bioinformatics",
+   "subjects": [
+    "bioinformatics"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g039",
+  "title": "Gut microbiome and diet in infants",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": null,
+   "subjects": [],
+   "methods": [],
+   "tools": [],
+   "applications": [
+    "microbiome"
+   ]
+  },
+  "kind": "abstain"
+ },
+ {
+  "id": "g040",
+  "title": "The skin microbiota across seasons",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": null,
+   "subjects": [],
+   "methods": [],
+   "tools": [],
+   "applications": [
+    "microbiome"
+   ]
+  },
+  "kind": "abstain"
+ },
+ {
+  "id": "g041",
+  "title": "Microbial communities in lakes",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": null,
+   "subjects": [],
+   "methods": [],
+   "tools": [],
+   "applications": [
+    "microbiome"
+   ]
+  },
+  "kind": "abstain"
+ },
+ {
+  "id": "g042",
+  "title": "Kullback-Leibler divergence estimation",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "kl-divergence",
+   "subjects": [
+    "kl-divergence"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g043",
+  "title": "KL divergence between Gaussian mixtures",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "kl-divergence",
+   "subjects": [
+    "kl-divergence"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g044",
+  "title": "Relative entropy and large deviations",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "kl-divergence",
+   "subjects": [
+    "kl-divergence"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g045",
+  "title": "On the KL divergence for variational inference",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "kl-divergence",
+   "subjects": [
+    "kl-divergence"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g046",
+  "title": "Kullback–Leibler bounds for hypothesis testing",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "kl-divergence",
+   "subjects": [
+    "kl-divergence"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g047",
+  "title": "Optimal transport on graphs",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "optimal-transport",
+   "subjects": [
+    "optimal-transport"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g048",
+  "title": "Wasserstein distances between persistence diagrams",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "optimal-transport",
+   "subjects": [
+    "optimal-transport"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g049",
+  "title": "Sinkhorn iterations for entropic regularization",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "optimal-transport",
+   "subjects": [
+    "optimal-transport"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g050",
+  "title": "Earth mover distance for image retrieval",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "optimal-transport",
+   "subjects": [
+    "optimal-transport"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g051",
+  "title": "OT plans and transport couplings",
+  "abstract": "We study OT with a Wasserstein cost.",
+  "keywords": [],
+  "expected": {
+   "primary": "optimal-transport",
+   "subjects": [
+    "optimal-transport"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g052",
+  "title": "Mutual information of channels",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "information-theory",
+   "subjects": [
+    "information-theory"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g053",
+  "title": "Shannon capacity of noisy channels",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "information-theory",
+   "subjects": [
+    "information-theory"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g054",
+  "title": "Channel capacity bounds",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "information-theory",
+   "subjects": [
+    "information-theory"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g055",
+  "title": "Algebraic topology of manifolds",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "topology",
+   "subjects": [
+    "topology"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g056",
+  "title": "Persistent homology groups and cohomology",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "topology",
+   "subjects": [
+    "topology"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g057",
+  "title": "Homotopy invariants of topological spaces",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "topology",
+   "subjects": [
+    "topology"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g058",
+  "title": "Markov chain mixing times",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "probability",
+   "subjects": [
+    "probability"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g059",
+  "title": "Martingale convergence theorems",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "probability",
+   "subjects": [
+    "probability"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g060",
+  "title": "Brownian motion and stochastic processes",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "probability",
+   "subjects": [
+    "probability"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g061",
+  "title": "Measure theory and the Lebesgue integral",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "analysis",
+   "subjects": [
+    "analysis"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g062",
+  "title": "Functional analysis on Banach spaces",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "analysis",
+   "subjects": [
+    "analysis"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g063",
+  "title": "Sobolev spaces and real analysis",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "analysis",
+   "subjects": [
+    "analysis"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g064",
+  "title": "Complex analysis of entire functions",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "analysis",
+   "subjects": [
+    "analysis"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g065",
+  "title": "Convex optimization algorithms",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "optimization",
+   "subjects": [
+    "optimization"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g066",
+  "title": "Linear programming and the simplex method",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "optimization",
+   "subjects": [
+    "optimization"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g067",
+  "title": "Gradient descent convergence for combinatorial optimization",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "optimization",
+   "subjects": [
+    "optimization"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g068",
+  "title": "Clinical analysis of disease burden",
+  "abstract": "Patient outcomes in a hospital cohort.",
+  "keywords": [],
+  "expected": {
+   "primary": null,
+   "subjects": [],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "abstain"
+ },
+ {
+  "id": "g069",
+  "title": "Statistical analysis of patient cohorts",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": null,
+   "subjects": [],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "abstain"
+ },
+ {
+  "id": "g070",
+  "title": "Gene expression analysis in cancer",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": null,
+   "subjects": [],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "abstain"
+ },
+ {
+  "id": "g071",
+  "title": "Data analysis of clinical trial mortality",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": null,
+   "subjects": [],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "abstain"
+ },
+ {
+  "id": "g072",
+  "title": "Analysis of health outcomes after therapy",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": null,
+   "subjects": [],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "abstain"
+ },
+ {
+  "id": "g073",
+  "title": "Survival analysis of cancer patients",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": null,
+   "subjects": [],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "abstain"
+ },
+ {
+  "id": "g074",
+  "title": "Meta-analysis of medical trials",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": null,
+   "subjects": [],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "abstain"
+ },
+ {
+  "id": "g075",
+  "title": "An analysis of hospital readmission",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": null,
+   "subjects": [],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "abstain"
+ },
+ {
+  "id": "g076",
+  "title": "Disease burden analysis in Africa",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": null,
+   "subjects": [],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "abstain"
+ },
+ {
+  "id": "g077",
+  "title": "A study of mass spectrometry data analysis",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": null,
+   "subjects": [],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "abstain"
+ },
+ {
+  "id": "g078",
+  "title": "Occupational therapy outcomes",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": null,
+   "subjects": [],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "abstain"
+ },
+ {
+  "id": "g079",
+  "title": "OT services for stroke patients",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": null,
+   "subjects": [],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "abstain"
+ },
+ {
+  "id": "g080",
+  "title": "Occupational therapy and OT staffing in hospitals",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": null,
+   "subjects": [],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "abstain"
+ },
+ {
+  "id": "g081",
+  "title": "Optimal transport and KL divergence for variational inference",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": null,
+   "subjects": [
+    "optimal-transport",
+    "kl-divergence"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "abstain"
+ },
+ {
+  "id": "g082",
+  "title": "Wasserstein and Kullback-Leibler objectives in generative models",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": null,
+   "subjects": [
+    "optimal-transport",
+    "kl-divergence"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "abstain"
+ },
+ {
+  "id": "g083",
+  "title": "Bacteriophage genome assembly bioinformatics tools",
+  "abstract": "We present an open-source toolkit for phage sequence analysis.",
+  "keywords": [],
+  "expected": {
+   "primary": null,
+   "subjects": [
+    "phage-biology",
+    "bioinformatics"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "abstain"
+ },
+ {
+  "id": "g084",
+  "title": "A q2 plugin for bacteriophage detection",
+  "abstract": "We present a q2-phage plugin for bacteriophage identification.",
+  "keywords": [],
+  "expected": {
+   "primary": null,
+   "subjects": [
+    "phage-biology",
+    "bioinformatics"
+   ],
+   "methods": [],
+   "tools": [
+    "qiime2"
+   ],
+   "applications": []
+  },
+  "kind": "abstain"
+ },
+ {
+  "id": "g085",
+  "title": "Algebraic topology of manifolds meets Markov chain theory",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": null,
+   "subjects": [
+    "topology",
+    "probability"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "abstain"
+ },
+ {
+  "id": "g086",
+  "title": "Convex optimization and measure theory",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": null,
+   "subjects": [
+    "optimization",
+    "analysis"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "abstain"
+ },
+ {
+  "id": "g087",
+  "title": "Relative entropy rates and Shannon channels",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "kl-divergence",
+   "subjects": [
+    "kl-divergence",
+    "information-theory"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g088",
+  "title": "Persistent homology and optimal transport",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": null,
+   "subjects": [
+    "topology",
+    "optimal-transport"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "abstain"
+ },
+ {
+  "id": "g089",
+  "title": "Wasserstein gradient flows",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "optimal-transport",
+   "subjects": [
+    "optimal-transport"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g090",
+  "title": "Hilbert space methods for stochastic optimization",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": null,
+   "subjects": [
+    "analysis",
+    "optimization"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "abstain"
+ },
+ {
+  "id": "g091",
+  "title": "Microbiome amplicon sequencing guidelines",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "bioinformatics",
+   "subjects": [
+    "bioinformatics"
+   ],
+   "methods": [
+    "amplicon"
+   ],
+   "tools": [],
+   "applications": [
+    "microbiome"
+   ]
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "g092",
+  "title": "Moshpit pipelines for metagenomics",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "bioinformatics",
+   "subjects": [
+    "bioinformatics"
+   ],
+   "methods": [
+    "metagenomics"
+   ],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ }
+]

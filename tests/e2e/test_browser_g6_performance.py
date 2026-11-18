@@ -32,7 +32,7 @@ def large_fixture():
             pairs.append([a, b, 2])
             if len(pairs) >= 50000: break
         if len(pairs) >= 50000: break
-    base.update(papers=papers, concepts=concepts, memberships=memberships, edges=edges, attachments=[])
+    base.update(papers=papers, concepts=concepts, memberships=memberships, edges=edges, attachments=[], collections=[])
     base['overview'].update(totalPapers=1000, totalEdges=len(edges), keywordAggregate={'conceptIds':[c['id'] for c in concepts], 'pairs':pairs, 'encoding':'concept-index-pairs'})
     return base
 
@@ -72,13 +72,16 @@ def test_large_synthetic_g6_reuses_graphs_on_selection_and_theme():
                 assert counts['paperNodes'] > 0 and counts['conceptNodes'] < 400
                 paper_button = page.locator('#atlas-paper-list button').first; paper_button.scroll_into_view_if_needed(); paper_button.click()
                 wait_js(page, "() => ['#atlas-paper-network','#atlas-concept-network'].every(id => document.querySelector(id)?.dataset.rendererState === 'ready')")
-                page.evaluate('''() => {window.__perfRefs=[AtlasDebug.getPaperGraph(),AtlasDebug.getConceptGraph()]; window.__perfRenderCalls=0; for (const graph of __perfRefs) { const original=graph.render.bind(graph); graph.render=(...args)=>{window.__perfRenderCalls++;return original(...args)}; }}''')
+                wait_js(page, "() => ['#atlas-paper-network','#atlas-concept-network'].every(id => { const c = document.querySelector(id); return c?.dataset.rendererState === 'ready' && c.dataset.updateState === 'idle' && c.dataset.layoutState === 'settled'; })")
+                reuse_key = "() => { const s = AtlasDebug.getG6Stats(); return [s.paper.created, s.paper.layoutRuns, s.concept.created, s.concept.layoutRuns]; }"
+                before_stats = page.evaluate(reuse_key)
                 start=time.monotonic(); paper_button=page.locator('#atlas-paper-list button[aria-pressed="true"]').first; paper_button.click(); selection_ms=round((time.monotonic()-start)*1000)
-                same_selection=page.evaluate('() => __perfRefs[0] === AtlasDebug.getPaperGraph() && __perfRefs[1] === AtlasDebug.getConceptGraph()')
+                wait_js(page, "() => ['#atlas-paper-network','#atlas-concept-network'].every(id => { const c = document.querySelector(id); return c?.dataset.rendererState === 'ready' && c.dataset.updateState === 'idle' && c.dataset.layoutState === 'settled'; })")
+                after_selection_stats = page.evaluate(reuse_key); same_selection = after_selection_stats == before_stats  # same G6 instances (created) and no new layout run
                 start=time.monotonic();page.locator('#atlas-theme').select_option('dark'); theme_ms=round((time.monotonic()-start)*1000)
-                same_theme=page.evaluate('() => __perfRefs[0] === AtlasDebug.getPaperGraph() && __perfRefs[1] === AtlasDebug.getConceptGraph()')
-                time.sleep(.5)
-                render_calls=page.evaluate('() => __perfRenderCalls')
+                wait_js(page, "() => ['#atlas-paper-network','#atlas-concept-network'].every(id => { const c = document.querySelector(id); return c?.dataset.rendererState === 'ready' && c.dataset.updateState === 'idle' && c.dataset.layoutState === 'settled'; })")
+                same_theme = page.evaluate(reuse_key) == before_stats
+                render_calls = page.evaluate(reuse_key)[1] - before_stats[1] + page.evaluate(reuse_key)[3] - before_stats[3]  # layout runs on the old instances
                 selected_counts=page.evaluate('() => AtlasDebug.getActualCounts()')
                 page.locator('#atlas-concept-list button').filter(has_text='Synthetic concept 0000').first.click()
                 wait_js(page, "() => ['#atlas-paper-network','#atlas-concept-network'].every(id => document.querySelector(id)?.dataset.rendererState === 'ready')")
@@ -90,7 +93,7 @@ def test_large_synthetic_g6_reuses_graphs_on_selection_and_theme():
                 assert 'keyword links 600/' in hub['notice']
                 assert hub['stats']['directPaperCandidates'] == 1000 and hub['stats']['visibleConceptPapers'] <= 150
                 assert '/1000 connected papers shown' in hub['notice']
-                receipt={'papers':1000,'concepts':1410,'initial':counts,'selected':selected_counts,'firstReadyMs':first_ready,'sameSelectionMs':selection_ms,'themeEventMs':theme_ms,'sameSelectionInstances':same_selection,'sameThemeInstances':same_theme,'oldInstanceRenderCalls':render_calls,'hub':hub, 'pageErrors':errors}
+                receipt={'papers':1000,'concepts':1410,'initial':counts,'selected':selected_counts,'firstReadyMs':first_ready,'sameSelectionMs':selection_ms,'themeEventMs':theme_ms,'sameSelectionInstances':same_selection,'sameThemeInstances':same_theme,'oldInstanceRenderCalls':render_calls,'reuseStatsBefore':before_stats,'reuseFullAfter':page.evaluate('() => AtlasDebug.getG6Stats()'),'reuseStatsAfterSelection':after_selection_stats,'reuseStatsAfterTheme':page.evaluate(reuse_key),'hub':hub, 'pageErrors':errors}
                 path=ROOT/'.omx/context/g6-performance-browser.json';path.parent.mkdir(parents=True,exist_ok=True);path.write_text(json.dumps(receipt,indent=2))
                 assert same_selection and same_theme and render_calls == 0
                 assert selected_counts['conceptNodes'] < 400

@@ -107,7 +107,12 @@ class CanonicalResolutionTests(unittest.TestCase):
                 settings={"fakeVectors": {}})
         labels = {f["id"]: f["label"]["en"] for f in snapshot["fields"]}
         assigned = {labels[f] for f in snapshot["papers"][0]["fieldIds"]}
-        self.assertIn("Optimization", assigned)
+        # v3: direct membership is the specific facet; Optimization is its
+        # ancestor and appears only in inclusive counts (not as a direct field).
+        self.assertIn("Optimal Transport", assigned)
+        stats = {r["fieldId"]: r for r in snapshot["fieldStats"]["rows"]}
+        optimization = next(f["id"] for f in snapshot["fields"] if f["label"]["en"] == "Optimization")
+        self.assertEqual((stats[optimization]["direct"], stats[optimization]["inclusive"]), (0, 1))
         self.assertIn("Optimal Transport", assigned)
 
     def test_redirects_persist_across_reindex_and_old_references_resolve(self):
@@ -372,7 +377,7 @@ class GraphEngineTests(unittest.TestCase):
         self.assertEqual(fields["Topology"]["parentIds"], [next(field["id"] for field in snapshot["fields"] if field["label"]["en"] == "Mathematics")])
         classified = next(p for p in snapshot["papers"] if p["key"] == "A")
         self.assertGreaterEqual(len(classified["fieldIds"]), 2)
-        self.assertTrue(any(m["method"] == "model" and m["modelVersion"] == "term-rules-v1" and m["provenance"]["label"] == "rule-based" for m in snapshot["memberships"]))
+        self.assertTrue(any(m["method"] == "model" and m["modelVersion"] == "taxonomy-v3" and m["provenance"]["label"] == "rule-based" for m in snapshot["memberships"]))
 
     def test_indexed_attachment_does_not_upgrade_abstract_keyword_evidence(self):
         papers = [

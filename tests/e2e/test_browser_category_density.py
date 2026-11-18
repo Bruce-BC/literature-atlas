@@ -36,9 +36,9 @@ def test_category_density_and_expansion_preserve_full_graph_truth():
         primary_field = fixture["fields"][0]["id"]
         for index in range(60):
             paper = copy.deepcopy(template)
-            paper.update({"id": f"zotero:demo-server:0:D{index:02d}", "key": f"D{index:02d}", "title": f"Dense category paper {index}", "fieldIds": [primary_field], "displayFieldId": primary_field, "conceptIds": [], "attachmentIds": [], "textStatus": "missing"})
+            paper.update({"id": f"zotero:demo-server:0:DC{index:02d}", "key": f"DC{index:02d}", "title": f"Dense category paper {index}", "fieldIds": [primary_field], "displayFieldId": primary_field, "conceptIds": [], "attachmentIds": [], "textStatus": "missing"})
             fixture["papers"].append(paper)
-            fixture["memberships"].append({"id": f"membership:demo-server:demo-epoch:D{index:02d}:analysis", "paperId": paper["id"], "fieldId": primary_field, "method": "user", "score": 1, "weight": 1})
+            fixture["memberships"].append({"id": f"membership:demo-server:demo-epoch:DC{index:02d}:analysis", "paperId": paper["id"], "fieldId": primary_field, "method": "user", "score": 1, "weight": 1})
         fixture_path = Path(data_dir) / "category-density-fixture.json"
         fixture_path.write_text(json.dumps(fixture), encoding="utf-8")
         process = subprocess.Popen([sys.executable, "-m", "atlas", "serve", "--demo", "--demo-fixture", str(fixture_path), "--embedding-provider", "fake", "--port", "0", "--data-dir", data_dir, "--web-root", str(ROOT / "dist/web"), "--poll-interval", "5", "--launch-id", "category-density", "--parent-origin", "app://obsidian.md"], cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)

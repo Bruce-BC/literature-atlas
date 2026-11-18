@@ -18,6 +18,15 @@ from typing import Any
 from .graph import MAX_TAXONOMY_REDIRECTS_PER_KIND, canonical_context_matches, canonical_entity_key, canonical_identity_matches, resolve_taxonomy_id
 from .storage import SQLiteStore
 from .sync import SyncManager
+from .facet_validation import (
+    facet_entities,
+    known_facet_index,
+    merge_payload,
+    validate_facet_assignments,
+    validate_input_state,
+    validate_primary_overrides,
+    validate_quality_override,
+)
 
 class RedirectLimitError(ValueError):
     """Reject oversized or excessively deep redirect state without mutation."""
@@ -192,10 +201,27 @@ class AtlasRequestHandler(BaseHTTPRequestHandler):
                 prefix = f"{kind}:{state.get('server_id')}:{state.get('epoch')}:"
                 canonical = redirects.get(entity_id, entity_id)
                 known = {str(row.get("id")) for row in snapshot.get(kind + "s", []) if isinstance(row, dict)}
-                if not entity_id.startswith(prefix) or canonical not in known:
+                # Suppressed concepts leave the active graph but stay resolvable
+                # through the same-source quality ledger (no fake graph nodes).
+                ledger = {}
+                if kind == "concept" and isinstance(snapshot.get("conceptQualityLedger"), dict):
+                    ledger = {str(e.get("id") or e.get("conceptId")): e for e in snapshot["conceptQualityLedger"].get("entries", []) if isinstance(e, dict)}
+                if not entity_id.startswith(prefix) or not canonical.startswith(prefix) or (canonical not in known and canonical not in ledger):
                     self._reject(404, "taxonomy entity not found"); return
                 revision = self.server.store.read_json("taxonomy")[0]
-                self._send(200, {"requestedId": entity_id, "canonicalId": canonical, "redirected": canonical != entity_id, "sourceId": state.get("server_id"), "sourceEpoch": state.get("epoch"), "revision": revision}); return
+                body = {"requestedId": entity_id, "canonicalId": canonical, "redirected": canonical != entity_id, "sourceId": state.get("server_id"), "sourceEpoch": state.get("epoch"), "revision": revision}
+                if kind == "concept":
+                    entry = ledger.get(canonical)
+                    body["status"] = "active" if canonical in known else str(entry.get("status", "suppressed"))
+                    if entry is not None:
+                        body["reason"] = entry.get("reason"); body["inGraph"] = canonical in known
+                        merged = entry.get("mergedInto")
+                        if canonical not in known and merged and merged[0] in known and entry.get("mergeScope") == "global":
+                            body["mergedInto"] = list(merged)
+                        if entry.get("contextMergedInto"):
+                            # Per-paper context merge (shared acronym): informational only, never a redirect.
+                            body["contextMergedInto"] = list(entry["contextMergedInto"]); body["mergeScope"] = "per-paper"
+                self._send(200, body); return
             if path == "/api/v1/overlays":
                 revision, payload, source = self.server.store.read_json("overlays")
                 self._send(200, {"revision": revision, "overlays": payload, "source": source}); return
@@ -289,7 +315,10 @@ class AtlasRequestHandler(BaseHTTPRequestHandler):
     def _expected_revision(self, body: dict[str, Any]) -> int | None:
         raw = self.headers.get("If-Match")
         if raw is None:
-            raw = body.get("revision")
+            nested = body.get("taxonomy", body.get("overlays", {}))
+            if not isinstance(nested, dict):
+                nested = {}
+            raw = body.get("expectedRevision", body.get("revision", nested.get("expectedRevision", nested.get("revision"))))
         if raw is None: raise ValueError("revision required")
         try:
             return int(str(raw).strip('"'))
@@ -369,6 +398,28 @@ class AtlasRequestHandler(BaseHTTPRequestHandler):
                 return True
         return False
 
+    def _active_epoch_payload(self, payload: dict[str, Any], tagged: dict[str, Any] | None) -> dict[str, Any]:
+        """Never carry a payload tagged with another source/epoch into a merge.
+
+        ``cas_json`` re-stamps a merged payload with the active epoch, so a
+        foreign-tagged ``facetCatalogConfig``/``inputState``/overlay would
+        otherwise be laundered into the current epoch.
+        """
+        state = self.server.store.state() or {}
+        if tagged and (tagged.get("server_id") != state.get("server_id") or tagged.get("epoch") != state.get("epoch")):
+            return {}
+        return payload
+
+    @staticmethod
+    def _concept_ids_with_ledger(snapshot: dict[str, Any]) -> set[str]:
+        """Active concepts plus same-snapshot ledger IDs (suppressed ones stay overridable)."""
+        ids = {str(row.get("id")) for row in snapshot.get("concepts", []) if isinstance(row, dict)}
+        ledger = snapshot.get("conceptQualityLedger")
+        for entry in (ledger.get("entries", []) if isinstance(ledger, dict) else []):
+            if isinstance(entry, dict) and (entry.get("id") or entry.get("conceptId")):
+                ids.add(str(entry.get("id") or entry.get("conceptId")))
+        return ids
+
     def _taxonomy_write(self, body: dict[str, Any], *, create: bool) -> None:
         with self.server.taxonomy_lock:
             self._taxonomy_write_locked(body, create=create)
@@ -376,14 +427,27 @@ class AtlasRequestHandler(BaseHTTPRequestHandler):
     def _taxonomy_write_locked(self, body: dict[str, Any], *, create: bool) -> None:
         payload = body.get("taxonomy", body)
         if not isinstance(payload, dict): raise ValueError("taxonomy object required")
-        allowed = {"fields", "concepts", "revision", "sourceEpoch", "sourceId", "entityType", "entityId", "label", "aliases", "parentIds", "patch", "source"}
+        allowed = {"fields", "concepts", "facetCatalogConfig", "inputState", "revision", "expectedRevision", "sourceEpoch", "sourceId", "entityType", "entityId", "label", "aliases", "parentIds", "patch", "source"}
         if set(payload) - allowed: raise ValueError("unknown taxonomy key")
-        current_revision, current, _ = self.server.store.read_json("taxonomy")
-        if self._expected_revision(body) != current_revision:
+        current_revision, current, current_source = self.server.store.read_json("taxonomy")
+        current = self._active_epoch_payload(current, current_source)
+        expected = self._expected_revision(body)
+        if expected != current_revision:
             self._send(409, {"error": "revision conflict", "revision": current_revision}); return
-        merged = {"fields": copy.deepcopy(current.get("fields", [])), "concepts": copy.deepcopy(current.get("concepts", []))}
+        merged = merge_payload(current, payload)
+        merged.setdefault("fields", copy.deepcopy(current.get("fields", [])))
+        merged.setdefault("concepts", copy.deepcopy(current.get("concepts", [])))
         state = self.server.store.state() or {}
-        if payload.get("sourceId") != state.get("server_id") or payload.get("sourceEpoch") != state.get("epoch"): raise ValueError("source identity required")
+        source_id = body.get("sourceId", payload.get("sourceId")); source_epoch = body.get("sourceEpoch", payload.get("sourceEpoch"))
+        if source_id != state.get("server_id") or source_epoch != state.get("epoch"): raise ValueError("source identity required")
+        for key in ("sourceId", "sourceEpoch", "revision", "expectedRevision"):
+            merged.pop(key, None)
+        if "facetCatalogConfig" in payload:
+            entities = facet_entities(payload.get("facetCatalogConfig"), source_id=state.get("server_id"), source_epoch=state.get("epoch"), require_source_scope=True)
+            # Persist the canonical (parent-alias-normalised) form only.
+            merged["facetCatalogConfig"] = {"version": 1, "entities": list(entities.values())}
+        if "inputState" in payload:
+            merged["inputState"] = validate_input_state(payload.get("inputState"))
         _, snapshot, redirects = self._taxonomy_view()
         if self._reject_redirected_write(payload, redirects, current_revision): return
         scoped_prefix = {kind: f"{kind}:{state.get('server_id')}:{state.get('epoch')}:" for kind in ("field", "concept")}
@@ -479,7 +543,7 @@ class AtlasRequestHandler(BaseHTTPRequestHandler):
                 visit(parent, path | {node})
         for child in parents:
             visit(child, set())
-        ok, revision, result = self.server.store.cas_json("taxonomy", merged, self._expected_revision(body), source=state)
+        ok, revision, result = self.server.store.cas_json("taxonomy", merged, expected, source=state)
         if not ok: self._send(409, {"error": "revision conflict", "revision": revision}); return
         self.server.manager.request_reindex()
         self._send(200, {"revision": revision, "taxonomy": result})
@@ -493,18 +557,22 @@ class AtlasRequestHandler(BaseHTTPRequestHandler):
         if not isinstance(payload, dict): raise ValueError("overlay object required")
         if payload.get("entityType"):
             if payload.get("entityType") not in {"paper", "concept", "field"} or not isinstance(payload.get("entityId"), str) or not isinstance(payload.get("patch"), dict): raise ValueError("invalid overlay entity")
-            if set(payload["patch"]) - {"aliases", "fieldIds", "memberships", "pinned"}: raise ValueError("unknown overlay patch key")
+            if set(payload["patch"]) - {"aliases", "fieldIds", "memberships", "pinned", "facetAssignments", "primaryFacetOverrides", "quality", "excluded", "protected"}: raise ValueError("unknown overlay patch key")
             if payload.get("entityType") == "paper" and "aliases" in payload["patch"]:
                 raise ValueError("paper aliases are unsupported")
             patch = payload["patch"]
             if "aliases" in patch and (not isinstance(patch["aliases"], list) or any(not isinstance(value, str) for value in patch["aliases"])): raise ValueError("aliases must be string array")
             if "fieldIds" in patch and (not isinstance(patch["fieldIds"], list) or any(not isinstance(value, str) for value in patch["fieldIds"])): raise ValueError("fieldIds must be string array")
             if "pinned" in patch and not isinstance(patch["pinned"], bool): raise ValueError("pinned must be boolean")
+            if payload.get("entityType") != "concept" and {"excluded", "protected", "quality"} & set(patch): raise ValueError("concept quality overrides apply to concepts")
+            if "excluded" in patch and not isinstance(patch["excluded"], bool): raise ValueError("excluded must be boolean")
+            if "protected" in patch and not isinstance(patch["protected"], bool): raise ValueError("protected must be boolean")
             if "memberships" in patch and (not isinstance(patch["memberships"], list) or any(not isinstance(value, dict) or set(value) - {"paperId", "fieldId", "weight", "method", "score"} or not isinstance(value.get("paperId"), str) or not isinstance(value.get("fieldId"), str) or ("weight" in value and (not isinstance(value["weight"], (int, float)) or value["weight"] < 0)) for value in patch["memberships"])): raise ValueError("invalid memberships")
-        elif set(payload) - {"aliases", "memberships", "pins", "archived", "revision", "sourceEpoch", "sourceId"}:
+        elif set(payload) - {"aliases", "memberships", "pins", "archived", "facetAssignments", "primaryFacetOverrides", "conceptQuality", "revision", "expectedRevision", "sourceEpoch", "sourceId"}:
             raise ValueError("unknown overlay key")
         state = self.server.store.state() or {}
-        if payload.get("sourceId") != state.get("server_id") or payload.get("sourceEpoch") != state.get("epoch"): raise ValueError("source identity required")
+        source_id = body.get("sourceId", payload.get("sourceId")); source_epoch = body.get("sourceEpoch", payload.get("sourceEpoch"))
+        if source_id != state.get("server_id") or source_epoch != state.get("epoch"): raise ValueError("source identity required")
         current_revision = self.server.store.read_json("overlays")[0]
         if self._expected_revision(body) != current_revision:
             self._send(412, {"error": "revision conflict", "revision": current_revision}); return
@@ -516,6 +584,8 @@ class AtlasRequestHandler(BaseHTTPRequestHandler):
                 raise ValueError("overlay id is not source scoped")
             snapshot = self.server.manager.snapshot()
             known = {str(row.get("id")) for key in ("papers", "fields", "concepts") for row in snapshot.get(key, [])}
+            if payload.get("entityType") == "concept":
+                known |= self._concept_ids_with_ledger(snapshot)      # suppressed (ledger-only) concepts stay overridable
             if entity_id not in known:
                 raise ValueError("unknown overlay entity")
             field_ids = payload["patch"].get("fieldIds", [])
@@ -524,6 +594,17 @@ class AtlasRequestHandler(BaseHTTPRequestHandler):
             for membership in payload["patch"].get("memberships", []):
                 if not isinstance(membership, dict) or str(membership.get("paperId")) not in {str(row.get("id")) for row in snapshot.get("papers", [])} or str(membership.get("fieldId")) not in {str(row.get("id")) for row in snapshot.get("fields", [])}:
                     raise ValueError("unknown overlay membership")
+            taxonomy = self.server.store.read_json("taxonomy")[1]
+            facet_ids, facet_kinds, facet_semantic = known_facet_index(taxonomy, snapshot, source_id=state.get("server_id"), source_epoch=state.get("epoch"))
+            paper_ids = {str(row.get("id")) for row in snapshot.get("papers", []) if isinstance(row, dict)}
+            if payload.get("entityType") != "paper" and ("facetAssignments" in payload["patch"] or "primaryFacetOverrides" in payload["patch"]):
+                raise ValueError("facet overrides apply to papers")
+            if "facetAssignments" in payload["patch"]:
+                payload["patch"]["facetAssignments"] = validate_facet_assignments(payload["patch"]["facetAssignments"], known_ids=facet_ids, semantic=facet_semantic, paper_ids=paper_ids)
+            if "primaryFacetOverrides" in payload["patch"]:
+                payload["patch"]["primaryFacetOverrides"] = validate_primary_overrides(payload["patch"]["primaryFacetOverrides"], known_ids=facet_ids, kinds=facet_kinds, semantic=facet_semantic)
+            if payload.get("entityType") == "concept" and "quality" in payload["patch"]:
+                validate_quality_override(payload["patch"]["quality"], known_concepts=self._concept_ids_with_ledger(snapshot))
         else:
             snapshot = self.server.manager.snapshot(); known = {str(row.get("id")) for key in ("papers", "fields", "concepts") for row in snapshot.get(key, [])}
             aliases = payload.get("aliases", {}); pins = payload.get("pins", {})
@@ -531,14 +612,26 @@ class AtlasRequestHandler(BaseHTTPRequestHandler):
             if not isinstance(pins, dict) or any(str(k) not in known or not isinstance(v, bool) for k, v in pins.items()): raise ValueError("invalid overlay pins")
             for membership in payload.get("memberships", []):
                 if not isinstance(membership, dict) or str(membership.get("paperId")) not in {str(row.get("id")) for row in snapshot.get("papers", [])} or str(membership.get("fieldId")) not in {str(row.get("id")) for row in snapshot.get("fields", [])}: raise ValueError("unknown overlay membership")
-        current = self.server.store.read_json("overlays")[1]
+            taxonomy = self.server.store.read_json("taxonomy")[1]
+            facet_ids, facet_kinds, facet_semantic = known_facet_index(taxonomy, snapshot, source_id=state.get("server_id"), source_epoch=state.get("epoch"))
+            paper_ids = {str(row.get("id")) for row in snapshot.get("papers", []) if isinstance(row, dict)}
+            if "facetAssignments" in payload or "primaryFacetOverrides" in payload:
+                raise ValueError("bulk facet overrides must use a paper entity patch")
+            if "conceptQuality" in payload:
+                if not isinstance(payload["conceptQuality"], dict): raise ValueError("conceptQuality must be an object")
+                concept_ids = self._concept_ids_with_ledger(snapshot)
+                for concept_id, quality in payload["conceptQuality"].items():
+                    if concept_id not in concept_ids: raise ValueError("unknown concept quality concept")
+                    validate_quality_override(quality, known_concepts=concept_ids)
+        _, current, current_source = self.server.store.read_json("overlays")
+        current = self._active_epoch_payload(current, current_source)
         merged = dict(current)
         if payload.get("entityType"):
             entities = dict(merged.get("entities", {})); entity_id = str(payload["entityId"])
             entity = dict(entities.get(entity_id, {})); entity.update(payload["patch"]); entity["entityType"] = payload["entityType"]; entities[entity_id] = entity; merged["entities"] = entities
         else:
             for key, value in payload.items():
-                if key in {"revision", "sourceEpoch", "sourceId"}: continue
+                if key in {"revision", "expectedRevision", "sourceEpoch", "sourceId"}: continue
                 if key in {"aliases", "pins"} and isinstance(value, dict):
                     existing = dict(merged.get(key, {})); existing.update(value); merged[key] = existing
                 elif key == "memberships" and isinstance(value, list):

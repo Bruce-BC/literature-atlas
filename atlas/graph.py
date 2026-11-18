@@ -16,12 +16,14 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping
 
 from .embeddings import EmbeddingProvider, normalize_text
+from .taxonomy import (build_facet_catalog, check_facet_invariants, collect_evidence, concept_quality, field_stats,
+                       msc_codes_from_extra, resolve_facets, source_keyword_items, taxonomy_input_state, PROTECTED_PHRASES, RULE_VERSION, ONTOLOGY_POLICY_VERSION)
 
 
 _STOPWORDS = {
     "a", "an", "and", "are", "as", "at", "by", "for", "from", "in", "into",
     "is", "of", "on", "or", "the", "to", "with", "this", "that", "using",
-    "study", "analysis", "method", "results", "paper", "연구", "분석", "및", "의",
+    "study", "analysis", "method", "results", "paper", "been", "has", "have", "were", "연구", "분석", "및", "의",
 }
 _SLUG = re.compile(r"[^a-z0-9가-힣]+", re.IGNORECASE)
 _ID_RE = re.compile(r"^[A-Za-z0-9:_./@+%-]+$")
@@ -38,6 +40,11 @@ _CURATED_CANONICALS = {
     "ot": "optimal-transport", "life science": "life-science", "life-science": "life-science",
     "biology": "life-science", "biological science": "life-science", "생명과학": "life-science",
 }
+# Short acronyms whose meaning depends on the paper (OT = optimal transport or
+# occupational therapy) are never merged globally for concepts; the per-paper
+# context gate in ``taxonomy.concept_quality`` decides.  Explicit user aliases
+# (an alias that names the acronym) still merge through the alias tokens.
+_CONTEXT_DEPENDENT_CONCEPT_KEYS = frozenset({"ot"})
 _PROVIDER_POOL: dict[tuple[str, str, bool], EmbeddingProvider] = {}
 
 
@@ -85,7 +92,13 @@ def _entity_key(value: Any) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
-def _canonical_entity_key(row: Mapping[str, Any]) -> str:
+def _curated_key(key: str, kind: str | None) -> str | None:
+    if kind == "concept" and key in _CONTEXT_DEPENDENT_CONCEPT_KEYS:
+        return None
+    return _CURATED_CANONICALS.get(key)
+
+
+def _canonical_entity_key(row: Mapping[str, Any], kind: str | None = None) -> str:
     label = row.get("label", {})
     labels = ([label.get("en"), label.get("ko")] + [value for key, value in label.items() if key not in {"en", "ko"}]) if isinstance(label, Mapping) else [label]
     aliases = list(row.get("aliases", []) or [])
@@ -96,8 +109,9 @@ def _canonical_entity_key(row: Mapping[str, Any]) -> str:
         # never a declaration that Optimization and Optimal Transport are equal.
         if primary in {"optimization", "optimisation", "최적화"} and _CURATED_CANONICALS.get(key) == "optimal-transport":
             continue
-        if key in _CURATED_CANONICALS:
-            return _CURATED_CANONICALS[key]
+        curated = _curated_key(key, kind)
+        if curated:
+            return curated
     return next((key for value in labels if (key := _entity_key(value))), _entity_key(row.get("id")))
 
 
@@ -110,17 +124,20 @@ def canonical_entity_key(kind: str, label: Any, aliases: Iterable[Any] = ()) -> 
     if kind not in {"field", "concept"}:
         raise ValueError("canonical identity kind must be field or concept")
     label_value = label if isinstance(label, Mapping) else {"en": label}
-    return _canonical_entity_key({"label": label_value, "aliases": list(aliases)})
+    return _canonical_entity_key({"label": label_value, "aliases": list(aliases)}, kind)
 
 
-def _identity_tokens(row: Mapping[str, Any]) -> set[str]:
+def _identity_tokens(row: Mapping[str, Any], kind: str | None = None) -> set[str]:
     label = row.get("label", {})
     labels = list(label.values()) if isinstance(label, Mapping) else [label]
     tokens = set()
     primary = next((_entity_key(value) for value in labels if _entity_key(value)), "")
+    generated = kind == "concept" and str(row.get("source")) != "user"
     for value in labels + list(row.get("aliases", []) or []):
         key = _entity_key(value)
-        normalized = _CURATED_CANONICALS.get(key, key)
+        if generated and key in _CONTEXT_DEPENDENT_CONCEPT_KEYS and value in (row.get("aliases", []) or []):
+            continue          # historic generated alias of an ambiguous sense: never a global identity token
+        normalized = _curated_key(key, kind) or key
         if primary in {"optimization", "optimisation", "최적화"} and normalized == "optimal-transport":
             continue
         if key:
@@ -132,7 +149,7 @@ def canonical_identity_matches(kind: str, left: Mapping[str, Any], right: Mappin
     """Whether two records share a normalized label or declared alias."""
     if kind not in {"field", "concept"}:
         raise ValueError("canonical identity kind must be field or concept")
-    return bool(_identity_tokens(left) & _identity_tokens(right))
+    return bool(_identity_tokens(left, kind) & _identity_tokens(right, kind))
 
 
 def canonical_context_matches(kind: str, left: Mapping[str, Any], right: Mapping[str, Any],
@@ -176,7 +193,7 @@ def _canonicalize_entities(entities: Mapping[str, Mapping[str, Any]], kind: str,
     ids = sorted(entities)
     groups = {i: {i} for i in ids}
     owner = {i: i for i in ids}
-    tokens = {i: _identity_tokens(entities[i]) for i in ids}
+    tokens = {i: _identity_tokens(entities[i], kind) for i in ids}
     inverted: dict[str, list[str]] = defaultdict(list)
     for entity_id in ids:
         for token in tokens[entity_id]:
@@ -210,6 +227,8 @@ def _canonicalize_entities(entities: Mapping[str, Mapping[str, Any]], kind: str,
     for cluster in clusters:
         members = sorted(cluster)
         curated = sorted(set.union(*(tokens[i] for i in members)) & set(_CURATED_CANONICALS.values()))
+        if kind == "concept" and len(members) == 1:
+            curated = []        # a lone concept keeps its own stable ID
         candidate = _id(kind, server, epoch, curated[0]) if curated else min(members)
         target = candidate if candidate not in used else min(members)
         if target in used:
@@ -528,6 +547,11 @@ def _iter_tags(paper: Mapping[str, Any]) -> list[tuple[str, str, str]]:
             label = normalize_text(label)
             if label:
                 values.append((label, item_origin, item_tier if item_tier in {"metadata", "indexed", "fulltext", "ocr", "unknown"} else tier))
+    # Structured MSC subject codes (explicit ``subjectCodes`` or parsed from a
+    # known-key Extra line).  Free Extra text is never turned into concepts.
+    codes = [str(c).upper() for c in (paper.get("subjectCodes") or []) if re.fullmatch(r"\d{2}[A-Za-z]\d{2}", str(c))]
+    for code in codes + [c for c in msc_codes_from_extra(paper.get("extra")) if c not in codes]:
+        values.append((code, "extra-msc", "metadata"))
     has_explicit = bool(paper.get("keywords") or paper.get("tags"))
     # Zotero records often have no explicit keyword array.  Add a small,
     # bounded lexical signal from title/abstract while keeping its origin and
@@ -552,6 +576,21 @@ def _iter_tags(paper: Mapping[str, Any]) -> list[tuple[str, str, str]]:
             if seen >= 12:
                 break
     return values
+
+
+_TOKEN_RE = re.compile(r"[\w\u0080-\uffff][\w\u0080-\uffff'’-]{1,}", re.UNICODE)
+
+
+def _bigrams(paper: Mapping[str, Any]) -> list[str]:
+    """Adjacent non-stopword bigrams from title/abstract (bounded, ordered)."""
+    result: list[str] = []
+    for field in ("title", "abstract"):
+        tokens = [_norm(t) for t in _TOKEN_RE.findall(normalize_text(paper.get(field)))[:400]]
+        for left, right in zip(tokens, tokens[1:]):
+            if left in _STOPWORDS or right in _STOPWORDS or len(left) < 3 or len(right) < 3:
+                continue
+            result.append(f"{left} {right}")
+    return result
 
 
 def _manual_values(overlays: Any, key: str) -> Any:
@@ -605,7 +644,9 @@ def _builtin_taxonomy(server: str, epoch: str) -> list[dict[str, Any]]:
 
 
 _BUILTIN_RULES = {
-    "analysis": ("analysis", "calculus", "theorem", "measure theory", "real analysis"),
+    # Bare biomedical ``analysis`` is intentionally absent.  A mathematical
+    # subject needs a domain marker or theorem/measure/real-analysis evidence.
+    "analysis": ("calculus", "theorem", "measure theory", "real analysis", "functional analysis"),
     "topology": ("topology", "topological", "graph topology"),
     "probability": ("probability", "stochastic", "bayesian", "markov", "random variable"),
     "optimization": ("optimization", "optimisation", "optimal transport", "convex", "optimal"),
@@ -852,8 +893,12 @@ class GraphEngine:
                     paper[key] = [_replace_id(item, migrations) for item in paper[key]]
             if isinstance(paper.get("memberships"), list):
                 paper["memberships"] = [dict(item, fieldId=_replace_id(item.get("fieldId"), migrations)) if isinstance(item, Mapping) else item for item in paper["memberships"]]
+        input_state, input_reason = taxonomy_input_state(raw_taxonomy)
         fields, concepts = self._taxonomy(taxonomy, server, epoch)
-        builtin_fields = not fields
+        # Only absent/uninitialized input inherits the builtin hierarchy.  An
+        # intentional-empty, invalid or disabled taxonomy never re-enables it.
+        builtin_fields = not fields and input_state in {"absent", "uninitialized"}
+        empty_visible = not fields and input_state in {"intentional-empty-valid", "invalid", "disabled"}
         if builtin_fields:
             fields, _ = self._taxonomy({"fields": _builtin_taxonomy(server, epoch)}, server, epoch)
             for field in fields.values():
@@ -942,6 +987,11 @@ class GraphEngine:
             p.setdefault("doi", None)
             p.setdefault("attachmentIds", [])
             p.setdefault("textStatus", "missing" if not p["abstract"] else "readable")
+            # Original source tags (Zotero keywords/tags) are the only keyword-tier evidence for the
+            # classifier.  ``p["keywords"]`` is later overwritten with concept-extraction tokens that may
+            # come from the abstract or indexed text; reading those as keywords would launder lower-tier
+            # evidence into keyword confidence.  Kept as a private, never-published copy.
+            p["_sourceKeywords"] = copy.deepcopy(source_keyword_items(p))
             p["_inputFieldIds"] = list(p.get("fieldIds") or [])
             p["_inputConceptIds"] = list(p.get("conceptIds") or [])
             p["fieldIds"] = []
@@ -951,15 +1001,22 @@ class GraphEngine:
         # Empty field declarations get explainable rule-based memberships so a
         # real library is useful immediately.  Existing/user memberships stay
         # authoritative and are never replaced by these candidates.
+        # Multifacet evidence is collected once (bounded, source-scoped).  When
+        # the builtin hierarchy is inherited, its subject facets drive the
+        # legacy field projection instead of substring rules, so a tool name
+        # such as QIIME2 can no longer fall into a broad parent by accident.
+        catalog0 = build_facet_catalog(server, epoch, fields, raw_taxonomy, input_state=input_state)
+        evidence_cache: dict = {}            # per-build; keyed by catalog fingerprint + paper text hash
+        evidence = collect_evidence(paper_rows, catalog0, evidence_cache)
         if builtin_fields:
+            by_id0 = {row["id"]: row for row in catalog0["entities"]}
             for p in paper_rows:
-                haystack = _norm(" ".join([p.get("title", ""), p.get("abstract") or ""] + [str(x) for x in p.get("keywords", [])]))
-                candidates = []
-                for field_key, terms in _BUILTIN_RULES.items():
-                    matched = next((term for term in terms if _norm(term) in haystack), None)
-                    if matched:
-                        candidates.append((field_key, matched))
-                p["_ruleFields"] = candidates
+                resolved = resolve_facets([p], catalog0, evidence)[0]
+                p["_facetSubjects"] = [(by_id0[m["facetId"]]["legacyFieldId"], m["score"], m["evidenceRef"].get("ruleId"))
+                                       for m in resolved["directMemberships"]
+                                       if m["kind"] == "subject" and by_id0[m["facetId"]].get("legacyFieldId")]
+                primary0 = resolved["primaryByFacet"].get("subject")
+                p["_facetPrimary"] = by_id0[primary0]["legacyFieldId"] if primary0 else None
 
         memberships: list[dict[str, Any]] = []
         membership_by_key: dict[tuple[str, str], dict] = {}
@@ -1001,13 +1058,17 @@ class GraphEngine:
                 add_membership(p["id"], ensure_field(str(field_id)), default_method="user")
             manual_override = isinstance(manual_fields, Mapping) and (p["id"] in manual_fields or p.get("key") in manual_fields)
             if builtin_fields and not p.get("_inputFieldIds") and not manual_override:
-                candidates = p.get("_ruleFields") or [("unknown", None)]
-                for field_key, evidence in candidates:
-                    add_membership(p["id"], ensure_field(field_key), {
-                        "method": "model", "score": 0.75 if evidence else 0.1,
-                        "weight": 1, "evidenceSpan": evidence, "modelVersion": "term-rules-v1",
+                for fid_legacy, score, rule in p.get("_facetSubjects") or []:
+                    add_membership(p["id"], ensure_field(str(fid_legacy)), {
+                        "method": "model", "score": score, "weight": 1, "evidenceSpan": None, "modelVersion": RULE_VERSION,
                         "scoreKind": "heuristic",
-                        "provenance": {"provider": "term-rules", "method": "normalized-term-match", "label": "rule-based"},
+                        "provenance": {"provider": "term-rules", "method": "facet-evidence", "label": "rule-based", "ruleId": rule},
+                    }, default_method="model")
+                if not p.get("_facetPrimary"):
+                    add_membership(p["id"], ensure_field("unknown"), {
+                        "method": "model", "score": 0.1, "weight": 1, "evidenceSpan": None, "modelVersion": RULE_VERSION,
+                        "scoreKind": "heuristic",
+                        "provenance": {"provider": "term-rules", "method": "abstain", "label": "rule-based"},
                     }, default_method="model")
         for raw in all_membership_inputs:
             pid = str(raw.get("paperId") or "")
@@ -1037,12 +1098,21 @@ class GraphEngine:
             related = [m for m in membership_by_key.values() if m["paperId"] == pid]
             related.sort(key=lambda m: (m["method"] != "user", -float(m["weight"]), m["fieldId"]))
             p["fieldIds"] = [m["fieldId"] for m in related]
+            p["_userFieldIds"] = [m["fieldId"] for m in related if m.get("method") == "user"]
             requested = p.get("displayFieldId")
+            if not requested and builtin_fields and not p.get("_inputFieldIds"):
+                requested = p.get("_facetPrimary") or "unknown"
             requested = ensure_field(str(requested)) if requested else None
             if requested and requested not in p["fieldIds"]:
                 requested = None
-            p["displayFieldId"] = requested or (related[0]["fieldId"] if related else _id("field", server, epoch, "unknown"))
-            if not related:
+            if requested:
+                p["displayFieldId"] = requested
+            elif related:
+                p["displayFieldId"] = related[0]["fieldId"]
+            elif empty_visible:
+                p["displayFieldId"] = None
+            else:
+                p["displayFieldId"] = _id("field", server, epoch, "unknown")
                 ensure_field(p["displayFieldId"], "Unknown")
             memberships.extend(related)
 
@@ -1050,9 +1120,15 @@ class GraphEngine:
         # It avoids broad fuzzy merges (e.g. KL divergence with Klebsiella).
         alias_to_concept: dict[str, str] = {}
         for cid, concept in concepts.items():
-            for value in [concept.get("label", {}).get("en"), concept.get("label", {}).get("ko"), *concept.get("aliases", [])]:
-                if value:
-                    alias_to_concept[_norm(value)] = cid
+            user_owned = str(concept.get("source")) == "user"
+            for index, value in enumerate([concept.get("label", {}).get("en"), concept.get("label", {}).get("ko"), *concept.get("aliases", [])]):
+                if not value:
+                    continue
+                # A historic GENERATED short alias of an ambiguous sense (e.g. "OT") must not globalize
+                # that sense before the per-paper context gate; user-confirmed aliases stay authoritative.
+                if index >= 2 and not user_owned and _norm(value) in _CONTEXT_DEPENDENT_CONCEPT_KEYS:
+                    continue
+                alias_to_concept[_norm(value)] = cid
         manual_aliases = _manual_values(overlay_copy, "conceptAliases") or {}
         if isinstance(manual_aliases, Mapping):
             for cid, aliases in manual_aliases.items():
@@ -1079,8 +1155,17 @@ class GraphEngine:
                 concepts[canonical]["aliases"].append(str(row["alias"]))
         keyword_meta: dict[str, list[dict[str, str]]] = {}
         manual_paper_concepts = _manual_values(overlay_copy, "paperConcepts") or _manual_values(overlay_copy, "conceptMemberships") or {}
+        # Bounded phrase candidates: a bigram is a candidate only when it is a
+        # curated protected phrase or recurs in >=2 papers (document frequency).
+        bigram_df: dict[str, int] = {}
+        paper_bigrams = {p["id"]: list(dict.fromkeys(_bigrams(p))) for p in paper_rows}
+        for grams in paper_bigrams.values():
+            for gram in grams:
+                bigram_df[gram] = bigram_df.get(gram, 0) + 1
         for p in paper_rows:
             tags = _iter_tags(p)
+            phrases = [g for g in paper_bigrams[p["id"]] if g in PROTECTED_PHRASES or bigram_df.get(g, 0) >= 2][:8]
+            tags.extend((g, "phrase", "metadata") for g in phrases)
             seen_kw: set[str] = set()
             extracted_keywords: list[str] = []
             for label, origin, tier in tags:
@@ -1111,6 +1196,7 @@ class GraphEngine:
                     if not cid.startswith(f"concept:{server}:{epoch}:"):
                         cid = _id("concept", server, epoch, cid)
                     concepts.setdefault(cid, {"id": cid, "label": _label(raw_cid), "aliases": [], "source": "user"})
+                    concepts[cid]["source"] = "user"
                     if cid not in p["conceptIds"]:
                         p["conceptIds"].append(cid)
             # Preserve explicit concept IDs and user concepts supplied by source.
@@ -1121,13 +1207,16 @@ class GraphEngine:
                 if cid not in concepts:
                     cid = _id("concept", server, epoch, cid)
                     concepts[cid] = {"id": cid, "label": _label(raw_cid), "aliases": [], "source": "user"}
+                concepts[cid]["source"] = "user"
                 if cid not in p["conceptIds"]:
                     p["conceptIds"].append(cid)
             p["keywordMetadata"] = keyword_meta.get(p["id"], [])
             p["keywords"] = extracted_keywords
-            p.pop("_ruleFields", None)
-            p.pop("indexedText", None)
-            p.pop("fullText", None)
+            p.pop("_facetSubjects", None); p.pop("_facetPrimary", None)
+            # Indexed/full text is retained until the multifacet classifier and
+            # concept-quality pass have consumed its provenance.  It is
+            # removed from the public snapshot below; raw text never leaves
+            # this process.
             pins = overlay_copy.get("pins", {})
             if isinstance(pins, Mapping) and p["id"] in pins:
                 p["pinned"] = bool(pins[p["id"]])
@@ -1148,6 +1237,38 @@ class GraphEngine:
                     target = concept_redirects.get(key, key)
                     remapped_pins[target] = remapped_pins.get(target, False) or bool(value)
                 overlay_copy["pins"] = remapped_pins
+
+        # v3 facets are independent of the legacy field taxonomy: a custom or
+        # empty taxonomy cannot disable QIIME2/phage/method/tool evidence.
+        # The catalog is rebuilt from the final legacy fields so custom fields
+        # created while resolving memberships are included.
+        facet_catalog = build_facet_catalog(server, epoch, fields, raw_taxonomy, input_state=input_state)
+        if input_reason:
+            facet_catalog["inputReason"] = input_reason
+        evidence = collect_evidence(paper_rows, facet_catalog, evidence_cache)
+        entity_overlays = overlay_copy.get("entities", {}) if isinstance(overlay_copy, Mapping) else {}
+        paper_facets = resolve_facets(
+            paper_rows, facet_catalog, evidence,
+            user_subjects={p["id"]: p.get("_userFieldIds", []) for p in paper_rows},
+            display_fields={p["id"]: p.get("displayFieldId") for p in paper_rows if p.get("displayFieldId")},
+            overlay_entities=entity_overlays if isinstance(entity_overlays, Mapping) else {})
+        facet_errors = check_facet_invariants(paper_facets, facet_catalog)
+        if facet_errors:
+            raise ValueError("facet invariant violation: " + facet_errors[0])
+        facet_status = {"version": RULE_VERSION, "ruleVersion": RULE_VERSION, "classifier": "bounded-evidence-rules", "ontologyPolicy": ONTOLOGY_POLICY_VERSION}
+        overlay_for_quality = dict(overlay_copy) if isinstance(overlay_copy, Mapping) else {}
+        overlay_for_quality["redirectTargets"] = sorted({*field_redirects.values(), *concept_redirects.values(), *prior_redirects.values()})
+        quality = concept_quality(concepts, paper_rows, overlay_for_quality, server=server, epoch=epoch)
+        concepts = quality["concepts"]
+        concept_quality_ledger = quality["ledger"]
+        # Suppressed/stale generated concepts stay resolvable in the ledger but
+        # are not active graph nodes.  Protected/user entities stay addressable.
+        active_concept_ids = {str(cid) for paper in paper_rows for cid in paper.get("conceptIds", [])}
+        keep_ids = set(concept_quality_ledger.get("protected", [])) | set(concept_quality_ledger.get("user", []))
+        concepts = {cid: row for cid, row in concepts.items()
+                    if cid in active_concept_ids or (cid in keep_ids and row.get("qualityStatus") != "suppressed")}
+        for p in paper_rows:
+            p.pop("indexedText", None); p.pop("fullText", None); p.pop("_userFieldIds", None); p.pop("extra", None); p.pop("_sourceKeywords", None)
         new_redirects = {**field_redirects, **concept_redirects}
         combined_redirects = {**prior_redirects, **new_redirects}
         for kind in ("field", "concept"):
@@ -1390,6 +1511,13 @@ class GraphEngine:
         for ribbon in overview["ribbons"]:
             ribbon["topFieldIDs"] = [ribbon["sourceFieldId"], ribbon["targetFieldId"]]
 
+        # Full-data cardinalities are computed once and persisted separately
+        # from display sampling.  Frontends can therefore subsample without
+        # changing direct/inclusive counts or the unknown-paper total.
+        field_stats_payload = field_stats(paper_rows, fields, memberships)
+        facet_catalog["paperCount"] = len(paper_rows)
+        facet_catalog["classifier"] = facet_status
+
         model_status = {"provider": provider.provider, "label": "synthetic-test-only" if provider.provider == "fake" else provider.provider,
                         "revision": provider.revision, "modelCardHash": embedding_records[0].model_card_hash if embedding_records else None,
                         "artifactHash": embedding_records[0].artifact_hash if embedding_records else None,
@@ -1435,5 +1563,11 @@ class GraphEngine:
                 "papers": paper_rows, "fields": list(fields.values()), "concepts": list(concepts.values()),
                 "memberships": memberships, "edges": edges, "attachments": out_attachments, "collections": collections,
                 "overview": overview, "modelStatus": model_status, "allocationMode": "primary-display-field",
-                "taxonomyRedirects": taxonomy_redirects}
+                "taxonomyRedirects": taxonomy_redirects,
+                "facetCatalog": facet_catalog, "paperFacets": paper_facets,
+                "conceptQualityLedger": concept_quality_ledger, "fieldStats": field_stats_payload,
+                "taxonomyState": {"status": facet_catalog.get("inputState", "absent"),
+                                  "sourceId": server, "sourceEpoch": epoch,
+                                  **({"reason": input_reason or f"{len(facet_catalog['validationErrors'])} facet catalog issue(s): {facet_catalog['validationErrors'][0]}"}
+                                     if (input_reason or facet_catalog.get("validationErrors")) else {})}}
 

@@ -42,20 +42,6 @@ test('viewport and surviving node positions restore with bounded zoom', async ()
   assert.deepEqual(next.graph.calls, ['stop', ['positions', {one: [10, 20], two: [30, 40]}], ['zoom', 3], ['pan', [0, 0]]]); next.destroy();
 });
 
-test('view states keep filtered positions, prune deleted IDs, and reset on source epoch change', async () => {
-  const {updateG6Views} = await import('../../frontend/g6-view-state.js');
-  const snapshot = {source: {serverId: 'library', epoch: 'a'}, papers: [{id: 'one'}, {id: 'two'}], concepts: [{id: 'c'}], fields: [{id: 'field'}]};
-  const initial = updateG6Views(null, {}, snapshot);
-  const view = {zoom: 1.5, position: [5, 7], positions: {one: [1, 1], two: [2, 2], deleted: [9, 9]}};
-  const saved = updateG6Views(initial.source, {}, snapshot, {paper: view});
-  const filtered = updateG6Views(saved.source, saved.views, snapshot, {paper: {zoom: 2, position: [6, 8], positions: {one: [3, 3]}}});
-  assert.deepEqual(filtered.views.paper.positions, {one: [3, 3], two: [2, 2]});
-  assert.equal(filtered.views.paper.zoom, 2);
-  const changed = updateG6Views(filtered.source, filtered.views, {...snapshot, source: {...snapshot.source, epoch: 'b'}}, {paper: view});
-  assert.deepEqual(changed.views, {});
-});
-
-
 test('readiness reports actual rendering, success, failure and disposal', async () => {
   let resolve; class DelayedGraph extends FakeGraph { render() { return new Promise(done => { resolve = done; }); } }
   const element = container(); const wrapper = renderG6Network(element, nodes, [], {GraphClass: DelayedGraph});
@@ -117,4 +103,59 @@ test('node color data changes trigger redraw even when theme is unchanged', asyn
   const wrapper=renderG6Network(container(),nodes,[],{GraphClass:StyleGraph,...style});await wrapper.ready;
   wrapper.restyle(nodes.map(node=>({data:{...node.data,categoryColor:'#abcdef'}})),[],style);await new Promise(resolve=>setTimeout(resolve,0));
   assert.equal(wrapper.graph.calls.find(call=>Array.isArray(call)&&call[0]==='nodes')[1][0].data.categoryColor,'#abcdef');assert.ok(wrapper.graph.calls.includes('draw'));wrapper.destroy();
+});
+
+class TopologyGraph extends FakeGraph {
+  render() { return Promise.resolve(); }
+  setData(data) { this.nodes = data.nodes; this.calls.push(['setData', data.nodes.map(node => node.id), data.nodes.map(node => node.style)]); }
+  getClientByCanvas(point) { return point; }
+  getEdgeData() { return []; } setNode() {} setEdge() {} layout() { this.calls.push('layout'); return Promise.resolve(); } draw() { this.calls.push('draw'); return Promise.resolve(); }
+}
+const palette = {textColor: '#111', panelColor: '#222', borderColor: '#333', focusColor: '#444', seriesColor: '#555'};
+
+test('rapid updates with the same desired topology never skip the node add (decided against the APPLIED graph)', async () => {
+  const wrapper = renderG6Network(container(), nodes, [], {GraphClass: TopologyGraph, layoutType: 'preset', ...palette}); await wrapper.ready;
+  const withX = [...nodes, {data: {id: 'x', label: 'X', x: 5, y: 6}}];
+  wrapper.update(withX, [], palette, {revision: 1});
+  wrapper.update(withX, [], {...palette, textColor: '#999'}, {revision: 2}); // same topology, newer revision; rev1 is skipped as stale
+  await wrapper.whenIdle();
+  assert.deepEqual(wrapper.graph.getNodeData().map(node => node.id).sort(), ['one', 'two', 'x']);
+  assert.ok(wrapper.graph.calls.some(call => Array.isArray(call) && call[0] === 'setData' && call[1].includes('x')));
+  assert.equal(wrapper.stats.droppedStale, 1); assert.equal(wrapper.stats.topologyChanges, 1);
+  assert.equal(wrapper.graph.nodes.find(node => node.id === 'x').style.x, 5); // preset coordinates from data, not (0,0)
+  assert.equal(wrapper.signature, wrapper.desiredSignature);
+  wrapper.destroy();
+});
+
+test('a reused wrapper resolves clicks with the CURRENT handler (new nodes after a poll are clickable with current metadata)', async () => {
+  const handlers = {}; const element = container(); element.addEventListener = (name, handler) => { handlers[name] = handler; };
+  const first = []; const second = [];
+  const wrapper = renderG6Network(element, nodes, [], {GraphClass: TopologyGraph, layoutType: 'preset', hitRadius: 12, onSelect: id => first.push(id), ...palette}); await wrapper.ready;
+  wrapper.setOnSelect(id => second.push(id));
+  handlers.pointerdown({button: 0, clientX: 10, clientY: 20}); handlers.click({button: 0, clientX: 10, clientY: 20});
+  assert.deepEqual(first, []); assert.deepEqual(second, ['one']); wrapper.destroy();
+});
+
+test('native node click after drag is suppressed and a plain native click selects exactly once', async () => {
+  const listeners = {}; const element = container(); element.addEventListener = (name, handler) => { (listeners[name] ||= []).push(handler); };
+  let nodeClick; class EventGraph extends TopologyGraph { on(name, handler) { if (String(name).includes('click')) nodeClick = handler; } }
+  const selected = []; const wrapper = renderG6Network(element, nodes, [], {GraphClass: EventGraph, onSelect: id => selected.push(id), ...palette}); await wrapper.ready;
+  const fire = (name, event) => listeners[name].forEach(handler => handler(event));
+  fire('pointerdown', {button: 0, clientX: 10, clientY: 20}); fire('pointermove', {clientX: 60, clientY: 60}); nodeClick({target: {id: 'one'}, targetType: 'node'});
+  assert.deepEqual(selected, []); assert.equal(wrapper.stats.suppressedDragClicks, 1);
+  fire('pointerdown', {button: 0, clientX: 10, clientY: 20}); nodeClick({target: {id: 'one'}, targetType: 'node'}); fire('click', {button: 0, clientX: 10, clientY: 20});
+  assert.deepEqual(selected, ['one']); assert.equal(wrapper.stats.nativeClicks, 1); assert.equal(wrapper.stats.physicalClicks, 0); wrapper.destroy();
+});
+
+test('a failed queued update clears pending desired state: identical retry applies, final nodes are right and ready phase recovers', async () => {
+  let failures = 1; class FlakyGraph extends TopologyGraph { draw() { if (failures-- > 0) return Promise.reject(new Error('draw failed')); return super.draw(); } }
+  const errors = []; const element = container(); const wrapper = renderG6Network(element, nodes, [], {GraphClass: FlakyGraph, layoutType: 'preset', onError: error => errors.push(error.message), ...palette}); await wrapper.ready;
+  const withX = [...nodes, {data: {id: 'x', label: 'X', x: 1, y: 2}}];
+  await wrapper.update(withX, [], palette, {revision: 1});
+  assert.deepEqual(errors, ['draw failed']); assert.equal(element.dataset.rendererState, 'error'); assert.equal(wrapper.stats.failedUpdates, 1);
+  assert.equal(wrapper.desiredSignature, wrapper.signature); // after failure the pending desired state is reset to the applied graph (still 2 nodes)
+  await wrapper.update(withX, [], palette, {revision: 2}); // IDENTICAL request must not be short-circuited
+  assert.deepEqual(wrapper.graph.getNodeData().map(node => node.id).sort(), ['one', 'two', 'x']);
+  assert.equal(wrapper.signature, wrapper.desiredSignature); assert.equal(element.dataset.rendererState, 'ready'); assert.equal(errors.length, 1);
+  wrapper.destroy();
 });

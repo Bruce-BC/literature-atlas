@@ -1,10 +1,10 @@
 import * as d3 from 'd3';
-import cytoscape from 'cytoscape';
-import {densityColor, densityRamp} from './density-view.js';
-import {renderG6Network} from './g6-render.js';
-import {networkLegendForNodes, clampNetworkZoom, networkZoomOptions, fieldPresentation} from './network-style.js';
+import {g6View} from './network-views.js';
+import {overviewGraphProjection, paperIdFromNode, paperNodeId} from './overview-expansion.js';
+import {fieldPresentation} from './network-style.js';
 import {displayLabel, safeText} from './decoder.js';
-import {circularLayout, graphProjection, overviewProjection} from './projection.js';
+import {circularLayout, overviewProjection} from './projection.js';
+import {allPaperOverviewProjection} from './all-paper-overview.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const svgEl = (tag, attrs = {}) => { const node = document.createElementNS(NS, tag); for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, String(value)); return node; };
@@ -17,7 +17,7 @@ export function renderCircular(svg, snapshot, state) {
   svg.setAttribute('viewBox', `0 0 ${width} ${height}`); svg.setAttribute('role', 'img');
   const group = svgEl('g', {transform: `translate(${width / 2 + state.panX},${height / 2 + state.panY}) scale(${state.zoom})`}); svg.append(group);
   const projection = overviewProjection(snapshot, state.relationType || 'semantic'); const layout = circularLayout(projection, width, height); const radius = layout.radius;
-  const computed = getComputedStyle(document.getElementById('atlas-app') || document.documentElement); const fieldPalette = {series: Array.from({length:6}, (_, index) => computed.getPropertyValue(`--atlas-series-${index+1}-hex`).trim() || '#64748b')};
+  const computed = getComputedStyle(document.getElementById('atlas-app') || document.documentElement); const fieldPalette = state.paletteContext || {series: Array.from({length:6}, (_, index) => computed.getPropertyValue(`--atlas-series-${index+1}-hex`).trim() || '#64748b')};
   const arc = d3.arc().innerRadius(radius).outerRadius(radius + 24);
   const ribbon = d3.ribbon().radius(radius - 12); const ribbonArrow = d3.ribbonArrow().radius(radius - 12).headRadius(7);
   const arcById = new Map(layout.arcs.map(item => [item.id, item])); const parents = new Map(); for (const field of layout.arcs) for (const parentId of field.parentIds || []) { const parentArc = arcById.get(parentId); if (!parentArc) continue; const group = parents.get(parentId) || {field: parentArc, children: []}; group.children.push(field); parents.set(parentId, group); }
@@ -37,47 +37,6 @@ export function renderCircular(svg, snapshot, state) {
   return {projection, layout, sectorCount: layout.arcs.length, ribbonCount: layout.links.length, pathCount: svg.querySelectorAll('path').length};
 }
 
-export function renderNetworks(containers, snapshot, detail, state, callbacks) {
-  const selectedConceptIds = state.selectedConceptId ? [state.selectedConceptId] : []; const mandatoryConceptIds = state.selectedPaperId ? (snapshot.papers.find(paper => paper.id === state.selectedPaperId)?.conceptIds || []) : []; const computed = getComputedStyle(document.getElementById('atlas-app') || document.documentElement); const color = name => computed.getPropertyValue(name).trim() || '#64748b'; const series = Array.from({length: 6}, (_, index) => color(`--atlas-series-${index + 1}-hex`)); const graph = graphProjection(snapshot, detail, {maxConceptNodes: Math.max(30, Math.ceil(300 * state.fraction)), selectedConceptIds, mandatoryConceptIds, selectedPaperId: state.selectedPaperId, fieldId: state.fieldId, categoryPalette: {series}}); const elements = [...graph.paperNodes, ...graph.paperEdges];
-  const textColor = color('--atlas-text-hex'); const panelColor = color('--atlas-panel-hex'); const borderColor = color('--atlas-border-hex'); const focusColor = color('--atlas-focus-hex'); const series4 = color('--atlas-series-4-hex'); const series1 = color('--atlas-series-1-hex');
-  const drawLegend = (container, nodes, label) => { let legend = container.parentElement.querySelector('.atlas-network-legend'); if (!legend) { legend = document.createElement('div'); legend.className = 'atlas-network-legend'; container.parentElement.append(legend); } legend.replaceChildren(); const title = document.createElement('span'); title.className = 'atlas-network-legend-title'; title.textContent = `${label} categories`; legend.append(title); for (const category of networkLegendForNodes(nodes.map(node => node.data))) { const item = document.createElement('span'); item.className = 'atlas-network-legend-item'; const swatch = document.createElement('i'); swatch.className = 'atlas-network-legend-swatch'; swatch.style.background = category.color || '#64748b'; const text = document.createElement('span'); text.textContent = `${category.label}${category.inferred ? ' · inferred' : ''} (${category.count})`; item.append(swatch, text); legend.append(item); } };
-  if (state.colorMode === 'density' && state.paperDensity) { const rows = new Map(state.paperDensity.rows.map(row => [row.id, row])); const max = Math.max(0, ...state.paperDensity.rows.map(row => row.degree)); for (const node of graph.paperNodes) { const degree=rows.get(node.data.id)?.degree || 0; node.data.categoryColor=densityColor(degree,max); node.data.degree=degree; node.data.degreePossible=Math.max(0,state.paperDensity.counts.papers-1); } }
-  drawLegend(containers.paper, graph.paperNodes, 'Paper'); drawLegend(containers.concept, [...graph.conceptNodes, ...graph.conceptPaperNodes], 'Concept');
-  if (state.colorMode === 'density' && state.paperDensity) { const legend=containers.paper.parentElement.querySelector('.atlas-network-legend');legend.replaceChildren();const title=document.createElement('span');title.textContent=`Observed degree · 0 to ${Math.max(0,...state.paperDensity.rows.map(row=>row.degree))} / ${Math.max(0,state.paperDensity.counts.papers-1)} possible`;legend.append(title);for(const color of densityRamp()){const swatch=document.createElement('i');swatch.className='atlas-network-legend-swatch';swatch.style.background=color.hex;legend.append(swatch);} }
-  if (state.renderer === 'g6') {
-    const signature = (nodes, edges) => JSON.stringify([nodes.map(node => node.data.id), edges.map(edge => [edge.data.id, edge.data.source, edge.data.target])]);
-    const paperSignature = signature(graph.paperNodes, graph.paperEdges);
-    const conceptNodes = [...graph.conceptNodes, ...graph.conceptPaperNodes]; const conceptSignature = signature(conceptNodes, graph.conceptEdges);
-    let g6Paper = state.g6Paper; let g6Concept = state.g6Concept;
-    if (g6Paper && g6Paper.signature !== paperSignature) { g6Paper.destroy(); g6Paper = null; }
-    if (g6Concept && g6Concept.signature !== conceptSignature) { g6Concept.destroy(); g6Concept = null; }
-    if (g6Paper) { g6Paper.restyle(graph.paperNodes, graph.paperEdges, {textColor, panelColor, borderColor, focusColor, seriesColor: focusColor}); g6Paper.select(state.selectedPaperId); }
-    else { g6Paper = renderG6Network(containers.paper, graph.paperNodes, graph.paperEdges, {textColor, panelColor, borderColor, focusColor, seriesColor: focusColor, viewState: state.g6Views?.[state.g6PaperKind], onError: callbacks.error, selectedId: state.selectedPaperId, onSelect: id => callbacks.select({kind: 'paper', value: graph.paperById.get(id)})}); g6Paper.signature = paperSignature; }
-    if (g6Concept) { g6Concept.restyle(conceptNodes, graph.conceptEdges, {textColor, panelColor, borderColor, focusColor, seriesColor: series4}); g6Concept.select(state.selectedConceptId); }
-    else { g6Concept = renderG6Network(containers.concept, conceptNodes, graph.conceptEdges, {textColor, panelColor, borderColor, focusColor, seriesColor: series4, viewState: state.g6Views?.concept, onError: callbacks.error, selectedId: state.selectedConceptId, onSelect: id => { const concept = graph.conceptById.get(id); const paper = graph.paperById.get(id); if (concept) callbacks.select({kind: 'concept', value: concept}); else if (paper) callbacks.select({kind: 'paper', value: paper}); }}); g6Concept.signature = conceptSignature; }
-    return {cyPaper: null, cyConcept: null, g6Paper, g6Concept, graph};
-  }
-  const paperLayout = state.cyPositions && Object.keys(state.cyPositions).length ? {name: 'preset', positions: state.cyPositions, fit: true} : (graph.paperNodes.length > 250 ? {name: 'grid', fit: true, avoidOverlap: true} : {name: 'cose', animate: false});
-  const cyPaper = cytoscape({container: containers.paper, ...networkZoomOptions(), elements, layout: paperLayout, style: [
-    {selector: 'node', style: {'background-color': 'data(categoryColor)', label: '', color: textColor, 'font-size': 12, 'text-wrap': 'wrap', 'text-max-width': 140, 'border-width': 2, 'border-color': panelColor}},
-    {selector: 'node:selected', style: {label: 'data(label)', 'text-background-color': panelColor, 'text-background-opacity': 0.9, 'text-background-padding': 3, 'text-border-color': focusColor, 'text-border-width': 1, 'text-border-opacity': 1}},
-    {selector: 'edge', style: {'line-color': borderColor, width: 1.5, 'curve-style': 'bezier', 'target-arrow-shape': 'none'}},
-    {selector: 'edge.directed', style: {'target-arrow-shape': 'triangle'}},
-    {selector: '.is-selected', style: {'border-color': focusColor, 'border-width': 4}}
-  ], userPanningEnabled: true, userZoomingEnabled: true});
-  cyPaper.on('tap', 'node', event => callbacks.select({kind: 'paper', value: graph.paperById.get(event.target.id())}));
-  const conceptElements = [...graph.conceptNodes, ...graph.conceptPaperNodes, ...graph.conceptEdges];
-  const conceptLayout = state.conceptPositions && Object.keys(state.conceptPositions).length ? {name: 'preset', positions: state.conceptPositions, fit: true} : (graph.conceptNodes.length + graph.conceptPaperNodes.length > 200 ? {name: 'grid', fit: true, avoidOverlap: true} : {name: 'cose', animate: false});
-  const cyConcept = cytoscape({container: containers.concept, ...networkZoomOptions(), elements: conceptElements, layout: conceptLayout, style: [
-    {selector: 'node[kind = "concept"]', style: {'background-color': 'data(categoryColor)', label: '', color: textColor, 'font-size': 12}},
-    {selector: 'node[kind = "paper"]', style: {'background-color': 'data(categoryColor)', label: '', color: textColor, 'font-size': 12}},
-    {selector: 'node:selected', style: {label: 'data(label)', 'text-background-color': panelColor, 'text-background-opacity': 0.9, 'text-background-padding': 3, 'text-border-color': focusColor, 'text-border-width': 1, 'text-border-opacity': 1}},
-    {selector: 'edge', style: {'line-color': borderColor, width: 1}}
-  ], userPanningEnabled: true, userZoomingEnabled: true});
-  cyConcept.on('tap', 'node', event => { const concept = graph.conceptById.get(event.target.id()); if (concept) callbacks.select({kind: 'concept', value: concept}); });
-  return {cyPaper, cyConcept, graph};
-}
-
 export function renderList(node, rows, label, onSelect, selectedId = null) {
   clear(node); if (!rows.length) { const empty = document.createElement('p'); empty.className = 'atlas-empty'; empty.textContent = 'No matching records'; node.append(empty); return; }
   for (const row of rows) { const button = document.createElement('button'); button.type = 'button'; button.className = 'atlas-list-item'; button.dataset.entityId = row.id; button.setAttribute('aria-pressed', String(selectedId === row.id)); const title = document.createElement('span'); title.textContent = label(row); const meta = document.createElement('small'); meta.textContent = row.year ? String(row.year) : row.source || ''; button.append(title, meta); button.addEventListener('click', () => onSelect(row)); node.append(button); }
@@ -88,16 +47,41 @@ export function renderRelationList(node, edges, paperById, onSelect) {
   for (const edge of edges.slice(0, 80)) { const button = document.createElement('button'); button.type = 'button'; button.className = 'atlas-list-item relation-item'; const source = paperById.get(edge.source); const target = paperById.get(edge.target); button.textContent = `${edge.type} · ${safeText(source?.title, edge.source)} → ${safeText(target?.title, edge.target)}`; button.dataset.relationType = edge.type; button.addEventListener('click', () => onSelect(edge)); node.append(button); }
 }
 
-export const AtlasRender = {renderCircular, renderNetworks, renderList, renderRelationList};
+export {renderNetworks} from './network-views.js';
 
+const cssVar = (computed, name) => computed.getPropertyValue(name).trim() || '#64748b';
+const styleFrom = computed => ({textColor: cssVar(computed, '--atlas-text-hex'), panelColor: cssVar(computed, '--atlas-panel-hex'), borderColor: cssVar(computed, '--atlas-border-hex'), focusColor: cssVar(computed, '--atlas-focus-hex'), seriesColor: undefined});
+
+/** Representative (field) overview with bounded expansion.  `existing` is the previous view wrapper. */
 export function renderG6Overview(container, snapshot, state, callbacks, existing = null) {
-  const computed = getComputedStyle(document.getElementById('atlas-app') || document.documentElement);
-  const color = name => computed.getPropertyValue(name).trim() || '#64748b';
-  const palette = {series: Array.from({length:6}, (_, index) => color(`--atlas-series-${index+1}-hex`))};
-  const overview = overviewProjection(snapshot, state.paperRelation);
-  const fields = new Map(snapshot.fields.map(field => [field.id, field]));
-  const nodes = overview.fields.map(field => ({data: {id: field.id, label: field.label?.en || field.label?.ko || field.id, categoryColor: fieldPresentation(fields.get(field.id), snapshot, palette).color, categoryLabel: field.label?.en || field.label?.ko || field.id}}));
-  const edges = overview.ribbons.map((ribbon, index) => ({data: {id: `overview:${index}`, source: ribbon.sourceFieldId, target: ribbon.targetFieldId, directed: ribbon.directed, weight: ribbon.value}}));
-  if (existing) { existing.restyle(nodes, edges, {textColor: color('--atlas-text-hex'), panelColor: color('--atlas-panel-hex'), borderColor: color('--atlas-border-hex'), focusColor: color('--atlas-focus-hex'), seriesColor: undefined}); existing.select(state.selectedFieldId); return existing; }
-  return renderG6Network(container, nodes, edges, {textColor: color('--atlas-text-hex'), panelColor: color('--atlas-panel-hex'), borderColor: color('--atlas-border-hex'), focusColor: color('--atlas-focus-hex'), viewState: state.g6Views?.overview, selectedId: state.selectedFieldId, onError: callbacks.error, onSelect: id => { const field = fields.get(id); if (field) callbacks.select({kind: 'field', value: field}); }});
+  const computed = getComputedStyle(document.getElementById('atlas-app') || document.documentElement); const palette = state.paletteContext || {};
+  const projection = overviewGraphProjection(snapshot, {relation: state.paperRelation, expanded: state.viewState?.expanded || new Set(), pages: state.childPages || new Map(), palette});
+  const select = id => {
+    const paperId = paperIdFromNode(id);
+    if (paperId) { const paper = snapshot.papers.find(row => row.id === paperId); const node = projection.nodes.find(row => row.data.id === id); const scopeField = state.viewState?.scope?.fieldId; const owners = node?.data.owners || []; callbacks.select({kind: 'paper', value: paper, ownerId: owners.includes(scopeField) ? scopeField : owners[0] || null}); return; }
+    const field = snapshot.fields.find(row => row.id === id); if (field) callbacks.toggleRepresentative(field.id);
+  };
+  const selectedId = state.selectedPaperId && projection.nodes.some(row => row.data.id === paperNodeId(state.selectedPaperId)) ? paperNodeId(state.selectedPaperId) : (state.viewState?.selected?.kind === 'field' ? state.viewState.selected.id : null);
+  const view = g6View({view: 'g6-overview', container, nodes: projection.nodes, edges: projection.edges, style: styleFrom(computed), selectedId, onSelect: select, onError: callbacks.error, store: state.cameraStore, epochKey: state.viewState?.source || '', scopeKey: 'overview', existing, revision: state.viewState?.revision ?? 0, ariaLabel: 'Field overview'}); // constant camera scope: expanding a representative is a topology change on the SAME graph, so the clicked node never jumps
+  view.projection = projection; return view;
 }
+
+/** 전체 논문 지도: one deterministic point per active paper, preset coordinates, no force layout. */
+export function renderG6AllPaperOverview(container, snapshot, state, callbacks, existing = null) {
+  const computed = getComputedStyle(document.getElementById('atlas-app') || document.documentElement);
+  const projection = allPaperOverviewProjection(snapshot, {focusScope: state.viewState?.scope?.kind === 'field' ? state.viewState.scope : null, relation: state.paperRelation, categoryPalette: state.paletteContext || {}});
+  const select = id => { const paperId = paperIdFromNode(id); const paper = snapshot.papers.find(row => row.id === paperId); if (paper) callbacks.select({kind: 'overview-paper', value: paper}); };
+  const selectedId = state.selectedPaperId ? paperNodeId(state.selectedPaperId) : null;
+  // Scope key is constant: field focus dims points, it never rebuilds or refits the global map.
+  const view = g6View({view: 'g6-all-papers', container, nodes: projection.nodes, edges: projection.edges, style: {...styleFrom(computed), nodeSize: 8, labels: false}, selectedId, onSelect: select, onError: callbacks.error, store: state.cameraStore, epochKey: state.viewState?.source || '', scopeKey: 'all-papers', existing, revision: state.viewState?.revision ?? 0, ariaLabel: '전체 논문 지도', extra: {layoutType: 'preset', hitRadius: 9}});
+  view.projection = projection; return view;
+}
+
+/** Points currently inside the visible container (informational; never changes represented N). */
+export function viewportPointCount(view, container) {
+  const graph = view?.g6?.graph; if (!graph || !container || container.dataset.rendererState !== 'ready') return null; const rect = container.getBoundingClientRect(); let inside = 0;
+  for (const node of graph.getNodeData()) { const [x, y] = graph.getClientByCanvas(graph.getElementPosition(node.id)); if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) inside += 1; }
+  return inside;
+}
+
+export const AtlasRender = {renderCircular, renderList, renderRelationList, renderG6Overview, renderG6AllPaperOverview, viewportPointCount};

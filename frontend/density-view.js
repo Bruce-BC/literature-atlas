@@ -1,10 +1,12 @@
-// A sequential OKLCH blue ramp with static sRGB fallbacks for canvas renderers.
+// Density is a quantitative channel: a low-chroma slate ramp (lightness-driven) that no
+// categorical family (blue/teal/gold/violet/rose/green) shares, so degree can never be
+// mistaken for a category.  Static sRGB fallbacks are kept for canvas renderers.
 const RAMP = [
-  {oklch:'oklch(0.91 0.04 250)', hex:'#cee4fc'},
-  {oklch:'oklch(0.80 0.09 250)', hex:'#91c3f6'},
-  {oklch:'oklch(0.68 0.15 250)', hex:'#449df0'},
-  {oklch:'oklch(0.55 0.17 250)', hex:'#0073cf'},
-  {oklch:'oklch(0.42 0.13 250)', hex:'#004e90'}
+  {oklch:'oklch(0.93 0.012 235)', hex:'#e1e9ef'},
+  {oklch:'oklch(0.82 0.022 235)', hex:'#b7c7d1'},
+  {oklch:'oklch(0.68 0.03 235)', hex:'#879ca8'},
+  {oklch:'oklch(0.52 0.034 235)', hex:'#566c7a'},
+  {oklch:'oklch(0.38 0.03 235)', hex:'#334550'}
 ];
 export function densityColor(value, max) { const ratio = max > 0 ? Math.max(0, Math.min(1, Number(value) / max)) : 0; return RAMP[Math.min(RAMP.length-1,Math.floor(ratio * RAMP.length))].hex; }
 export function densityForeground(hex) { const channels = [1,3,5].map(index => parseInt(hex.slice(index,index+2),16)/255).map(value => value <= .04045 ? value/12.92 : ((value+.055)/1.055)**2.4); const luminance=.2126*channels[0]+.7152*channels[1]+.0722*channels[2]; return (luminance+.05)/.05 >= 1.05/(luminance+.05) ? '#000000' : '#ffffff'; }

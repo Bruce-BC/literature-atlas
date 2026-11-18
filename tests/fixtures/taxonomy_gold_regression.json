@@ -1,0 +1,174 @@
+[
+ {
+  "id": "r001",
+  "title": "Occupational therapist-led OT sessions with optimal dosing",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": null,
+   "subjects": [],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "abstain"
+ },
+ {
+  "id": "r002",
+  "title": "OT services in an ergotherapy clinic with optimal staffing",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": null,
+   "subjects": [],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "abstain"
+ },
+ {
+  "id": "r003",
+  "title": "Occupational therapy students and optimal OT training",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": null,
+   "subjects": [],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "abstain"
+ },
+ {
+  "id": "r004",
+  "title": "Optimal OT scheduling for therapists in rehabilitation hospitals",
+  "abstract": "Occupational therapists and patients in a clinical cohort.",
+  "keywords": [],
+  "expected": {
+   "primary": null,
+   "subjects": [],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "abstain"
+ },
+ {
+  "id": "r005",
+  "title": "Q2-2023 revenue forecasting for genomics laboratories",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": null,
+   "subjects": [],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "abstain"
+ },
+ {
+  "id": "r006",
+  "title": "Quarterly Q2-2024 sequencing budget review",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": null,
+   "subjects": [],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "abstain"
+ },
+ {
+  "id": "r007",
+  "title": "OT couplings and Sinkhorn iterations on patient cohorts",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "optimal-transport",
+   "subjects": [
+    "optimal-transport"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "r008",
+  "title": "Wasserstein distances between clinical trajectories",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "optimal-transport",
+   "subjects": [
+    "optimal-transport"
+   ],
+   "methods": [],
+   "tools": [],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "r009",
+  "title": "q2-picrust2 functional prediction",
+  "abstract": "A plugin for sequence analysis.",
+  "keywords": [],
+  "expected": {
+   "primary": "bioinformatics",
+   "subjects": [
+    "bioinformatics"
+   ],
+   "methods": [],
+   "tools": [
+    "qiime2"
+   ],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "r010",
+  "title": "A q2-newplugin plugin for diversity metrics",
+  "abstract": "We present an extensible plugin for sequence data.",
+  "keywords": [],
+  "expected": {
+   "primary": "bioinformatics",
+   "subjects": [
+    "bioinformatics"
+   ],
+   "methods": [],
+   "tools": [
+    "qiime2"
+   ],
+   "applications": []
+  },
+  "kind": "resolvable"
+ },
+ {
+  "id": "r011",
+  "title": "QIIME 2 q2-dada2 denoising of 16S amplicon reads",
+  "abstract": "",
+  "keywords": [],
+  "expected": {
+   "primary": "bioinformatics",
+   "subjects": [
+    "bioinformatics"
+   ],
+   "methods": [
+    "amplicon"
+   ],
+   "tools": [
+    "qiime2"
+   ],
+   "applications": []
+  },
+  "kind": "resolvable"
+ }
+]

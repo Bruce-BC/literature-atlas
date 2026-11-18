@@ -141,7 +141,9 @@ def test_g6_renderer_switches_interacts_and_preserves_projection():
             concept_label = page.evaluate("id => (window.AtlasDebug.getState().snapshot.concepts.find(concept => concept.id === id) || {}).label?.en || id", concept["first"])
             page.mouse.click(cclient[0], cclient[1])
             wait_for(page, "label => document.querySelector('#atlas-detail')?.textContent.includes(label)", timeout=10, arg=concept_label)
-            cbefore = concept["pos"]
+            wait_graph_settled(page, "concept")  # the selection rebuilt the scope graph; drag only after the renderer is ready
+            concept_container.scroll_into_view_if_needed()
+            after_select = graph_metrics(page, "concept"); cbefore = after_select["pos"]; cclient = after_select["client"]  # the scope graph was rebuilt and refit: re-read the live target
             page.mouse.move(cclient[0], cclient[1]); page.mouse.down(); page.wait_for_timeout(180); page.mouse.move(cclient[0] + 12, cclient[1] + 8); page.mouse.move(cclient[0] + 30, cclient[1] + 18, steps=8); page.mouse.up()
             assert graph_metrics(page, "concept")["pos"] != cbefore
 

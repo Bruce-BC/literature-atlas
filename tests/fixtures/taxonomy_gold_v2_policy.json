@@ -1,0 +1,52 @@
+{
+ "record": "ontology-label-policy-v2 (public, static)",
+ "policyVersion": "ontology-label-policy-v2",
+ "purpose": "Self-contained record of the four reviewed corrections to the archived v1 gold labels. Every value below is a static literal decided by review BEFORE the broad-domain rule was implemented; none is computed from classifier output.",
+ "archivedV1": {
+  "file": "tests/fixtures/taxonomy_gold.json",
+  "sha256": "594c41cc723fca541a770d3097f63f0ec2563037faba1a0f9db149c2621f53f0",
+  "caseCount": 92,
+  "note": "left byte-identical"
+ },
+ "v2": {
+  "file": "tests/fixtures/taxonomy_gold_v2.json",
+  "sha256": "28daba23b893d1c351beecdca43db2a3cad5b0a98eab2fb78725c0b79f231f9c"
+ },
+ "corrections": [
+  {
+   "id": "g039",
+   "title": "Gut microbiome and diet in infants",
+   "v1ExpectedPrimary": null,
+   "v2ExpectedPrimary": "life-science",
+   "reason": "Explicit biological microbiome topic; no evidence of bioinformatics methodology."
+  },
+  {
+   "id": "g040",
+   "title": "The skin microbiota across seasons",
+   "v1ExpectedPrimary": null,
+   "v2ExpectedPrimary": "life-science",
+   "reason": "Explicit biological microbiota topic."
+  },
+  {
+   "id": "g041",
+   "title": "Microbial communities in lakes",
+   "v1ExpectedPrimary": null,
+   "v2ExpectedPrimary": "life-science",
+   "reason": "Explicit microbial ecology topic."
+  },
+  {
+   "id": "g070",
+   "title": "Gene expression analysis in cancer",
+   "v1ExpectedPrimary": null,
+   "v2ExpectedPrimary": "life-science",
+   "reason": "Explicit biological gene-expression topic; never Mathematics Analysis."
+  }
+ ],
+ "unchanged": "every other v1 case keeps its title, abstract, keywords, expected labels and frozen split (sha256(id)[:8] % 4 == 0 -> heldout)",
+ "added": {
+  "count": 32,
+  "idPrefix": "b",
+  "note": "independently labelled broad-biology positives, near-neighbour negatives and narrow-subject-wins cases; NOT blind held-out"
+ },
+ "honesty": "metrics on v2 are synthetic conformance to a new ontology; not unchanged v1 accuracy, not blind held-out accuracy, not private-corpus accuracy"
+}

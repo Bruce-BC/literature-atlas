@@ -1,4 +1,5 @@
 .omx/
+.omc/
 .omx-state-locks/
 .omx-state-locks.identity.json
 .local/

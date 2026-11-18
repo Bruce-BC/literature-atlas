@@ -13,6 +13,7 @@ import secrets
 import sqlite3
 import threading
 import time
+import tempfile
 from pathlib import Path
 from typing import Any, Iterator
 
@@ -268,19 +269,223 @@ class SQLiteStore:
         return int(row["revision"]), int(row["generation"]), json.loads(row["payload"])
 
     def publish_snapshot(self, snapshot: dict[str, Any], generation: int) -> int | None:
+        return self.publish_snapshot_fenced(snapshot, generation)
+
+    def snapshot_inputs(self) -> dict[str, Any]:
+        """Atomically read source state, singleton payloads and their revisions.
+
+        Derived jobs capture this *before* building so that the published graph
+        can be fenced against exactly the inputs it consumed.
+        """
         with self.transaction() as c:
-            source_row = c.execute("SELECT generation FROM source_state WHERE singleton=1").fetchone()
-            if source_row is not None and int(source_row[0]) != int(generation):
-                return None
-            row = c.execute("SELECT revision FROM snapshots WHERE singleton=1").fetchone()
-            revision = int(row[0]) + 1 if row else 1
-            snapshot = dict(snapshot)
-            snapshot["revision"] = revision
-            c.execute(
-                "INSERT INTO snapshots(singleton,revision,generation,payload,updated_at) VALUES(1,?,?,?,?) ON CONFLICT(singleton) DO UPDATE SET revision=excluded.revision,generation=excluded.generation,payload=excluded.payload,updated_at=excluded.updated_at",
-                (revision, generation, _json(snapshot), time.time()),
-            )
+            state = c.execute("SELECT * FROM source_state WHERE singleton=1").fetchone()
+            state = dict(state) if state else {}
+            def read(table: str) -> tuple[int, dict[str, Any], dict[str, Any] | None]:
+                row = c.execute(f"SELECT * FROM {table} WHERE singleton=1").fetchone()
+                if not row:
+                    return 0, {}, None
+                source = {"server_id": row["server_id"], "epoch": row["epoch"]} if table != "settings" else None
+                return int(row["revision"]), json.loads(row["payload"]), source
+            tax_rev, taxonomy, tax_source = read("taxonomy")
+            ov_rev, overlays, ov_source = read("overlays")
+            cfg_rev, settings, _ = read("settings")
+            snap = c.execute("SELECT revision FROM snapshots WHERE singleton=1").fetchone()
+        return {
+            "sourceId": state.get("server_id"), "sourceEpoch": state.get("epoch"),
+            "generation": int(state.get("generation", 0) or 0),
+            "taxonomyRevision": tax_rev, "overlayRevision": ov_rev, "configRevision": cfg_rev,
+            "snapshotRevision": int(snap[0]) if snap else 0,
+            "taxonomy": taxonomy, "overlays": overlays, "settings": settings,
+            "taxonomySource": tax_source, "overlaySource": ov_source,
+        }
+
+    @staticmethod
+    def _install_snapshot(c: sqlite3.Connection, snapshot: dict[str, Any], generation: int) -> int:
+        row = c.execute("SELECT revision FROM snapshots WHERE singleton=1").fetchone()
+        revision = int(row[0]) + 1 if row else 1
+        snapshot = dict(snapshot)
+        snapshot["revision"] = revision
+        fences = dict(snapshot.get("fences") or {})
+        fences["generation"] = int(generation)
+        snapshot["fences"] = fences
+        c.execute(
+            "INSERT INTO snapshots(singleton,revision,generation,payload,updated_at) VALUES(1,?,?,?,?) ON CONFLICT(singleton) DO UPDATE SET revision=excluded.revision,generation=excluded.generation,payload=excluded.payload,updated_at=excluded.updated_at",
+            (revision, generation, _json(snapshot), time.time()),
+        )
         return revision
+
+    def publish_snapshot_fenced(self, snapshot: dict[str, Any], generation: int, *,
+                                expected_source: dict[str, Any] | None = None,
+                                expected_taxonomy_revision: int | None = None,
+                                expected_overlay_revision: int | None = None,
+                                expected_config_revision: int | None = None) -> int | None:
+        """Publish only when source and every consumed input revision still match.
+
+        ``None`` is the stale-worker signal.  The check shares one SQLite
+        transaction with the write, closing the race between a background
+        graph build and a user taxonomy/overlay/settings edit.
+        """
+        with self.transaction() as c:
+            source_row = c.execute("SELECT server_id,epoch,generation FROM source_state WHERE singleton=1").fetchone()
+            if source_row is not None and int(source_row[2]) != int(generation):
+                return None
+            if expected_source and (source_row is None or source_row[0] != expected_source.get("server_id", expected_source.get("sourceId"))
+                                    or source_row[1] != expected_source.get("epoch", expected_source.get("sourceEpoch"))):
+                return None
+            def revision(table: str) -> int:
+                row = c.execute(f"SELECT revision FROM {table} WHERE singleton=1").fetchone()
+                return int(row[0]) if row else 0
+            for table, expected in (("taxonomy", expected_taxonomy_revision), ("overlays", expected_overlay_revision), ("settings", expected_config_revision)):
+                if expected is not None and revision(table) != int(expected):
+                    return None
+            return self._install_snapshot(c, snapshot, generation)
+
+    @staticmethod
+    def _migration_path(root: Path, source_epoch: str, generation: int) -> Path:
+        safe_epoch = "".join(char if char.isalnum() or char in {"-", "_", "."} else "_" for char in str(source_epoch))[:200] or "unknown"
+        return root / "migrations" / "atlas-graph-v3" / safe_epoch / f"{int(generation)}.json"
+
+    def write_migration_backup(self, source_epoch: str, generation: int, payload: dict[str, Any], *, overwrite: bool = False) -> tuple[Path, bool]:
+        """Atomically create an app-owned receipt; the original is never replaced.
+
+        Returns ``(path, created)``.  A receipt already present for this
+        epoch/generation is the pre-migration original and is preserved unless
+        ``overwrite`` is explicitly requested.
+        """
+        target = self._migration_path(self.data_dir, source_epoch, generation)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        raw = _json(payload).encode("utf-8")
+        fd, temporary = tempfile.mkstemp(prefix=f".{target.name}.", suffix=".tmp", dir=target.parent)
+        created = False
+        try:
+            with os.fdopen(fd, "wb") as handle:
+                handle.write(raw); handle.flush(); os.fsync(handle.fileno())
+            if overwrite:
+                os.replace(temporary, target); created = True
+            else:
+                try:
+                    os.link(temporary, target); created = True      # atomic create-if-absent
+                except FileExistsError:
+                    created = False
+        finally:
+            try:
+                os.unlink(temporary)
+            except FileNotFoundError:
+                pass
+        return target, created
+
+    def migration_backup(self, source_epoch: str, generation: int) -> dict[str, Any] | None:
+        path = self._migration_path(self.data_dir, source_epoch, generation)
+        if not path.is_file():
+            return None
+        try:
+            value = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return None
+        return value if isinstance(value, dict) else None
+
+    # --- publication audit (append-only, bounded) -----------------------------
+    MAX_AUDIT_ATTEMPTS = 50
+    KEEP_MIGRATION_GENERATIONS = 5
+    KEEP_MIGRATION_EPOCHS = 3
+
+    def append_migration_audit(self, source_epoch: str, generation: int, record: dict[str, Any]) -> Path:
+        """Append one publication attempt record (never touches the immutable receipt)."""
+        receipt = self._migration_path(self.data_dir, source_epoch, generation)
+        target = receipt.with_name(f"{int(generation)}.audit.json")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with self._lock:
+            try:
+                value = json.loads(target.read_text(encoding="utf-8")) if target.is_file() else {}
+            except (OSError, ValueError):
+                value = {}
+            attempts = list(value.get("attempts", [])) if isinstance(value, dict) else []
+            attempts.append({**record, "attempt": (attempts[-1]["attempt"] + 1) if attempts and isinstance(attempts[-1].get("attempt"), int) else len(attempts) + 1})
+            payload = {"sourceEpoch": str(source_epoch), "generation": int(generation), "attempts": attempts[-self.MAX_AUDIT_ATTEMPTS:]}
+            fd, temporary = tempfile.mkstemp(prefix=f".{target.name}.", suffix=".tmp", dir=target.parent)
+            try:
+                with os.fdopen(fd, "wb") as handle:
+                    handle.write(_json(payload).encode("utf-8")); handle.flush(); os.fsync(handle.fileno())
+                os.replace(temporary, target)
+            finally:
+                try:
+                    os.unlink(temporary)
+                except FileNotFoundError:
+                    pass
+        return target
+
+    def migration_audit(self, source_epoch: str, generation: int) -> dict[str, Any] | None:
+        path = self._migration_path(self.data_dir, source_epoch, generation).with_name(f"{int(generation)}.audit.json")
+        try:
+            value = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else None
+        except (OSError, ValueError):
+            return None
+        return value if isinstance(value, dict) else None
+
+    def prune_migrations(self) -> list[str]:
+        """Bound app-owned migration records: newest generations per epoch, newest epochs overall."""
+        root = self.data_dir / "migrations" / "atlas-graph-v3"
+        removed: list[str] = []
+        if not root.is_dir():
+            return removed
+        epochs = sorted((d for d in root.iterdir() if d.is_dir()), key=lambda d: d.stat().st_mtime, reverse=True)
+        for stale in epochs[self.KEEP_MIGRATION_EPOCHS:]:
+            for file in stale.iterdir():
+                file.unlink(missing_ok=True); removed.append(f"{stale.name}/{file.name}")
+            stale.rmdir()
+        for directory in epochs[:self.KEEP_MIGRATION_EPOCHS]:
+            generations = sorted({int(f.name.split(".", 1)[0]) for f in directory.iterdir() if f.name.split(".", 1)[0].isdigit()}, reverse=True)
+            for generation in generations[self.KEEP_MIGRATION_GENERATIONS:]:
+                for suffix in (".json", ".audit.json"):
+                    target = directory / f"{generation}{suffix}"
+                    if target.exists():
+                        target.unlink(); removed.append(f"{directory.name}/{target.name}")
+        return removed
+
+    def rollback_migration(self, source_epoch: str, generation: int, *, expected_snapshot_revision: int | None = None) -> tuple[bool, str, int | None]:
+        """Atomically restore the immutable original backup.
+
+        The snapshot revision the rollback is bound to is the one *recorded* in the
+        audit log when this generation's graph was actually published; a newer
+        publish therefore rejects it.  Source, generation and the taxonomy /
+        overlay / settings revisions are re-read from the store inside the write
+        transaction and compared with the revisions the original backup was taken
+        under: if user state changed since the backup, the rollback is refused
+        (the backup would silently discard that newer user state).
+        """
+        receipt = self.migration_backup(source_epoch, generation)
+        if receipt is None:
+            return False, "no-receipt", None
+        previous = receipt.get("rollbackPayload")
+        if not isinstance(previous, dict) or not previous:
+            return False, "no-previous-snapshot", None
+        audit = self.migration_audit(source_epoch, generation) or {}
+        published = [a for a in audit.get("attempts", []) if a.get("outcome") == "published" and isinstance(a.get("snapshotRevision"), int)]
+        if not published:
+            return False, "not-published", None
+        bound = int(published[-1]["snapshotRevision"])
+        if expected_snapshot_revision is not None and int(expected_snapshot_revision) != bound:
+            return False, "snapshot-revision-changed", None
+        expected = receipt.get("expectedRevisions", {})
+        with self.transaction() as c:
+            source = c.execute("SELECT server_id,epoch,generation FROM source_state WHERE singleton=1").fetchone()
+            if source is None or source[0] != receipt.get("sourceId") or source[1] != receipt.get("sourceEpoch") or str(source[1]) != str(source_epoch) or int(source[2]) != int(generation) or int(receipt.get("generation", -1)) != int(generation):
+                return False, "source-changed", None
+            def revision(table: str) -> int:
+                row = c.execute(f"SELECT revision FROM {table} WHERE singleton=1").fetchone()
+                return int(row[0]) if row else 0
+            for table, key in (("taxonomy", "taxonomy"), ("overlays", "overlays"), ("settings", "config")):
+                if revision(table) != int(expected.get(key, -1)):
+                    return False, f"{key}-changed", None
+            snap = c.execute("SELECT revision FROM snapshots WHERE singleton=1").fetchone()
+            current = int(snap[0]) if snap else 0
+            if current != bound:
+                return False, "snapshot-revision-changed", None
+            restored = dict(previous)
+            restored["fences"] = {**dict(restored.get("fences") or {}), "rolledBackFrom": current}
+            new_revision = self._install_snapshot(c, restored, generation)
+        self.append_migration_audit(source_epoch, generation, {"outcome": "rolled-back", "snapshotRevision": new_revision, "rolledBackFrom": bound})
+        return True, "rolled-back", new_revision
 
     def snapshot_generation(self) -> int | None:
         row = self._connection().execute("SELECT generation FROM snapshots WHERE singleton=1").fetchone()

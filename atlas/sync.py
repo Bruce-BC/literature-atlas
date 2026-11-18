@@ -12,6 +12,10 @@ from pathlib import Path
 from typing import Any, Callable
 
 from .storage import SQLiteStore
+from .migration import RECIPE_VERSION, create_migration_receipt, is_recipe_migration, record_publication, validate_migration
+from .taxonomy import field_stats, msc_codes_from_extra, taxonomy_input_state, ONTOLOGY_POLICY_VERSION, RULE_VERSION
+from .trace import TraceLog, summarize_snapshot
+from .category_colors import build_category_color_registry
 from .zotero import (
     IncompleteResponse,
     SourceChanged,
@@ -28,7 +32,7 @@ from .zotero import (
 # reported by the engine itself rather than masked as a missing backend module.
 from .graph import GraphEngine  # type: ignore
 
-GRAPH_RECIPE_VERSION = "atlas-graph-v2"
+GRAPH_RECIPE_VERSION = RECIPE_VERSION
 
 
 def now_iso() -> str:
@@ -40,6 +44,7 @@ class SyncManager:
         if not 5 <= float(poll_interval) <= 300:
             raise ValueError("poll_interval must be between 5 and 300 seconds")
         self.store, self.client = store, client
+        self.trace = TraceLog(store.data_dir)      # local, bounded, privacy-safe structured trace (enums/counts only)
         self.cache_dir = Path(cache_dir or store.data_dir / "models")
         self.graph_engine = graph_engine
         self.poll_interval = float(poll_interval)
@@ -347,17 +352,65 @@ class SyncManager:
         self._engine_provider = self.embedding_provider
         return self._engine_instance
 
+    def _trace_recipe(self) -> dict[str, str]:
+        return {"recipe": GRAPH_RECIPE_VERSION, "ruleVersion": RULE_VERSION, "ontologyPolicy": ONTOLOGY_POLICY_VERSION}
+
+    def _stale_fence_reasons(self, inputs: dict[str, Any], state: dict[str, Any], generation: int) -> dict[str, int]:
+        """Which captured fence moved (enum keys only)."""
+        now = self.store.snapshot_inputs()
+        reasons: dict[str, int] = {}
+        if now["taxonomyRevision"] != inputs["taxonomyRevision"]: reasons["fence.taxonomy_changed"] = 1
+        if now["overlayRevision"] != inputs["overlayRevision"]: reasons["fence.overlays_changed"] = 1
+        if now["configRevision"] != inputs["configRevision"]: reasons["fence.config_changed"] = 1
+        if now["sourceId"] != state["server_id"] or now["sourceEpoch"] != state["epoch"] or now["generation"] != generation: reasons["fence.source_or_generation_changed"] = 1
+        return reasons or {"fence.unspecified": 1}
+
+    def _requeue(self) -> None:
+        """Ask the enrichment loop to rebuild from the latest inputs."""
+        with self._generation_lock:
+            self._reindex_pending = True
+
     def _enrich(self, generation: int, state: dict[str, Any]) -> None:
+        # Capture every fence BEFORE reading inputs or building, atomically.  The
+        # graph is published only against these captured revisions; any newer
+        # taxonomy/overlay/settings/source write makes publication a no-op and
+        # re-queues a rebuild from the latest inputs (never a stale graph).
+        inputs = self.store.snapshot_inputs()
+        if inputs["sourceId"] != state["server_id"] or inputs["sourceEpoch"] != state["epoch"] or inputs["generation"] != generation:
+            return
+        trace_ids = {"source_id": state["server_id"], "source_epoch": state["epoch"], "recipe": self._trace_recipe()}
+        self.trace.emit("build.start", revisions={"taxonomy": inputs["taxonomyRevision"], "overlays": inputs["overlayRevision"], "config": inputs["configRevision"],
+                                                   "snapshot": inputs["snapshotRevision"], "generation": generation}, **trace_ids)
         try:
             papers, attachments, collections = self._normalized_records(state)
             engine = self._engine()
-            _, _, previous = self.store.get_snapshot() or (0, generation, None)
-            _, taxonomy, taxonomy_source = self.store.read_json("taxonomy")
-            _, overlays, overlays_source = self.store.read_json("overlays")
-            if taxonomy_source and (taxonomy_source.get("server_id") != state["server_id"] or taxonomy_source.get("epoch") != state["epoch"]):
-                taxonomy = {}
-            if overlays_source and (overlays_source.get("server_id") != state["server_id"] or overlays_source.get("epoch") != state["epoch"]):
-                overlays = {}
+            stored = self.store.get_snapshot()
+            previous = stored[2] if stored else None
+            taxonomy, overlays, settings = copy.deepcopy(inputs["taxonomy"]), copy.deepcopy(inputs["overlays"]), copy.deepcopy(inputs["settings"])
+            for source, name in ((inputs["taxonomySource"], "taxonomy"), (inputs["overlaySource"], "overlays")):
+                if source and (source.get("server_id") != state["server_id"] or source.get("epoch") != state["epoch"]):
+                    if name == "taxonomy": taxonomy = {}
+                    else: overlays = {}
+            fence_kwargs = dict(expected_source=state, expected_taxonomy_revision=inputs["taxonomyRevision"],
+                                expected_overlay_revision=inputs["overlayRevision"], expected_config_revision=inputs["configRevision"])
+            fences = {"sourceId": state["server_id"], "sourceEpoch": state["epoch"], "generation": generation,
+                      "taxonomyRevision": inputs["taxonomyRevision"], "overlayRevision": inputs["overlayRevision"], "configRevision": inputs["configRevision"]}
+            input_state, input_reason = taxonomy_input_state(taxonomy)
+            if input_state in {"invalid", "disabled"} and previous:
+                # Never silently re-enable builtin rules: keep the last valid
+                # snapshot and record why plus how to recover.
+                kept = copy.deepcopy(previous)
+                kept["taxonomyState"] = {"status": input_state, "sourceId": state["server_id"], "sourceEpoch": state["epoch"],
+                                         "reason": input_reason or f"taxonomy {input_state}", "recovery": "restore-or-replace-taxonomy-then-resync",
+                                         "revision": inputs["taxonomyRevision"]}
+                kept["fences"] = fences
+                kept_revision = self.store.publish_snapshot_fenced(kept, generation, **fence_kwargs)
+                if kept_revision is None:
+                    self.trace.emit("publish.stale", reasons=self._stale_fence_reasons(inputs, state, generation), **trace_ids)
+                    self._requeue()
+                else:
+                    self.trace.emit("publish.kept_previous", revisions={"snapshot": kept_revision, "generation": generation}, **trace_ids)
+                return
             overlays = self._canonical_overlays(overlays, papers)
             field_aliases = overlays.pop("fieldAliases", {}) if isinstance(overlays, dict) else {}
             if isinstance(field_aliases, dict) and isinstance(taxonomy, dict):
@@ -365,14 +418,37 @@ class SyncManager:
                 for field in taxonomy.get("fields", []):
                     if isinstance(field, dict) and field.get("id") in field_aliases:
                         field["aliases"] = list(field_aliases[field["id"]])
-            settings = self.store.read_json("settings")[1]
             result = engine.build(papers, source=self._source(state), taxonomy=taxonomy, overlays=overlays, settings=settings, attachments=attachments, previous=previous)
-            result = self._complete_snapshot(result, state, papers, attachments, collections, {"provider": self.embedding_provider, "state": "ready"})
+            result = self._complete_snapshot(result, state, papers, attachments, collections, {"provider": self.embedding_provider, "state": "ready"}, previous=previous)
+            result["fences"] = fences
+            # Phase 1: validate the new derived data; invalid output is never published.
+            problems = validate_migration(previous, result, inputs)
+            summary_counts, summary_reasons = summarize_snapshot(result)
+            self.trace.emit("build.complete", counts=summary_counts, reasons=summary_reasons, **trace_ids)
+            if problems:
+                self.trace.emit("publish.validation_failed", reasons={"validation.failed": 1}, **trace_ids)
+                record_publication(self.store, source_epoch=state["epoch"], generation=generation, inputs=inputs, outcome="validation-failed", detail=problems[0])
+                raise ValueError("migration validation failed: " + problems[0])
             current = self.store.state()
             if not current or current["server_id"] != state["server_id"] or current["epoch"] != state["epoch"] or int(current["generation"]) != generation:
                 return
-            if self.store.publish_snapshot(result, generation) is None:
+            # Only an actual recipe migration needs the full original backup; it is created
+            # once and never overwritten.  Publication facts go to the append-only audit log.
+            if is_recipe_migration(previous):
+                create_migration_receipt(self.store, before=previous, inputs=inputs, source_id=state["server_id"],
+                                         source_epoch=state["epoch"], generation=generation)
+            # Phase 2: publish against the captured fences.
+            revision = self.store.publish_snapshot_fenced(result, generation, **fence_kwargs)
+            if revision is None:
+                record_publication(self.store, source_epoch=state["epoch"], generation=generation, inputs=inputs, outcome="discarded-stale", snapshot=result)
+                self.trace.emit("publish.stale", reasons=self._stale_fence_reasons(inputs, state, generation), **trace_ids)
+                latest = self.store.state()
+                if latest and latest["server_id"] == state["server_id"] and latest["epoch"] == state["epoch"] and int(latest["generation"]) == generation:
+                    self._requeue()
                 return
+            record_publication(self.store, source_epoch=state["epoch"], generation=generation, inputs=inputs, outcome="published", snapshot=result, snapshot_revision=revision)
+            self.trace.emit("publish.ok", revisions={"snapshot": revision, "generation": generation}, counts=summary_counts, reasons=summary_reasons, **trace_ids)
+            self.store.prune_migrations()
             self._set_status(modelStatus=result.get("modelStatus", {}), indexing=False)
         except Exception as exc:
             # Publish errors only for the still-current source and generation;
@@ -476,6 +552,9 @@ class SyncManager:
             return result
         paper_ids = {str(p.get("id")) for p in papers}
         paper_fields = dict(result.get("paperFields", {}))
+        paper_facets = dict(result.get("paperFacets", {})) if isinstance(result.get("paperFacets"), dict) else {}
+        primary_facets = dict(result.get("primaryFacetOverrides", {})) if isinstance(result.get("primaryFacetOverrides"), dict) else {}
+        quality_overrides = dict(result.get("conceptQualityOverrides", {})) if isinstance(result.get("conceptQualityOverrides"), dict) else {}
         memberships = list(result.get("memberships", []))
         concept_aliases = dict(result.get("conceptAliases", {}))
         for entity_id, raw in entities.items():
@@ -488,15 +567,35 @@ class SyncManager:
                 for paper in papers:
                     if paper.get("id") == entity_id and "pinned" in patch:
                         paper["pinned"] = bool(patch["pinned"])
+                if isinstance(patch.get("facetAssignments"), list):
+                    paper_facets[entity_id] = copy.deepcopy(patch["facetAssignments"])
+                if isinstance(patch.get("primaryFacetOverrides"), dict):
+                    primary_facets[entity_id] = copy.deepcopy(patch["primaryFacetOverrides"])
+            if str(entity_id).startswith("concept:") and isinstance(patch.get("quality"), dict):
+                quality_overrides[entity_id] = copy.deepcopy(patch["quality"])
             if isinstance(patch.get("aliases"), list) and str(entity_id).startswith("concept:"):
                 concept_aliases[entity_id] = list(patch["aliases"])
             if isinstance(patch.get("aliases"), list) and str(entity_id).startswith("field:"):
                 field_aliases = dict(result.get("fieldAliases", {})); field_aliases[entity_id] = list(patch["aliases"]); result["fieldAliases"] = field_aliases
             if isinstance(patch.get("memberships"), list):
                 memberships.extend(x for x in patch["memberships"] if isinstance(x, dict))
+        # Facet/quality overrides are consumed by the graph as entity patches.
+        # Only those keys are passed through (everything else was flattened
+        # above), so no override is applied twice.
+        passthrough: dict[str, Any] = {}
+        for entity_id, raw in entities.items():
+            if isinstance(raw, dict):
+                keep = {k: copy.deepcopy(raw[k]) for k in ("facetAssignments", "primaryFacetOverrides", "excluded", "protected", "quality") if k in raw}
+                if keep:
+                    keep["entityType"] = raw.get("entityType") or ("paper" if entity_id in paper_ids else "concept" if str(entity_id).startswith("concept:") else "field")
+                    passthrough[str(entity_id)] = keep
+        if passthrough: result["entities"] = passthrough
         if paper_fields: result["paperFields"] = paper_fields
         if memberships: result["memberships"] = memberships
         if concept_aliases: result["conceptAliases"] = concept_aliases
+        if paper_facets: result["paperFacets"] = paper_facets
+        if primary_facets: result["primaryFacetOverrides"] = primary_facets
+        if quality_overrides: result["conceptQualityOverrides"] = quality_overrides
         return result
 
     def _normalized_records(self, state: dict[str, Any] | None = None) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
@@ -555,7 +654,7 @@ class SyncManager:
             if match:
                 year = int(match.group(0))
             pid = f"zotero:{state['server_id']}:{row['library_id']}:{row['item_key']}"
-            paper_row = {"id": pid, "key": row["item_key"], "libraryID": row["library_id"], "title": str(data.get("title") or ""), "year": year, "authors": creators, "doi": str(doi) if doi else None, "abstract": str(data.get("abstractNote")) if data.get("abstractNote") is not None else None, "keywords": [k for k in keywords if k], "relatedItems": related_items, "fieldIds": [], "conceptIds": [], "displayFieldId": None, "attachmentIds": attachment_ids_by_parent.get(str(row["item_key"]), []), "textStatus": "indexed" if any(a["parentId"].endswith(":" + str(row["item_key"])) and a["status"] == "indexed" for a in attachments) else ("readable" if attachment_ids_by_parent.get(str(row["item_key"])) else "missing"), "sourcePayload": payload}
+            paper_row = {"id": pid, "key": row["item_key"], "libraryID": row["library_id"], "title": str(data.get("title") or ""), "year": year, "authors": creators, "doi": str(doi) if doi else None, "abstract": str(data.get("abstractNote")) if data.get("abstractNote") is not None else None, "keywords": [k for k in keywords if k], "relatedItems": related_items, "subjectCodes": msc_codes_from_extra(data.get("extra")), "fieldIds": [], "conceptIds": [], "displayFieldId": None, "attachmentIds": attachment_ids_by_parent.get(str(row["item_key"]), []), "textStatus": "indexed" if any(a["parentId"].endswith(":" + str(row["item_key"])) and a["status"] == "indexed" for a in attachments) else ("readable" if attachment_ids_by_parent.get(str(row["item_key"])) else "missing"), "sourcePayload": payload}
             if self.include_indexed_text:
                 text_parts = [str(raw.get("indexed_text")) for raw in raw_atts if str(raw.get("attachment_key")) in active_attachment_keys and raw.get("parent_key") == row["item_key"] and raw.get("indexed_text")]
                 if text_parts:
@@ -607,7 +706,10 @@ class SyncManager:
                     for key in ("fieldIds", "conceptIds", "displayFieldId"):
                         if key in old:
                             paper[key] = copy.deepcopy(old[key])
-            for key in ("fields", "concepts", "memberships", "edges", "overview", "allocationMode"):
+            for key in ("fields", "concepts", "memberships", "edges", "overview", "allocationMode", "facetCatalog", "facetCatalogConfig", "inputState", "paperFacets", "conceptQualityLedger", "categoryColorRegistry", "fieldStats", "fences", "taxonomyRedirects", "taxonomyState"):
+                # Same-source/epoch only (guarded above): redirect history and taxonomy state are
+                # identity metadata of the derived graph; dropping them at the base publish would
+                # strip old merged IDs before enrichment and hide the loss from migration validation.
                 if key in previous:
                     result[key] = copy.deepcopy(previous[key])
             live_ids = {str(p.get("id")) for p in result["papers"]}
@@ -616,12 +718,20 @@ class SyncManager:
             allowed = live_ids | field_ids | concept_ids
             result["memberships"] = [m for m in result.get("memberships", []) if str(m.get("paperId")) in live_ids and str(m.get("fieldId")) in field_ids]
             result["edges"] = [e for e in result.get("edges", []) if str(e.get("source")) in allowed and str(e.get("target")) in allowed]
+            # Per-paper v3 rows follow the CURRENT active papers: a source deletion must not leave
+            # paperFacets pointing at a removed paper (the strict decoder rejects that), and the
+            # aggregates are recomputed from what this pending snapshot actually contains.  New
+            # papers have no facet row until enrichment publishes (modelStatus.state == "pending").
+            if isinstance(result.get("paperFacets"), list):
+                result["paperFacets"] = [row for row in result["paperFacets"] if isinstance(row, dict) and str(row.get("paperId")) in live_ids]
+            if isinstance(result.get("fieldStats"), dict):
+                result["fieldStats"] = field_stats(result["papers"], {str(f["id"]): f for f in result.get("fields", []) if isinstance(f, dict) and f.get("id")}, result["memberships"])
             result["overview"] = dict(result.get("overview", {}))
             result["overview"]["totalPapers"] = len(result["papers"])
             result["overview"]["totalEdges"] = len(result["edges"])
         return self._complete_snapshot(result, state, papers, attachments, collections, model_status, message=message)
 
-    def _complete_snapshot(self, result: dict[str, Any], state: dict[str, Any], papers: list[dict[str, Any]], attachments: list[dict[str, Any]], collections: list[dict[str, Any]], model_status: dict[str, Any], message: str | None = None) -> dict[str, Any]:
+    def _complete_snapshot(self, result: dict[str, Any], state: dict[str, Any], papers: list[dict[str, Any]], attachments: list[dict[str, Any]], collections: list[dict[str, Any]], model_status: dict[str, Any], message: str | None = None, previous: dict[str, Any] | None = None) -> dict[str, Any]:
         snapshot = copy.deepcopy(result or {})
         snapshot["schemaVersion"] = 1
         snapshot["source"] = self._source(state)
@@ -641,12 +751,37 @@ class SyncManager:
         snapshot["modelStatus"] = dict(snapshot.get("modelStatus") or model_status)
         snapshot["modelStatus"].setdefault("recipeVersion", GRAPH_RECIPE_VERSION)
         snapshot.setdefault("allocationMode", "primary-display-field")
+        self._ensure_v2_metadata(snapshot, state, previous)
         # The graph lane may intentionally omit source payloads from its output.
         for paper in snapshot["papers"]:
             paper.pop("sourcePayload", None)
             paper.pop("indexedText", None)
             paper.pop("fullText", None)
         return snapshot
+
+    @staticmethod
+    def _ensure_v2_metadata(snapshot: dict[str, Any], state: dict[str, Any], previous: dict[str, Any] | None = None) -> None:
+        """Derive the persisted colour registry and (when missing) fieldStats.
+
+        The registry is append-only: entries from the previous snapshot of the
+        same source/epoch namespace are reused byte-for-byte; across epochs only
+        non-custom (semantic) entries carry over.  Facet entities / catalog
+        payloads are produced by the graph engine and are never taken from
+        user-writable taxonomy state.
+        """
+        source = snapshot.get("source") if isinstance(snapshot.get("source"), dict) else {}
+        namespace = f"atlas:{source.get('serverId', source.get('id', 'local'))}:{source.get('epoch', 'unknown')}"
+        catalog = snapshot.get("facetCatalog") if isinstance(snapshot.get("facetCatalog"), dict) else {}
+        entities = [x for x in catalog.get("entities", []) if isinstance(x, dict)]
+        mapped = {x.get("legacyFieldId") for x in entities if x.get("legacyFieldId")}
+        categories = list(entities) + [f for f in snapshot.get("fields", []) if isinstance(f, dict) and f.get("id") not in mapped]
+        prior = snapshot.get("categoryColorRegistry") if isinstance(snapshot.get("categoryColorRegistry"), dict) else (previous or {}).get("categoryColorRegistry")
+        if isinstance(prior, dict) and prior.get("namespace") != namespace:
+            prior = {**prior, "entries": [e for e in prior.get("entries", []) if isinstance(e, dict) and e.get("origin") != "custom"]}
+        snapshot["categoryColorRegistry"] = build_category_color_registry(categories, existing=prior, namespace=namespace)
+        snapshot["categoryColorRegistry"]["namespace"] = namespace
+        if not isinstance(snapshot.get("fieldStats"), dict):
+            snapshot["fieldStats"] = field_stats(snapshot.get("papers", []), {str(f["id"]): f for f in snapshot.get("fields", []) if isinstance(f, dict) and f.get("id")}, snapshot.get("memberships", []))
 
     def snapshot(self, projection: str = "full", sample: int | None = None) -> dict[str, Any]:
         stored = self.store.get_snapshot()
@@ -683,11 +818,46 @@ class SyncManager:
                         collection["hiddenPaperCount"] = len(all_ids) - len(visible_ids)
                         collections.append(collection)
                 snapshot["collections"] = collections
+                self._project_v3_extensions(snapshot, ids, {c.get("id") for c in snapshot["concepts"]}, field_ids)
                 full_edges = snapshot["overview"].get("totalEdges", len(stored[2].get("edges", [])) if stored else 0)
                 visible_edges = len(snapshot["edges"])
                 snapshot["visibility"] = {"visiblePapers": len(snapshot["papers"]), "hiddenPapers": len(papers) - len(snapshot["papers"]), "visibleEdges": visible_edges, "hiddenEdges": max(0, full_edges - visible_edges), "fullEdgeCount": full_edges, "displayMaterializedEdgeCount": visible_edges}
             return snapshot
         return snapshot
+
+    @staticmethod
+    def _project_v3_extensions(snapshot: dict[str, Any], paper_ids: set[Any], concept_ids: set[Any], field_ids: set[Any]) -> None:
+        """Project the optional v3 per-entity extensions onto a sampled detail view.
+
+        Per-entity rows (paperFacets, ledger buckets, fieldStats rows) follow the
+        projected papers/concepts/fields so the strict decoder's references stay
+        closed; catalog-level data (facetCatalog, color registry, redirects) is
+        kept whole.  Aggregate numbers (ledger ``counts``, fieldStats
+        ``paperCount``/``unknown``/``knownPrimary``) always describe the FULL graph
+        and are marked ``projected: true`` so clients never mistake them for the
+        sample.  Suppressed concepts stay resolvable (they are not graph nodes).
+        """
+        if isinstance(snapshot.get("paperFacets"), list):
+            snapshot["paperFacets"] = [row for row in snapshot["paperFacets"] if row.get("paperId") in paper_ids]
+        ledger = snapshot.get("conceptQualityLedger")
+        if isinstance(ledger, dict):
+            suppressed = {str(x) for x in ledger.get("suppressed", [])}
+            keep = {str(x) for x in concept_ids} | suppressed
+            idof = lambda item: str(item.get("id") or item.get("conceptId")) if isinstance(item, dict) else str(item)
+            projected = dict(ledger)
+            for bucket in ("active", "protected", "user", "suppressed"):
+                if bucket in projected:
+                    projected[bucket] = [item for item in projected[bucket] if idof(item) in keep]
+            if "entries" in projected:
+                projected["entries"] = [entry for entry in projected["entries"] if idof(entry) in keep]
+            if "raw" in projected:
+                owned = {idof(x) for bucket in ("active", "protected", "user", "suppressed") for x in projected.get(bucket, [])}
+                projected["raw"] = [item for item in projected["raw"] if idof(item) in owned]
+            projected["projected"] = True
+            snapshot["conceptQualityLedger"] = projected
+        stats = snapshot.get("fieldStats")
+        if isinstance(stats, dict) and isinstance(stats.get("rows"), list):
+            snapshot["fieldStats"] = {**stats, "rows": [row for row in stats["rows"] if row.get("fieldId") in field_ids], "projected": True}
 
     @staticmethod
     def _ensure_snapshot_shape(snapshot: dict[str, Any]) -> None:

@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=75,<81"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "literature-atlas-local"
+version = "0.1.0"
+description = "Read-only local Zotero literature graph bridge and Obsidian integration"
+requires-python = ">=3.11"
+license = "MIT"
+readme = "README.md"
+authors = [{name = "Bruce-BC"}]
+dependencies = []
+
+[project.optional-dependencies]
+pdf = ["pypdf==5.4.0"]
+ai = ["sentence-transformers==3.0.1", "transformers==4.57.6", "huggingface-hub==0.36.2", "tokenizers==0.22.2", "safetensors==0.7.0", "numpy==2.2.6", "torch==2.11.0"]
+test = ["playwright==1.62.0", "jsonschema>=4.23,<5", "pytest==8.4.2"]
+
+[project.scripts]
+literature-atlas = "atlas.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["atlas*"]

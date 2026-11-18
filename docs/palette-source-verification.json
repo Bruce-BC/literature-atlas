@@ -1,0 +1,10 @@
+{
+  "checkedAt": "2026-11-18",
+  "method": "curl -fsSL --max-time 20",
+  "status": "passed",
+  "families": [
+    {"id": "tailwind", "commit": "5e9d8c9f6f2c5a4d8123beb377a95f9493092de8", "rawFiles": ["theme.css", "LICENSE"], "license": "MIT", "httpStatus": 200},
+    {"id": "radix", "commit": "dbdb85470547c7d34b9001f48fddb08ded335979", "rawFiles": ["light.ts", "dark.ts", "LICENSE"], "license": "MIT", "httpStatus": 200},
+    {"id": "catppuccin", "commit": "07d02aa110ef9eb7e7427afca5c73ba9cf7f8ebd", "rawFiles": ["palette.json", "LICENSE"], "license": "MIT", "httpStatus": 200}
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "fixture": "reconcile_trace_source_swap",
+  "sourceA": {"serverId": "server-A", "epoch": "epoch-A"},
+  "sourceB": {"serverId": "server-B", "epoch": "epoch-B"},
+  "events": [
+    {"step": 1, "operation": "first-fence", "serverId": "server-A", "epoch": "epoch-A"},
+    {"step": 2, "operation": "complete-item-version-map", "includeTrashed": true, "keys": ["A1", "B2"]},
+    {"step": 3, "operation": "exact-item-payloads", "keys": ["A1", "B2"]},
+    {"step": 4, "operation": "complete-collection-version-map", "keys": ["C1"]},
+    {"step": 5, "operation": "exact-collection-payloads", "keys": ["C1"]},
+    {"step": 6, "operation": "second-fence", "serverId": "server-A", "epoch": "epoch-A"},
+    {"step": 7, "operation": "atomic-commit", "cursor": 742},
+    {"step": 8, "operation": "late-job", "serverId": "server-A", "epoch": "epoch-A", "currentServerId": "server-B", "accepted": false, "reason": "source-swap"}
+  ],
+  "expected": {"uniqueKey": ["serverId", "epoch", "libraryID", "itemKey"], "commitCount": 1, "rejectLateJob": true, "missingOrPartialCommit": false}
+}

@@ -1,0 +1,405 @@
+"""Authenticated loopback HTTP bridge for Literature Atlas."""
+from __future__ import annotations
+
+import hmac
+import copy
+import json
+import mimetypes
+import os
+import secrets
+import threading
+import urllib.parse
+from http import HTTPStatus
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from typing import Any
+
+from .storage import SQLiteStore
+from .sync import SyncManager
+
+MAX_BODY = 1024 * 1024
+MAX_RESPONSE = 16 * 1024 * 1024
+DEFAULT_SETTINGS = {"provider": "e5", "threshold": 0.8, "topK": 5, "includeIndexedText": False, "openAlex": False}
+
+
+def _json_bytes(value: Any) -> bytes:
+    return json.dumps(value, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+
+
+class AtlasHTTPServer(ThreadingHTTPServer):
+    daemon_threads = True
+    allow_reuse_address = True
+
+    def __init__(self, address: tuple[str, int], manager: SyncManager, *, web_root: Path | str | None = None, token: str | None = None, launch_id: str = "", parent_origin: str | None = None):
+        self.manager = manager
+        self.store = manager.store
+        self.web_root = Path(web_root).resolve() if web_root else None
+        self.token = token or secrets.token_urlsafe(32)
+        self.launch_id = launch_id
+        self.parent_origin = parent_origin
+        self.pid = os.getpid()
+        super().__init__(address, AtlasRequestHandler)
+
+    def health(self) -> dict[str, Any]:
+        return {"ok": True, "version": "0.1.0", "pid": self.pid, "launchId": self.launch_id, "parentOrigin": self.parent_origin, "port": self.server_port}
+
+
+class AtlasRequestHandler(BaseHTTPRequestHandler):
+    server: AtlasHTTPServer
+    protocol_version = "HTTP/1.1"
+
+    def log_message(self, fmt: str, *args: Any) -> None:
+        # Never include query strings, bearer headers, or source values in logs.
+        return
+
+    def finish(self) -> None:
+        try:
+            super().finish()
+        finally:
+            # Each ThreadingHTTPServer request has its own thread-local SQLite
+            # connection. Close it before that short-lived thread exits.
+            self.server.store.close()
+
+    def _host_ok(self) -> bool:
+        host = self.headers.get("Host", "")
+        try:
+            parsed = urllib.parse.urlsplit("//" + host)
+            hostname = (parsed.hostname or "").lower()
+            port = parsed.port or 80
+        except ValueError:
+            return False
+        return hostname in {"127.0.0.1", "localhost"} and port == self.server.server_port and self.client_address[0] in {"127.0.0.1", "::1"}
+
+    def _origin_ok(self) -> bool:
+        origin = self.headers.get("Origin")
+        if not origin:
+            return True
+        allowed = {f"http://127.0.0.1:{self.server.server_port}", f"http://localhost:{self.server.server_port}"}
+        if self.server.parent_origin:
+            allowed.add(self.server.parent_origin)
+        return origin in allowed
+
+    def _auth_ok(self) -> bool:
+        value = self.headers.get("Authorization", "")
+        if not value.startswith("Bearer "):
+            return False
+        candidate = value[7:].strip()
+        try:
+            return hmac.compare_digest(candidate, self.server.token)
+        except TypeError:
+            return False
+
+    def _send(self, status: int, payload: Any, *, content_type: str = "application/json", headers: dict[str, str] | None = None) -> None:
+        body = payload if isinstance(payload, bytes) else _json_bytes(payload) if content_type == "application/json" else str(payload).encode("utf-8")
+        if len(body) > MAX_RESPONSE:
+            status, body = HTTPStatus.INTERNAL_SERVER_ERROR, _json_bytes({"error": "response too large"})
+            content_type = "application/json"
+        self.send_response(status)
+        self.send_header("Content-Type", content_type + ("; charset=utf-8" if content_type.startswith("text/") or content_type == "application/json" else ""))
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        if self.server.parent_origin:
+            self.send_header("Access-Control-Allow-Origin", self.server.parent_origin)
+            self.send_header("Vary", "Origin")
+        for key, value in (headers or {}).items():
+            self.send_header(key, value)
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _reject(self, status: int, message: str) -> None:
+        self._send(status, {"error": message})
+
+    def _preflight(self) -> None:
+        if not self._host_ok() or not self._origin_ok():
+            self._reject(403, "forbidden")
+            return
+        self.send_response(204)
+        self.send_header("Content-Length", "0")
+        self.send_header("Access-Control-Allow-Origin", self.server.parent_origin or f"http://127.0.0.1:{self.server.server_port}")
+        self.send_header("Access-Control-Allow-Headers", "Authorization, Content-Type, If-Match")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
+        self.end_headers()
+
+    def _guard(self, *, auth: bool = True) -> bool:
+        if not self._host_ok() or not self._origin_ok():
+            self._reject(403, "forbidden")
+            return False
+        if auth and not self._auth_ok():
+            self._send(401, {"error": "unauthorized"}, headers={"WWW-Authenticate": "Bearer"})
+            return False
+        return True
+
+    def _body(self) -> dict[str, Any]:
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+        except ValueError:
+            raise ValueError("invalid content length")
+        if length < 0 or length > MAX_BODY:
+            raise ValueError("request body too large")
+        raw = self.rfile.read(length)
+        value = json.loads(raw.decode("utf-8")) if raw else {}
+        if not isinstance(value, dict):
+            raise ValueError("JSON object required")
+        return value
+
+    def do_OPTIONS(self) -> None:  # noqa: N802
+        self._preflight()
+
+    def do_GET(self) -> None:  # noqa: N802
+        request_path = urllib.parse.unquote(urllib.parse.urlsplit(self.path).path)
+        if not self._guard(auth=request_path.startswith("/api/")):
+            return
+        parsed = urllib.parse.urlsplit(self.path)
+        path = urllib.parse.unquote(parsed.path)
+        query = urllib.parse.parse_qs(parsed.query)
+        try:
+            if path == "/health":
+                self._send(200, self.server.health()); return
+            if path == "/api/v1/status":
+                self._send(200, self.server.manager.status); return
+            if path == "/api/v1/snapshot":
+                projection = query.get("projection", ["full"])[0]
+                if projection not in {"full", "overview", "detail"}:
+                    self._reject(400, "invalid projection"); return
+                sample = None
+                if query.get("sample"):
+                    sample = int(query["sample"][0])
+                    if sample < 0 or sample > 10000:
+                        raise ValueError("invalid sample")
+                self._send(200, self.server.manager.snapshot(projection, sample)); return
+            if path == "/api/v1/settings":
+                revision, payload, _ = self.server.store.read_json("settings")
+                settings = dict(DEFAULT_SETTINGS); settings.update(payload)
+                self._send(200, {"revision": revision, "settings": settings}); return
+            if path == "/api/v1/taxonomy":
+                revision, payload, source = self.server.store.read_json("taxonomy")
+                self._send(200, {"revision": revision, "taxonomy": payload, "source": source}); return
+            if path == "/api/v1/overlays":
+                revision, payload, source = self.server.store.read_json("overlays")
+                self._send(200, {"revision": revision, "overlays": payload, "source": source}); return
+            if path.startswith("/api/v1/papers/"):
+                paper_id = path.rsplit("/", 1)[-1]
+                snapshot = self.server.manager.snapshot()
+                state = self.server.store.state() or {}
+                if snapshot.get("source", {}).get("serverId") != state.get("server_id") or snapshot.get("source", {}).get("epoch") != state.get("epoch"):
+                    self._reject(404, "paper not found"); return
+                row = next((p for p in snapshot.get("papers", []) if p.get("id") == paper_id), None)
+                if row is None:
+                    self._reject(404, "paper not found")
+                else:
+                    self._send(200, row)
+                return
+            if path.startswith("/api/v1/attachments/") and path.endswith("/url"):
+                attachment_id = path[len("/api/v1/attachments/"):-len("/url")]
+                snapshot = self.server.manager.snapshot()
+                state = self.server.store.state() or {}
+                if snapshot.get("source", {}).get("serverId") != state.get("server_id") or snapshot.get("source", {}).get("epoch") != state.get("epoch"):
+                    self._reject(404, "attachment target unavailable"); return
+                row = next((a for a in snapshot.get("attachments", []) if a.get("id") == attachment_id), None)
+                url = row.get("url") if row else None
+                if not row or not isinstance(url, str) or not url.startswith(("http://", "https://", "zotero://")):
+                    self._reject(404, "attachment target unavailable")
+                else:
+                    self._send(200, {"url": url})
+                return
+            if self._serve_static(path):
+                return
+            self._reject(404, "not found")
+        except (ValueError, TypeError):
+            self._reject(400, "invalid request")
+        except Exception:
+            self._reject(500, "request failed")
+
+    def _serve_static(self, path: str) -> bool:
+        root = self.server.web_root
+        if not root or path.startswith("/api/"):
+            return False
+        relative = path.lstrip("/") or "index.html"
+        candidate = (root / relative).resolve()
+        try:
+            candidate.relative_to(root)
+        except ValueError:
+            self._reject(404, "not found"); return True
+        if not candidate.is_file():
+            candidate = root / "index.html"
+        if not candidate.is_file():
+            return False
+        body = candidate.read_bytes()
+        ancestors = "'self'" if not self.server.parent_origin else f"'self' {self.server.parent_origin}"
+        self._send(200, body, content_type=mimetypes.guess_type(str(candidate))[0] or "application/octet-stream", headers={"Content-Security-Policy": f"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' http://127.0.0.1:* http://localhost:*; object-src 'none'; base-uri 'none'; frame-ancestors {ancestors}"})
+        return True
+
+    def do_POST(self) -> None:  # noqa: N802
+        if not self._guard(): return
+        path = urllib.parse.unquote(urllib.parse.urlsplit(self.path).path)
+        try:
+            if path == "/api/v1/sync":
+                snapshot = self.server.manager.sync(trigger="manual")
+                self._send(200, {"accepted": True, "revision": snapshot.get("revision", 0), "status": self.server.manager.status}); return
+            if path == "/api/v1/taxonomy":
+                body = self._body(); self._taxonomy_write(body, create=True); return
+            self._reject(404, "not found")
+        except ValueError as exc:
+            self._reject(400, str(exc))
+        except Exception:
+            self._reject(500, "request failed")
+
+    def do_PUT(self) -> None:  # noqa: N802
+        if not self._guard(): return
+        path = urllib.parse.unquote(urllib.parse.urlsplit(self.path).path)
+        try:
+            body = self._body()
+            if path == "/api/v1/settings": self._settings_write(body); return
+            if path == "/api/v1/taxonomy": self._taxonomy_write(body, create=False); return
+            if path == "/api/v1/overlays": self._overlay_write(body); return
+            self._reject(404, "not found")
+        except ValueError as exc:
+            self._reject(400, str(exc))
+        except Exception:
+            self._reject(500, "request failed")
+
+    def _expected_revision(self, body: dict[str, Any]) -> int | None:
+        raw = self.headers.get("If-Match")
+        if raw is None:
+            raw = body.get("revision")
+        if raw is None: raise ValueError("revision required")
+        try:
+            return int(str(raw).strip('"'))
+        except ValueError:
+            raise ValueError("invalid revision")
+
+    def _settings_write(self, body: dict[str, Any]) -> None:
+        allowed = {"provider", "threshold", "topK", "includeIndexedText", "openAlex"}
+        payload = body.get("settings", body)
+        if not isinstance(payload, dict) or set(payload) - allowed - {"revision"}:
+            raise ValueError("unknown settings key")
+        current = dict(DEFAULT_SETTINGS); current.update(self.server.store.read_json("settings")[1])
+        merged = dict(current)
+        for key, value in payload.items():
+            if key == "revision": continue
+            if key == "provider" and value not in {"e5", "tfidf"}: raise ValueError("invalid provider")
+            if key == "threshold" and (not isinstance(value, (int, float)) or not 0 <= value <= 1): raise ValueError("invalid threshold")
+            if key == "topK" and (not isinstance(value, int) or not 1 <= value <= 1000): raise ValueError("invalid topK")
+            if key in {"includeIndexedText", "openAlex"} and not isinstance(value, bool): raise ValueError("invalid setting")
+            merged[key] = value
+        ok, revision, result = self.server.store.cas_json("settings", merged, self._expected_revision(body))
+        if not ok: self._send(409, {"error": "revision conflict", "revision": revision}); return
+        previous_indexed = self.server.manager.include_indexed_text
+        self.server.manager.include_indexed_text = bool(merged.get("includeIndexedText", False))
+        if previous_indexed and not self.server.manager.include_indexed_text:
+            state = self.server.store.state()
+            if state:
+                self.server.store.clear_indexed_text(state)
+        self.server.manager.request_reindex(provider=merged.get("provider"))
+        self._send(200, {"revision": revision, "settings": result})
+
+    def _taxonomy_write(self, body: dict[str, Any], *, create: bool) -> None:
+        payload = body.get("taxonomy", body)
+        if not isinstance(payload, dict): raise ValueError("taxonomy object required")
+        allowed = {"fields", "concepts", "revision", "sourceEpoch", "sourceId", "entityType", "entityId", "label", "aliases", "parentIds", "patch", "source"}
+        if set(payload) - allowed: raise ValueError("unknown taxonomy key")
+        current = self.server.store.read_json("taxonomy")[1]
+        merged = {"fields": list(current.get("fields", [])), "concepts": list(current.get("concepts", []))}
+        state = self.server.store.state() or {}
+        if payload.get("sourceId") != state.get("server_id") or payload.get("sourceEpoch") != state.get("epoch"): raise ValueError("source identity required")
+        if payload.get("entityType"):
+            kind = str(payload["entityType"])
+            if kind not in {"field", "concept"}: raise ValueError("invalid taxonomy entity type")
+            label = payload.get("label")
+            if not isinstance(label, (str, dict)): raise ValueError("invalid taxonomy label")
+            import re
+            raw_label = label.get("en", "") if isinstance(label, dict) else label
+            slug = re.sub(r"[^A-Za-z0-9_-]+", "-", str(raw_label)).strip("-").lower() or "item"
+            payload = dict(payload)
+            payload["fields" if kind == "field" else "concepts"] = [{"id": f"{kind}:{state.get('server_id')}:{state.get('epoch')}:{slug}", "label": label if isinstance(label, dict) else {"en": str(label), "ko": str(label)}, "parentIds": list(payload.get("parentIds", [])) if kind == "field" else [], "aliases": list(payload.get("aliases", [])), "source": str(payload.get("source") or "user")}]
+        if payload.get("entityId") and isinstance(payload.get("patch"), dict):
+            patch = payload["patch"]
+            if set(patch) - {"label", "aliases", "parentIds", "source"}: raise ValueError("unknown taxonomy patch key")
+            if not any(entry.get("id") == payload["entityId"] for kind in ("fields", "concepts") for entry in merged[kind]): raise ValueError("unknown taxonomy entity")
+            for kind in ("fields", "concepts"):
+                for entry in merged[kind]:
+                    if entry.get("id") == payload["entityId"]:
+                        entry.update(patch)
+            payload = dict(payload)
+            payload["fields"], payload["concepts"] = [], []
+        for kind in ("fields", "concepts"):
+            for entry in payload.get(kind, []):
+                if not isinstance(entry, dict) or set(entry) - {"id", "label", "parentIds", "aliases", "source", "revision"}: raise ValueError("unknown taxonomy field")
+                if not entry.get("id", "").startswith(f"{kind[:-1]}:{state.get('server_id')}:{state.get('epoch')}:"): raise ValueError("taxonomy id is not source scoped")
+                if not create and not any(old.get("id") == entry.get("id") for old in merged[kind]): raise ValueError("unknown taxonomy entity")
+            if create: merged[kind].extend(payload.get(kind, []))
+            elif payload.get(kind): merged[kind] = payload[kind]
+        ids = {str(f.get("id")) for f in merged["fields"]}
+        parents = {str(f.get("id")): [str(x) for x in f.get("parentIds", [])] for f in merged["fields"]}
+        for child, parent_ids in parents.items():
+            for parent in parent_ids:
+                if parent not in ids: raise ValueError("unknown taxonomy parent")
+        def visit(node: str, path: set[str]) -> None:
+            if node in path: raise ValueError("taxonomy cycle")
+            for parent in parents.get(node, []):
+                visit(parent, path | {node})
+        for child in parents:
+            visit(child, set())
+        ok, revision, result = self.server.store.cas_json("taxonomy", merged, self._expected_revision(body), source=state)
+        if not ok: self._send(409, {"error": "revision conflict", "revision": revision}); return
+        self.server.manager.request_reindex()
+        self._send(200, {"revision": revision, "taxonomy": result})
+
+    def _overlay_write(self, body: dict[str, Any]) -> None:
+        payload = body.get("overlays", body)
+        if not isinstance(payload, dict): raise ValueError("overlay object required")
+        if payload.get("entityType"):
+            if payload.get("entityType") not in {"paper", "concept", "field"} or not isinstance(payload.get("entityId"), str) or not isinstance(payload.get("patch"), dict): raise ValueError("invalid overlay entity")
+            if set(payload["patch"]) - {"aliases", "fieldIds", "memberships", "pinned"}: raise ValueError("unknown overlay patch key")
+            if payload.get("entityType") == "paper" and "aliases" in payload["patch"]:
+                raise ValueError("paper aliases are unsupported")
+            patch = payload["patch"]
+            if "aliases" in patch and (not isinstance(patch["aliases"], list) or any(not isinstance(value, str) for value in patch["aliases"])): raise ValueError("aliases must be string array")
+            if "fieldIds" in patch and (not isinstance(patch["fieldIds"], list) or any(not isinstance(value, str) for value in patch["fieldIds"])): raise ValueError("fieldIds must be string array")
+            if "pinned" in patch and not isinstance(patch["pinned"], bool): raise ValueError("pinned must be boolean")
+            if "memberships" in patch and (not isinstance(patch["memberships"], list) or any(not isinstance(value, dict) or set(value) - {"paperId", "fieldId", "weight", "method", "score"} or not isinstance(value.get("paperId"), str) or not isinstance(value.get("fieldId"), str) or ("weight" in value and (not isinstance(value["weight"], (int, float)) or value["weight"] < 0)) for value in patch["memberships"])): raise ValueError("invalid memberships")
+        elif set(payload) - {"aliases", "memberships", "pins", "archived", "revision", "sourceEpoch", "sourceId"}:
+            raise ValueError("unknown overlay key")
+        state = self.server.store.state() or {}
+        if payload.get("sourceId") != state.get("server_id") or payload.get("sourceEpoch") != state.get("epoch"): raise ValueError("source identity required")
+        if payload.get("entityType"):
+            entity_id = str(payload.get("entityId"))
+            if not (entity_id.startswith(f"zotero:{state.get('server_id')}:") or entity_id.startswith(f"field:{state.get('server_id')}:{state.get('epoch')}:") or entity_id.startswith(f"concept:{state.get('server_id')}:{state.get('epoch')}:") ):
+                raise ValueError("overlay id is not source scoped")
+            snapshot = self.server.manager.snapshot()
+            known = {str(row.get("id")) for key in ("papers", "fields", "concepts") for row in snapshot.get(key, [])}
+            if entity_id not in known:
+                raise ValueError("unknown overlay entity")
+            field_ids = payload["patch"].get("fieldIds", [])
+            if not isinstance(field_ids, list) or any(str(field_id) not in {str(row.get("id")) for row in snapshot.get("fields", [])} for field_id in field_ids):
+                raise ValueError("unknown overlay field")
+            for membership in payload["patch"].get("memberships", []):
+                if not isinstance(membership, dict) or str(membership.get("paperId")) not in {str(row.get("id")) for row in snapshot.get("papers", [])} or str(membership.get("fieldId")) not in {str(row.get("id")) for row in snapshot.get("fields", [])}:
+                    raise ValueError("unknown overlay membership")
+        else:
+            snapshot = self.server.manager.snapshot(); known = {str(row.get("id")) for key in ("papers", "fields", "concepts") for row in snapshot.get(key, [])}
+            aliases = payload.get("aliases", {}); pins = payload.get("pins", {})
+            if not isinstance(aliases, dict) or any(str(k) not in known or not isinstance(v, list) or any(not isinstance(x, str) for x in v) for k, v in aliases.items()): raise ValueError("invalid overlay aliases")
+            if not isinstance(pins, dict) or any(str(k) not in known or not isinstance(v, bool) for k, v in pins.items()): raise ValueError("invalid overlay pins")
+            for membership in payload.get("memberships", []):
+                if not isinstance(membership, dict) or str(membership.get("paperId")) not in {str(row.get("id")) for row in snapshot.get("papers", [])} or str(membership.get("fieldId")) not in {str(row.get("id")) for row in snapshot.get("fields", [])}: raise ValueError("unknown overlay membership")
+        current = self.server.store.read_json("overlays")[1]
+        merged = dict(current)
+        if payload.get("entityType"):
+            entities = dict(merged.get("entities", {})); entity_id = str(payload["entityId"])
+            entity = dict(entities.get(entity_id, {})); entity.update(payload["patch"]); entity["entityType"] = payload["entityType"]; entities[entity_id] = entity; merged["entities"] = entities
+        else:
+            for key, value in payload.items():
+                if key in {"revision", "sourceEpoch", "sourceId"}: continue
+                if key in {"aliases", "pins"} and isinstance(value, dict):
+                    existing = dict(merged.get(key, {})); existing.update(value); merged[key] = existing
+                elif key == "memberships" and isinstance(value, list):
+                    merged[key] = list(merged.get(key, [])) + copy.deepcopy(value)
+                else:
+                    merged[key] = value
+        ok, revision, result = self.server.store.cas_json("overlays", merged, self._expected_revision(body), source=state)
+        if not ok: self._send(412, {"error": "revision conflict", "revision": revision}); return
+        self.server.manager.request_reindex()
+        self._send(200, {"revision": revision, "overlays": result})
+

@@ -1,0 +1,2665 @@
+{
+  "version": 1,
+  "date": "2026-11-18",
+  "defaultPalette": "atlas",
+  "defaultTheme": "system",
+  "categoryOrder": [
+    "blue",
+    "teal",
+    "gold",
+    "violet",
+    "rose",
+    "green"
+  ],
+  "palettes": [
+    {
+      "id": "atlas",
+      "name": "Atlas · 선명한 연구 지도",
+      "sourceLabel": "Tailwind seeds → derived OKLCH",
+      "themes": {
+        "light": {
+          "bg": "#f8fafc",
+          "panel": "#ffffff",
+          "text": "#1e293b",
+          "muted": "#475569",
+          "border": "#cbd5e1",
+          "series": [
+            {
+              "hex": "#3c74ca",
+              "oklch": "oklch(0.5650000 0.1450000 258.75250)",
+              "L": 0.565,
+              "C": 0.145,
+              "h": 258.75249999999994,
+              "requestedC": 0.145,
+              "gamutMapped": false,
+              "name": "blue",
+              "sourceFamily": "Tailwind"
+            },
+            {
+              "hex": "#00897c",
+              "oklch": "oklch(0.5650000 0.1004506 183.30800)",
+              "L": 0.565,
+              "C": 0.10045061969346945,
+              "h": 183.30799999999996,
+              "requestedC": 0.145,
+              "gamutMapped": true,
+              "name": "teal",
+              "sourceFamily": "Tailwind"
+            },
+            {
+              "hex": "#a16800",
+              "oklch": "oklch(0.5650000 0.1214052 71.37350)",
+              "L": 0.565,
+              "C": 0.1214052161154295,
+              "h": 71.3735,
+              "requestedC": 0.145,
+              "gamutMapped": true,
+              "name": "gold",
+              "sourceFamily": "Tailwind"
+            },
+            {
+              "hex": "#7b62c2",
+              "oklch": "oklch(0.5650000 0.1450000 293.27500)",
+              "L": 0.565,
+              "C": 0.145,
+              "h": 293.275,
+              "requestedC": 0.145,
+              "gamutMapped": false,
+              "name": "violet",
+              "sourceFamily": "Tailwind"
+            },
+            {
+              "hex": "#bb4b59",
+              "oklch": "oklch(0.5650000 0.1450000 15.50650)",
+              "L": 0.565,
+              "C": 0.145,
+              "h": 15.5065,
+              "requestedC": 0.145,
+              "gamutMapped": false,
+              "name": "rose",
+              "sourceFamily": "Tailwind"
+            },
+            {
+              "hex": "#198d45",
+              "oklch": "oklch(0.5650000 0.1450000 150.46250)",
+              "L": 0.565,
+              "C": 0.145,
+              "h": 150.4625,
+              "requestedC": 0.145,
+              "gamutMapped": false,
+              "name": "green",
+              "sourceFamily": "Tailwind"
+            }
+          ],
+          "focus": "#3c74ca",
+          "ribbonAlpha": 0.16,
+          "selectedAlpha": 0.7,
+          "neutralOKLCH": {
+            "bg": "oklch(0.9841519 0.0034127 247.85754)",
+            "panel": "oklch(1.0000000 0.0000000 0.00000)",
+            "text": "oklch(0.2794952 0.0368481 260.03098)",
+            "muted": "oklch(0.4455331 0.0374467 257.28084)",
+            "border": "oklch(0.8689814 0.0198477 252.89430)",
+            "focus": "oklch(0.5646582 0.1458798 258.79612)"
+          },
+          "ribbonComposites": [
+            {
+              "series": "blue",
+              "kind": "context",
+              "alpha": 0.16,
+              "hex": "#dae5f4",
+              "contrast": 1.2167940915931288,
+              "solidOutlineContrast": 4.417909544637425
+            },
+            {
+              "series": "blue",
+              "kind": "selected",
+              "alpha": 0.7,
+              "hex": "#749cd9",
+              "contrast": 2.676180603014168,
+              "solidOutlineContrast": 4.417909544637425
+            },
+            {
+              "series": "teal",
+              "kind": "context",
+              "alpha": 0.16,
+              "hex": "#d0e8e8",
+              "contrast": 1.2246099282433964,
+              "solidOutlineContrast": 4.12197704761454
+            },
+            {
+              "series": "teal",
+              "kind": "selected",
+              "alpha": 0.7,
+              "hex": "#4aaba2",
+              "contrast": 2.627786262898997,
+              "solidOutlineContrast": 4.12197704761454
+            },
+            {
+              "series": "gold",
+              "kind": "context",
+              "alpha": 0.16,
+              "hex": "#eae3d4",
+              "contrast": 1.2211120518347698,
+              "solidOutlineContrast": 4.464690110661471
+            },
+            {
+              "series": "gold",
+              "kind": "selected",
+              "alpha": 0.7,
+              "hex": "#bb944c",
+              "contrast": 2.6929332582755094,
+              "solidOutlineContrast": 4.464690110661471
+            },
+            {
+              "series": "violet",
+              "kind": "context",
+              "alpha": 0.16,
+              "hex": "#e4e2f3",
+              "contrast": 1.2185366703844553,
+              "solidOutlineContrast": 4.594766300875232
+            },
+            {
+              "series": "violet",
+              "kind": "selected",
+              "alpha": 0.7,
+              "hex": "#a090d3",
+              "contrast": 2.703317979512985,
+              "solidOutlineContrast": 4.594766300875232
+            },
+            {
+              "series": "rose",
+              "kind": "context",
+              "alpha": 0.16,
+              "hex": "#eedee2",
+              "contrast": 1.2403300212878652,
+              "solidOutlineContrast": 4.70752040442115
+            },
+            {
+              "series": "rose",
+              "kind": "selected",
+              "alpha": 0.7,
+              "hex": "#cd808a",
+              "contrast": 2.846778822331624,
+              "solidOutlineContrast": 4.70752040442115
+            },
+            {
+              "series": "green",
+              "kind": "context",
+              "alpha": 0.16,
+              "hex": "#d4e9df",
+              "contrast": 1.2149249738402534,
+              "solidOutlineContrast": 4.065282069583696
+            },
+            {
+              "series": "green",
+              "kind": "selected",
+              "alpha": 0.7,
+              "hex": "#5cae7c",
+              "contrast": 2.573054524024711,
+              "solidOutlineContrast": 4.065282069583696
+            }
+          ],
+          "overlapComposites": [
+            {
+              "under": "blue",
+              "over": "blue",
+              "hex": "#c1d3ed",
+              "contrast": 1.4535826845445585,
+              "selectedOutlineAgainstOverlap": 3.039324554159545
+            },
+            {
+              "under": "blue",
+              "over": "teal",
+              "hex": "#b7d6e1",
+              "contrast": 1.4629859850134057,
+              "selectedOutlineAgainstOverlap": 2.817509593283472
+            },
+            {
+              "under": "blue",
+              "over": "gold",
+              "hex": "#d1d1cd",
+              "contrast": 1.4636824631470362,
+              "selectedOutlineAgainstOverlap": 3.0503133180006987
+            },
+            {
+              "under": "blue",
+              "over": "violet",
+              "hex": "#cbd0ec",
+              "contrast": 1.4572981603687107,
+              "selectedOutlineAgainstOverlap": 3.1529349489556147
+            },
+            {
+              "under": "blue",
+              "over": "rose",
+              "hex": "#d5ccdb",
+              "contrast": 1.4879376736756356,
+              "selectedOutlineAgainstOverlap": 3.163788704127785
+            },
+            {
+              "under": "blue",
+              "over": "green",
+              "hex": "#bbd7d8",
+              "contrast": 1.4518345929772587,
+              "selectedOutlineAgainstOverlap": 2.800100017762405
+            },
+            {
+              "under": "teal",
+              "over": "blue",
+              "hex": "#b8d5e3",
+              "contrast": 1.4688049425700012,
+              "selectedOutlineAgainstOverlap": 3.0078258974995746
+            },
+            {
+              "under": "teal",
+              "over": "teal",
+              "hex": "#afd9d7",
+              "contrast": 1.4619351315386226,
+              "selectedOutlineAgainstOverlap": 2.819534847128504
+            },
+            {
+              "under": "teal",
+              "over": "gold",
+              "hex": "#c8d4c3",
+              "contrast": 1.4692014661243225,
+              "selectedOutlineAgainstOverlap": 3.038854924668087
+            },
+            {
+              "under": "teal",
+              "over": "violet",
+              "hex": "#c2d3e2",
+              "contrast": 1.4640062496917485,
+              "selectedOutlineAgainstOverlap": 3.138488173696442
+            },
+            {
+              "under": "teal",
+              "over": "rose",
+              "hex": "#cdcfd1",
+              "contrast": 1.4932091517302124,
+              "selectedOutlineAgainstOverlap": 3.152619577080979
+            },
+            {
+              "under": "teal",
+              "over": "green",
+              "hex": "#b3d9ce",
+              "contrast": 1.461516120468558,
+              "selectedOutlineAgainstOverlap": 2.7815513032318644
+            },
+            {
+              "under": "gold",
+              "over": "blue",
+              "hex": "#ced1d2",
+              "contrast": 1.4677097104944747,
+              "selectedOutlineAgainstOverlap": 3.0100703926998076
+            },
+            {
+              "under": "gold",
+              "over": "teal",
+              "hex": "#c5d5c6",
+              "contrast": 1.4642800718835252,
+              "selectedOutlineAgainstOverlap": 2.815019562693618
+            },
+            {
+              "under": "gold",
+              "over": "gold",
+              "hex": "#decfb2",
+              "contrast": 1.4678446984598204,
+              "selectedOutlineAgainstOverlap": 3.041663818622079
+            },
+            {
+              "under": "gold",
+              "over": "violet",
+              "hex": "#d8ced1",
+              "contrast": 1.4683730894156712,
+              "selectedOutlineAgainstOverlap": 3.129154527548368
+            },
+            {
+              "under": "gold",
+              "over": "rose",
+              "hex": "#e2cbc0",
+              "contrast": 1.4826605726451776,
+              "selectedOutlineAgainstOverlap": 3.1750492940016475
+            },
+            {
+              "under": "gold",
+              "over": "green",
+              "hex": "#c9d5bd",
+              "contrast": 1.4612078921817042,
+              "selectedOutlineAgainstOverlap": 2.78213804574645
+            },
+            {
+              "under": "violet",
+              "over": "blue",
+              "hex": "#c9d0ec",
+              "contrast": 1.4632263962563612,
+              "selectedOutlineAgainstOverlap": 3.0192932248492563
+            },
+            {
+              "under": "violet",
+              "over": "teal",
+              "hex": "#c0d4e0",
+              "contrast": 1.4613116599407872,
+              "selectedOutlineAgainstOverlap": 2.8207378074171827
+            },
+            {
+              "under": "violet",
+              "over": "gold",
+              "hex": "#d9cecc",
+              "contrast": 1.4703314980617426,
+              "selectedOutlineAgainstOverlap": 3.0365193948079243
+            },
+            {
+              "under": "violet",
+              "over": "violet",
+              "hex": "#d3ceeb",
+              "contrast": 1.4546521037238558,
+              "selectedOutlineAgainstOverlap": 3.1586702340118302
+            },
+            {
+              "under": "violet",
+              "over": "rose",
+              "hex": "#ddcada",
+              "contrast": 1.4829065365552951,
+              "selectedOutlineAgainstOverlap": 3.1745226609874164
+            },
+            {
+              "under": "violet",
+              "over": "green",
+              "hex": "#c4d4d7",
+              "contrast": 1.460168340932879,
+              "selectedOutlineAgainstOverlap": 2.7841187592017302
+            },
+            {
+              "under": "rose",
+              "over": "blue",
+              "hex": "#d2cdde",
+              "contrast": 1.483716837906741,
+              "selectedOutlineAgainstOverlap": 2.977596150266991
+            },
+            {
+              "under": "rose",
+              "over": "teal",
+              "hex": "#c8d0d2",
+              "contrast": 1.4968612823908747,
+              "selectedOutlineAgainstOverlap": 2.753746854238007
+            },
+            {
+              "under": "rose",
+              "over": "gold",
+              "hex": "#e2cbbe",
+              "contrast": 1.4845921512839915,
+              "selectedOutlineAgainstOverlap": 3.007351282842266
+            },
+            {
+              "under": "rose",
+              "over": "violet",
+              "hex": "#dccadd",
+              "contrast": 1.482862841763501,
+              "selectedOutlineAgainstOverlap": 3.098578082522377
+            },
+            {
+              "under": "rose",
+              "over": "rose",
+              "hex": "#e6c6cc",
+              "contrast": 1.5075071370696864,
+              "selectedOutlineAgainstOverlap": 3.1227184858120762
+            },
+            {
+              "under": "rose",
+              "over": "green",
+              "hex": "#ccd1c9",
+              "contrast": 1.4833410360207246,
+              "selectedOutlineAgainstOverlap": 2.7406253658898287
+            },
+            {
+              "under": "green",
+              "over": "blue",
+              "hex": "#bcd6dc",
+              "contrast": 1.4554505686303696,
+              "selectedOutlineAgainstOverlap": 3.035423971007709
+            },
+            {
+              "under": "green",
+              "over": "teal",
+              "hex": "#b2dacf",
+              "contrast": 1.4520606701954848,
+              "selectedOutlineAgainstOverlap": 2.838708555517598
+            },
+            {
+              "under": "green",
+              "over": "gold",
+              "hex": "#ccd4bb",
+              "contrast": 1.4647896136664706,
+              "selectedOutlineAgainstOverlap": 3.048007760982166
+            },
+            {
+              "under": "green",
+              "over": "violet",
+              "hex": "#c6d3da",
+              "contrast": 1.4617160528218938,
+              "selectedOutlineAgainstOverlap": 3.1434055143643502
+            },
+            {
+              "under": "green",
+              "over": "rose",
+              "hex": "#d0d0ca",
+              "contrast": 1.480483778944264,
+              "selectedOutlineAgainstOverlap": 3.179717651332926
+            },
+            {
+              "under": "green",
+              "over": "green",
+              "hex": "#b6dac6",
+              "contrast": 1.4509620656010092,
+              "selectedOutlineAgainstOverlap": 2.801783841192153
+            }
+          ]
+        },
+        "dark": {
+          "bg": "#0f172a",
+          "panel": "#182338",
+          "text": "#e2e8f0",
+          "muted": "#b5c2d5",
+          "border": "#43546c",
+          "series": [
+            {
+              "hex": "#8ebaff",
+              "oklch": "oklch(0.7850000 0.1094758 258.75250)",
+              "L": 0.785,
+              "C": 0.1094758484974713,
+              "h": 258.75249999999994,
+              "requestedC": 0.145,
+              "gamutMapped": true,
+              "name": "blue",
+              "sourceFamily": "Tailwind"
+            },
+            {
+              "hex": "#00d5c2",
+              "oklch": "oklch(0.7850000 0.1395641 183.30800)",
+              "L": 0.785,
+              "C": 0.13956413527480444,
+              "h": 183.30799999999996,
+              "requestedC": 0.145,
+              "gamutMapped": true,
+              "name": "teal",
+              "sourceFamily": "Tailwind"
+            },
+            {
+              "hex": "#f2a83f",
+              "oklch": "oklch(0.7850000 0.1450000 71.37350)",
+              "L": 0.785,
+              "C": 0.145,
+              "h": 71.3735,
+              "requestedC": 0.145,
+              "gamutMapped": false,
+              "name": "gold",
+              "sourceFamily": "Tailwind"
+            },
+            {
+              "hex": "#bcaaff",
+              "oklch": "oklch(0.7850000 0.1203249 293.27500)",
+              "L": 0.785,
+              "C": 0.12032489638327831,
+              "h": 293.275,
+              "requestedC": 0.145,
+              "gamutMapped": true,
+              "name": "violet",
+              "sourceFamily": "Tailwind"
+            },
+            {
+              "hex": "#ff969e",
+              "oklch": "oklch(0.7850000 0.1261188 15.50650)",
+              "L": 0.785,
+              "C": 0.12611875076958895,
+              "h": 15.5065,
+              "requestedC": 0.145,
+              "gamutMapped": true,
+              "name": "rose",
+              "sourceFamily": "Tailwind"
+            },
+            {
+              "hex": "#6cd387",
+              "oklch": "oklch(0.7850000 0.1450000 150.46250)",
+              "L": 0.785,
+              "C": 0.145,
+              "h": 150.4625,
+              "requestedC": 0.145,
+              "gamutMapped": false,
+              "name": "green",
+              "sourceFamily": "Tailwind"
+            }
+          ],
+          "focus": "#8ebaff",
+          "ribbonAlpha": 0.2,
+          "selectedAlpha": 0.62,
+          "neutralOKLCH": {
+            "bg": "oklch(0.2076819 0.0398243 265.75487)",
+            "panel": "oklch(0.2569417 0.0428261 262.62785)",
+            "text": "oklch(0.9287613 0.0126187 255.50785)",
+            "muted": "oklch(0.8100343 0.0304161 257.77320)",
+            "border": "oklch(0.4415022 0.0451281 257.02788)",
+            "focus": "oklch(0.7840783 0.1098644 259.17620)"
+          },
+          "ribbonComposites": [
+            {
+              "series": "blue",
+              "kind": "context",
+              "alpha": 0.2,
+              "hex": "#283855",
+              "contrast": 1.5192235320857306,
+              "solidOutlineContrast": 9.026342708705869
+            },
+            {
+              "series": "blue",
+              "kind": "selected",
+              "alpha": 0.62,
+              "hex": "#5e7cae",
+              "contrast": 4.225266439847051,
+              "solidOutlineContrast": 9.026342708705869
+            },
+            {
+              "series": "teal",
+              "kind": "context",
+              "alpha": 0.2,
+              "hex": "#0c3d48",
+              "contrast": 1.5104144186711463,
+              "solidOutlineContrast": 9.60356570641555
+            },
+            {
+              "series": "teal",
+              "kind": "selected",
+              "alpha": 0.62,
+              "hex": "#068d88",
+              "contrast": 4.397852008277468,
+              "solidOutlineContrast": 9.60356570641555
+            },
+            {
+              "series": "gold",
+              "kind": "context",
+              "alpha": 0.2,
+              "hex": "#3c342e",
+              "contrast": 1.4645707104770134,
+              "solidOutlineContrast": 8.882297623226947
+            },
+            {
+              "series": "gold",
+              "kind": "selected",
+              "alpha": 0.62,
+              "hex": "#9c7137",
+              "contrast": 4.1067648002826145,
+              "solidOutlineContrast": 8.882297623226947
+            },
+            {
+              "series": "violet",
+              "kind": "context",
+              "alpha": 0.2,
+              "hex": "#323455",
+              "contrast": 1.494507078029085,
+              "solidOutlineContrast": 8.783586096449234
+            },
+            {
+              "series": "violet",
+              "kind": "selected",
+              "alpha": 0.62,
+              "hex": "#7a72ae",
+              "contrast": 4.119378105505063,
+              "solidOutlineContrast": 8.783586096449234
+            },
+            {
+              "series": "rose",
+              "kind": "context",
+              "alpha": 0.2,
+              "hex": "#3f3041",
+              "contrast": 1.4541009191970682,
+              "solidOutlineContrast": 8.593243718452552
+            },
+            {
+              "series": "rose",
+              "kind": "selected",
+              "alpha": 0.62,
+              "hex": "#a46672",
+              "contrast": 4.014297295754096,
+              "solidOutlineContrast": 8.593243718452552
+            },
+            {
+              "series": "green",
+              "kind": "context",
+              "alpha": 0.2,
+              "hex": "#223d3d",
+              "contrast": 1.5326809485395099,
+              "solidOutlineContrast": 9.610775501971633
+            },
+            {
+              "series": "green",
+              "kind": "selected",
+              "alpha": 0.62,
+              "hex": "#498c64",
+              "contrast": 4.436394814888778,
+              "solidOutlineContrast": 9.610775501971633
+            }
+          ],
+          "overlapComposites": [
+            {
+              "under": "blue",
+              "over": "blue",
+              "hex": "#3c5277",
+              "contrast": 2.265938069476966,
+              "selectedOutlineAgainstOverlap": 3.9834904714714328
+            },
+            {
+              "under": "blue",
+              "over": "teal",
+              "hex": "#20576b",
+              "contrast": 2.241768827707053,
+              "selectedOutlineAgainstOverlap": 4.2839232965150815
+            },
+            {
+              "under": "blue",
+              "over": "gold",
+              "hex": "#504e51",
+              "contrast": 2.1675243882038675,
+              "selectedOutlineAgainstOverlap": 4.097899738321891
+            },
+            {
+              "under": "blue",
+              "over": "violet",
+              "hex": "#464f77",
+              "contrast": 2.2487333546519137,
+              "selectedOutlineAgainstOverlap": 3.9060149476054105
+            },
+            {
+              "under": "blue",
+              "over": "rose",
+              "hex": "#534b64",
+              "contrast": 2.1748219792848467,
+              "selectedOutlineAgainstOverlap": 3.9512400556473573
+            },
+            {
+              "under": "blue",
+              "over": "green",
+              "hex": "#36575f",
+              "contrast": 2.2828942903501064,
+              "selectedOutlineAgainstOverlap": 4.209908247874989
+            },
+            {
+              "under": "teal",
+              "over": "blue",
+              "hex": "#26566d",
+              "contrast": 2.2395193813936247,
+              "selectedOutlineAgainstOverlap": 4.0304820684735
+            },
+            {
+              "under": "teal",
+              "over": "teal",
+              "hex": "#0a5b60",
+              "contrast": 2.2768322278288498,
+              "selectedOutlineAgainstOverlap": 4.21795053189903
+            },
+            {
+              "under": "teal",
+              "over": "gold",
+              "hex": "#3a5246",
+              "contrast": 2.104273833122579,
+              "selectedOutlineAgainstOverlap": 4.221074977702073
+            },
+            {
+              "under": "teal",
+              "over": "violet",
+              "hex": "#2f536d",
+              "contrast": 2.192457485616391,
+              "selectedOutlineAgainstOverlap": 4.006274308201603
+            },
+            {
+              "under": "teal",
+              "over": "rose",
+              "hex": "#3d4f59",
+              "contrast": 2.0922036849245362,
+              "selectedOutlineAgainstOverlap": 4.107269182427858
+            },
+            {
+              "under": "teal",
+              "over": "green",
+              "hex": "#1f5b55",
+              "contrast": 2.2833144632808855,
+              "selectedOutlineAgainstOverlap": 4.209133545347034
+            },
+            {
+              "under": "gold",
+              "over": "blue",
+              "hex": "#4c4f58",
+              "contrast": 2.1819274037339516,
+              "selectedOutlineAgainstOverlap": 4.13686664976067
+            },
+            {
+              "under": "gold",
+              "over": "teal",
+              "hex": "#30544c",
+              "contrast": 2.1237424207378237,
+              "selectedOutlineAgainstOverlap": 4.5220011676741425
+            },
+            {
+              "under": "gold",
+              "over": "gold",
+              "hex": "#604b31",
+              "contrast": 2.1662268482143947,
+              "selectedOutlineAgainstOverlap": 4.1003543237166316
+            },
+            {
+              "under": "gold",
+              "over": "violet",
+              "hex": "#564c58",
+              "contrast": 2.1851327597212693,
+              "selectedOutlineAgainstOverlap": 4.019703634652226
+            },
+            {
+              "under": "gold",
+              "over": "rose",
+              "hex": "#634844",
+              "contrast": 2.160111449897202,
+              "selectedOutlineAgainstOverlap": 3.9781483121444956
+            },
+            {
+              "under": "gold",
+              "over": "green",
+              "hex": "#465440",
+              "contrast": 2.2125078668086293,
+              "selectedOutlineAgainstOverlap": 4.34383788918881
+            },
+            {
+              "under": "violet",
+              "over": "blue",
+              "hex": "#444f77",
+              "contrast": 2.236296485276659,
+              "selectedOutlineAgainstOverlap": 4.036290701225688
+            },
+            {
+              "under": "violet",
+              "over": "teal",
+              "hex": "#28546b",
+              "contrast": 2.1853714053663875,
+              "selectedOutlineAgainstOverlap": 4.394477608169064
+            },
+            {
+              "under": "violet",
+              "over": "gold",
+              "hex": "#584b51",
+              "contrast": 2.1594668048455223,
+              "selectedOutlineAgainstOverlap": 4.113190164950159
+            },
+            {
+              "under": "violet",
+              "over": "violet",
+              "hex": "#4e4c77",
+              "contrast": 2.230800644910077,
+              "selectedOutlineAgainstOverlap": 3.9374141819845576
+            },
+            {
+              "under": "violet",
+              "over": "rose",
+              "hex": "#5b4864",
+              "contrast": 2.172734460019554,
+              "selectedOutlineAgainstOverlap": 3.9550363270692612
+            },
+            {
+              "under": "violet",
+              "over": "green",
+              "hex": "#3e545f",
+              "contrast": 2.2427891291272393,
+              "selectedOutlineAgainstOverlap": 4.2851890876212595
+            },
+            {
+              "under": "rose",
+              "over": "blue",
+              "hex": "#4f4c67",
+              "contrast": 2.1780806736680383,
+              "selectedOutlineAgainstOverlap": 4.144172811333423
+            },
+            {
+              "under": "rose",
+              "over": "teal",
+              "hex": "#32515b",
+              "contrast": 2.0944083762863377,
+              "selectedOutlineAgainstOverlap": 4.585335799431789
+            },
+            {
+              "under": "rose",
+              "over": "gold",
+              "hex": "#634841",
+              "contrast": 2.1540413611173013,
+              "selectedOutlineAgainstOverlap": 4.123550171116351
+            },
+            {
+              "under": "rose",
+              "over": "violet",
+              "hex": "#584867",
+              "contrast": 2.1573869138414965,
+              "selectedOutlineAgainstOverlap": 4.071400470678189
+            },
+            {
+              "under": "rose",
+              "over": "rose",
+              "hex": "#654454",
+              "contrast": 2.1322794351945036,
+              "selectedOutlineAgainstOverlap": 4.030073908989648
+            },
+            {
+              "under": "rose",
+              "over": "green",
+              "hex": "#48514f",
+              "contrast": 2.1809149524495632,
+              "selectedOutlineAgainstOverlap": 4.406763084079454
+            },
+            {
+              "under": "green",
+              "over": "blue",
+              "hex": "#385664",
+              "contrast": 2.2811170126045615,
+              "selectedOutlineAgainstOverlap": 3.9569836439033272
+            },
+            {
+              "under": "green",
+              "over": "teal",
+              "hex": "#1b5b58",
+              "contrast": 2.281683728509548,
+              "selectedOutlineAgainstOverlap": 4.208981983970598
+            },
+            {
+              "under": "green",
+              "over": "gold",
+              "hex": "#4c523d",
+              "contrast": 2.1946730117912323,
+              "selectedOutlineAgainstOverlap": 4.047207750542053
+            },
+            {
+              "under": "green",
+              "over": "violet",
+              "hex": "#415364",
+              "contrast": 2.2494925927927536,
+              "selectedOutlineAgainstOverlap": 3.904696607844518
+            },
+            {
+              "under": "green",
+              "over": "rose",
+              "hex": "#4e4f50",
+              "contrast": 2.1747537657020835,
+              "selectedOutlineAgainstOverlap": 3.9513639907083298
+            },
+            {
+              "under": "green",
+              "over": "green",
+              "hex": "#315b4c",
+              "contrast": 2.3220097708156078,
+              "selectedOutlineAgainstOverlap": 4.138990120870956
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "calm",
+      "name": "Calm · 차분한 장시간 탐색",
+      "sourceLabel": "Radix seeds → derived OKLCH",
+      "themes": {
+        "light": {
+          "bg": "#fcfcfd",
+          "panel": "#f9f9fb",
+          "text": "#1c2024",
+          "muted": "#60646c",
+          "border": "#b9bbc6",
+          "series": [
+            {
+              "hex": "#4379b1",
+              "oklch": "oklch(0.5650000 0.1050000 250.82955)",
+              "L": 0.565,
+              "C": 0.105,
+              "h": 250.82954756000825,
+              "requestedC": 0.105,
+              "gamutMapped": false,
+              "name": "blue",
+              "sourceFamily": "Radix"
+            },
+            {
+              "hex": "#008a75",
+              "oklch": "oklch(0.5650000 0.1045666 177.26073)",
+              "L": 0.565,
+              "C": 0.10456655209590507,
+              "h": 177.26073088737485,
+              "requestedC": 0.105,
+              "gamutMapped": true,
+              "name": "teal",
+              "sourceFamily": "Radix"
+            },
+            {
+              "hex": "#996c21",
+              "oklch": "oklch(0.5650000 0.1050000 76.47781)",
+              "L": 0.565,
+              "C": 0.105,
+              "h": 76.47781076681454,
+              "requestedC": 0.105,
+              "gamutMapped": false,
+              "name": "gold",
+              "sourceFamily": "Radix"
+            },
+            {
+              "hex": "#766aaf",
+              "oklch": "oklch(0.5650000 0.1050000 290.91575)",
+              "L": 0.565,
+              "C": 0.105,
+              "h": 290.91574509873317,
+              "requestedC": 0.105,
+              "gamutMapped": false,
+              "name": "violet",
+              "sourceFamily": "Radix"
+            },
+            {
+              "hex": "#a95a6e",
+              "oklch": "oklch(0.5650000 0.1050000 4.61354)",
+              "L": 0.565,
+              "C": 0.105,
+              "h": 4.613544305478841,
+              "requestedC": 0.105,
+              "gamutMapped": false,
+              "name": "rose",
+              "sourceFamily": "Radix"
+            },
+            {
+              "hex": "#34885e",
+              "oklch": "oklch(0.5650000 0.1050000 158.39189)",
+              "L": 0.565,
+              "C": 0.105,
+              "h": 158.3918938146582,
+              "requestedC": 0.105,
+              "gamutMapped": false,
+              "name": "green",
+              "sourceFamily": "Radix"
+            }
+          ],
+          "focus": "#4379b1",
+          "ribbonAlpha": 0.16,
+          "selectedAlpha": 0.7,
+          "neutralOKLCH": {
+            "bg": "oklch(0.9913482 0.0013178 286.37601)",
+            "panel": "oklch(0.9826789 0.0026423 286.35112)",
+            "text": "oklch(0.2411301 0.0096905 248.22900)",
+            "muted": "oklch(0.5024886 0.0136213 264.44495)",
+            "border": "oklch(0.7938433 0.0156010 277.78900)",
+            "focus": "oklch(0.5642187 0.1046834 250.94269)"
+          },
+          "ribbonComposites": [
+            {
+              "series": "blue",
+              "kind": "context",
+              "alpha": 0.16,
+              "hex": "#dee7f1",
+              "contrast": 1.2186755192942678,
+              "solidOutlineContrast": 4.444340738929047
+            },
+            {
+              "series": "blue",
+              "kind": "selected",
+              "alpha": 0.7,
+              "hex": "#7ba0c8",
+              "contrast": 2.658383591241133,
+              "solidOutlineContrast": 4.444340738929047
+            },
+            {
+              "series": "teal",
+              "kind": "context",
+              "alpha": 0.16,
+              "hex": "#d4eae7",
+              "contrast": 1.2247984598388288,
+              "solidOutlineContrast": 4.186533510092606
+            },
+            {
+              "series": "teal",
+              "kind": "selected",
+              "alpha": 0.7,
+              "hex": "#4cac9e",
+              "contrast": 2.659248312492081,
+              "solidOutlineContrast": 4.186533510092606
+            },
+            {
+              "series": "gold",
+              "kind": "context",
+              "alpha": 0.16,
+              "hex": "#ece5da",
+              "contrast": 1.2201107962070075,
+              "solidOutlineContrast": 4.529881999840529
+            },
+            {
+              "series": "gold",
+              "kind": "selected",
+              "alpha": 0.7,
+              "hex": "#b79763",
+              "contrast": 2.687781519163359,
+              "solidOutlineContrast": 4.529881999840529
+            },
+            {
+              "series": "violet",
+              "kind": "context",
+              "alpha": 0.16,
+              "hex": "#e7e5f1",
+              "contrast": 1.2136764600154204,
+              "solidOutlineContrast": 4.601625805848637
+            },
+            {
+              "series": "violet",
+              "kind": "selected",
+              "alpha": 0.7,
+              "hex": "#9e96c6",
+              "contrast": 2.683720091712998,
+              "solidOutlineContrast": 4.601625805848637
+            },
+            {
+              "series": "rose",
+              "kind": "context",
+              "alpha": 0.16,
+              "hex": "#efe2e6",
+              "contrast": 1.227082047177499,
+              "solidOutlineContrast": 4.6819126562203435
+            },
+            {
+              "series": "rose",
+              "kind": "selected",
+              "alpha": 0.7,
+              "hex": "#c28b99",
+              "contrast": 2.7503567902500063,
+              "solidOutlineContrast": 4.6819126562203435
+            },
+            {
+              "series": "green",
+              "kind": "context",
+              "alpha": 0.16,
+              "hex": "#dce9e4",
+              "contrast": 1.217768192749368,
+              "solidOutlineContrast": 4.2411096130695105
+            },
+            {
+              "series": "green",
+              "kind": "selected",
+              "alpha": 0.7,
+              "hex": "#70ab8e",
+              "contrast": 2.591064843834417,
+              "solidOutlineContrast": 4.2411096130695105
+            }
+          ],
+          "overlapComposites": [
+            {
+              "under": "blue",
+              "over": "blue",
+              "hex": "#c5d5e7",
+              "contrast": 1.458216239999433,
+              "selectedOutlineAgainstOverlap": 3.0477926503758974
+            },
+            {
+              "under": "blue",
+              "over": "teal",
+              "hex": "#bad8dd",
+              "contrast": 1.467768417450291,
+              "selectedOutlineAgainstOverlap": 2.852312027101095
+            },
+            {
+              "under": "blue",
+              "over": "gold",
+              "hex": "#d3d3d0",
+              "contrast": 1.4631509539141696,
+              "selectedOutlineAgainstOverlap": 3.0959772043495235
+            },
+            {
+              "under": "blue",
+              "over": "violet",
+              "hex": "#cdd3e6",
+              "contrast": 1.4571269453824487,
+              "selectedOutlineAgainstOverlap": 3.1580129791923235
+            },
+            {
+              "under": "blue",
+              "over": "rose",
+              "hex": "#d6d0dc",
+              "contrast": 1.471905283993297,
+              "selectedOutlineAgainstOverlap": 3.18085185720528
+            },
+            {
+              "under": "blue",
+              "over": "green",
+              "hex": "#c3d8d9",
+              "contrast": 1.4480048797802283,
+              "selectedOutlineAgainstOverlap": 2.928933232402647
+            },
+            {
+              "under": "teal",
+              "over": "blue",
+              "hex": "#bdd8de",
+              "contrast": 1.4587118576502849,
+              "selectedOutlineAgainstOverlap": 3.0467571204144854
+            },
+            {
+              "under": "teal",
+              "over": "teal",
+              "hex": "#b2dbd5",
+              "contrast": 1.4643931635594427,
+              "selectedOutlineAgainstOverlap": 2.8588862706218623
+            },
+            {
+              "under": "teal",
+              "over": "gold",
+              "hex": "#cbd6c7",
+              "contrast": 1.4647899538653646,
+              "selectedOutlineAgainstOverlap": 3.0925130172328386
+            },
+            {
+              "under": "teal",
+              "over": "violet",
+              "hex": "#c5d6de",
+              "contrast": 1.45802856265039,
+              "selectedOutlineAgainstOverlap": 3.1560601237357426
+            },
+            {
+              "under": "teal",
+              "over": "rose",
+              "hex": "#cdd3d4",
+              "contrast": 1.4772998980644434,
+              "selectedOutlineAgainstOverlap": 3.169236430838843
+            },
+            {
+              "under": "teal",
+              "over": "green",
+              "hex": "#badad1",
+              "contrast": 1.4591091789422694,
+              "selectedOutlineAgainstOverlap": 2.9066430903710407
+            },
+            {
+              "under": "gold",
+              "over": "blue",
+              "hex": "#d1d4d3",
+              "contrast": 1.4557890973243246,
+              "selectedOutlineAgainstOverlap": 3.0528740372472547
+            },
+            {
+              "under": "gold",
+              "over": "teal",
+              "hex": "#c6d6ca",
+              "contrast": 1.4764046129358683,
+              "selectedOutlineAgainstOverlap": 2.8356274922276063
+            },
+            {
+              "under": "gold",
+              "over": "gold",
+              "hex": "#dfd2bc",
+              "contrast": 1.4544125939704282,
+              "selectedOutlineAgainstOverlap": 3.1145783656027892
+            },
+            {
+              "under": "gold",
+              "over": "violet",
+              "hex": "#d9d1d3",
+              "contrast": 1.4618078232112124,
+              "selectedOutlineAgainstOverlap": 3.1479006561478506
+            },
+            {
+              "under": "gold",
+              "over": "rose",
+              "hex": "#e1cfc9",
+              "contrast": 1.4661094336340976,
+              "selectedOutlineAgainstOverlap": 3.193426458361379
+            },
+            {
+              "under": "gold",
+              "over": "green",
+              "hex": "#cfd6c6",
+              "contrast": 1.4539222429188259,
+              "selectedOutlineAgainstOverlap": 2.917012676383063
+            },
+            {
+              "under": "violet",
+              "over": "blue",
+              "hex": "#cdd4e7",
+              "contrast": 1.4457146907063385,
+              "selectedOutlineAgainstOverlap": 3.074147871291021
+            },
+            {
+              "under": "violet",
+              "over": "teal",
+              "hex": "#c2d6dd",
+              "contrast": 1.4675237636966074,
+              "selectedOutlineAgainstOverlap": 2.8527875416115718
+            },
+            {
+              "under": "violet",
+              "over": "gold",
+              "hex": "#dbd2d0",
+              "contrast": 1.4483380144297833,
+              "selectedOutlineAgainstOverlap": 3.127641444683037
+            },
+            {
+              "under": "violet",
+              "over": "violet",
+              "hex": "#d5d1e6",
+              "contrast": 1.4534170254962147,
+              "selectedOutlineAgainstOverlap": 3.166073965782522
+            },
+            {
+              "under": "violet",
+              "over": "rose",
+              "hex": "#ddcfdc",
+              "contrast": 1.4595303617028679,
+              "selectedOutlineAgainstOverlap": 3.2078213506691613
+            },
+            {
+              "under": "violet",
+              "over": "green",
+              "hex": "#cad6d9",
+              "contrast": 1.4493193746373265,
+              "selectedOutlineAgainstOverlap": 2.9262767663826983
+            },
+            {
+              "under": "rose",
+              "over": "blue",
+              "hex": "#d3d1de",
+              "contrast": 1.4687695287894282,
+              "selectedOutlineAgainstOverlap": 3.0258938872405046
+            },
+            {
+              "under": "rose",
+              "over": "teal",
+              "hex": "#c9d4d4",
+              "contrast": 1.4786478287840847,
+              "selectedOutlineAgainstOverlap": 2.8313256399498843
+            },
+            {
+              "under": "rose",
+              "over": "gold",
+              "hex": "#e1cfc6",
+              "contrast": 1.4690502390932445,
+              "selectedOutlineAgainstOverlap": 3.0835446462583542
+            },
+            {
+              "under": "rose",
+              "over": "violet",
+              "hex": "#dccfdd",
+              "contrast": 1.4616835061133062,
+              "selectedOutlineAgainstOverlap": 3.1481683870707435
+            },
+            {
+              "under": "rose",
+              "over": "rose",
+              "hex": "#e4ccd3",
+              "contrast": 1.4759856038926547,
+              "selectedOutlineAgainstOverlap": 3.172058483411095
+            },
+            {
+              "under": "rose",
+              "over": "green",
+              "hex": "#d1d4d0",
+              "contrast": 1.458880885296596,
+              "selectedOutlineAgainstOverlap": 2.9070979377506045
+            },
+            {
+              "under": "green",
+              "over": "blue",
+              "hex": "#c4d7dc",
+              "contrast": 1.4525158877244617,
+              "selectedOutlineAgainstOverlap": 3.059753615426289
+            },
+            {
+              "under": "green",
+              "over": "teal",
+              "hex": "#b9dad2",
+              "contrast": 1.4606725842131734,
+              "selectedOutlineAgainstOverlap": 2.8661683359709142
+            },
+            {
+              "under": "green",
+              "over": "gold",
+              "hex": "#d1d5c5",
+              "contrast": 1.459324032954792,
+              "selectedOutlineAgainstOverlap": 3.1040960729390377
+            },
+            {
+              "under": "green",
+              "over": "violet",
+              "hex": "#ccd5dc",
+              "contrast": 1.450679924131718,
+              "selectedOutlineAgainstOverlap": 3.1720476235327157
+            },
+            {
+              "under": "green",
+              "over": "rose",
+              "hex": "#d4d2d1",
+              "contrast": 1.4694029044857244,
+              "selectedOutlineAgainstOverlap": 3.186268818393934
+            },
+            {
+              "under": "green",
+              "over": "green",
+              "hex": "#c1d9cf",
+              "contrast": 1.453253566444066,
+              "selectedOutlineAgainstOverlap": 2.9183548631826084
+            }
+          ]
+        },
+        "dark": {
+          "bg": "#111113",
+          "panel": "#18191b",
+          "text": "#edeef0",
+          "muted": "#b0b4ba",
+          "border": "#5a6169",
+          "series": [
+            {
+              "hex": "#85befa",
+              "oklch": "oklch(0.7850000 0.1050000 250.82955)",
+              "L": 0.785,
+              "C": 0.105,
+              "h": 250.82954756000825,
+              "requestedC": 0.105,
+              "gamutMapped": false,
+              "name": "blue",
+              "sourceFamily": "Radix"
+            },
+            {
+              "hex": "#64cfb8",
+              "oklch": "oklch(0.7850000 0.1050000 177.26073)",
+              "L": 0.785,
+              "C": 0.105,
+              "h": 177.26073088737485,
+              "requestedC": 0.105,
+              "gamutMapped": false,
+              "name": "teal",
+              "sourceFamily": "Radix"
+            },
+            {
+              "hex": "#dfb069",
+              "oklch": "oklch(0.7850000 0.1050000 76.47781)",
+              "L": 0.785,
+              "C": 0.105,
+              "h": 76.47781076681454,
+              "requestedC": 0.105,
+              "gamutMapped": false,
+              "name": "gold",
+              "sourceFamily": "Radix"
+            },
+            {
+              "hex": "#b9adf8",
+              "oklch": "oklch(0.7850000 0.1050000 290.91575)",
+              "L": 0.785,
+              "C": 0.105,
+              "h": 290.91574509873317,
+              "requestedC": 0.105,
+              "gamutMapped": false,
+              "name": "violet",
+              "sourceFamily": "Radix"
+            },
+            {
+              "hex": "#f29cb0",
+              "oklch": "oklch(0.7850000 0.1050000 4.61354)",
+              "L": 0.785,
+              "C": 0.105,
+              "h": 4.613544305478841,
+              "requestedC": 0.105,
+              "gamutMapped": false,
+              "name": "rose",
+              "sourceFamily": "Radix"
+            },
+            {
+              "hex": "#7bcea0",
+              "oklch": "oklch(0.7850000 0.1050000 158.39189)",
+              "L": 0.785,
+              "C": 0.105,
+              "h": 158.3918938146582,
+              "requestedC": 0.105,
+              "gamutMapped": false,
+              "name": "green",
+              "sourceFamily": "Radix"
+            }
+          ],
+          "focus": "#85befa",
+          "ribbonAlpha": 0.2,
+          "selectedAlpha": 0.62,
+          "neutralOKLCH": {
+            "bg": "oklch(0.1785291 0.0040663 285.98068)",
+            "panel": "oklch(0.2131751 0.0042126 264.47887)",
+            "text": "oklch(0.9489208 0.0028876 264.54172)",
+            "muted": "oklch(0.7685605 0.0096406 258.34182)",
+            "border": "oklch(0.4893177 0.0155134 251.69082)",
+            "focus": "oklch(0.7852314 0.1046635 250.50297)"
+          },
+          "ribbonComposites": [
+            {
+              "series": "blue",
+              "kind": "context",
+              "alpha": 0.2,
+              "hex": "#283441",
+              "contrast": 1.4888855164470012,
+              "solidOutlineContrast": 9.6487801600054
+            },
+            {
+              "series": "blue",
+              "kind": "selected",
+              "alpha": 0.62,
+              "hex": "#597ca2",
+              "contrast": 4.337599099567122,
+              "solidOutlineContrast": 9.6487801600054
+            },
+            {
+              "series": "teal",
+              "kind": "context",
+              "alpha": 0.2,
+              "hex": "#223734",
+              "contrast": 1.4945686056285128,
+              "solidOutlineContrast": 10.022419040592922
+            },
+            {
+              "series": "teal",
+              "kind": "selected",
+              "alpha": 0.62,
+              "hex": "#448779",
+              "contrast": 4.479429198229575,
+              "solidOutlineContrast": 10.022419040592922
+            },
+            {
+              "series": "gold",
+              "kind": "context",
+              "alpha": 0.2,
+              "hex": "#3a3124",
+              "contrast": 1.4771716640706358,
+              "solidOutlineContrast": 9.476873316120242
+            },
+            {
+              "series": "gold",
+              "kind": "selected",
+              "alpha": 0.62,
+              "hex": "#917448",
+              "contrast": 4.3071736522646535,
+              "solidOutlineContrast": 9.476873316120242
+            },
+            {
+              "series": "violet",
+              "kind": "context",
+              "alpha": 0.2,
+              "hex": "#333041",
+              "contrast": 1.4728291783912428,
+              "solidOutlineContrast": 9.3367954683161
+            },
+            {
+              "series": "violet",
+              "kind": "selected",
+              "alpha": 0.62,
+              "hex": "#7972a1",
+              "contrast": 4.25227602271101,
+              "solidOutlineContrast": 9.3367954683161
+            },
+            {
+              "series": "rose",
+              "kind": "context",
+              "alpha": 0.2,
+              "hex": "#3e2d32",
+              "contrast": 1.4605837268612587,
+              "solidOutlineContrast": 9.123044426270075
+            },
+            {
+              "series": "rose",
+              "kind": "selected",
+              "alpha": 0.62,
+              "hex": "#9c6774",
+              "contrast": 4.136701246681275,
+              "solidOutlineContrast": 9.123044426270075
+            },
+            {
+              "series": "green",
+              "kind": "context",
+              "alpha": 0.2,
+              "hex": "#26372f",
+              "contrast": 1.4998299577124572,
+              "solidOutlineContrast": 10.03965758045647
+            },
+            {
+              "series": "green",
+              "kind": "selected",
+              "alpha": 0.62,
+              "hex": "#53866a",
+              "contrast": 4.478070567685835,
+              "solidOutlineContrast": 10.03965758045647
+            }
+          ],
+          "overlapComposites": [
+            {
+              "under": "blue",
+              "over": "blue",
+              "hex": "#3b5066",
+              "contrast": 2.2680516553100176,
+              "selectedOutlineAgainstOverlap": 4.254215347086756
+            },
+            {
+              "under": "blue",
+              "over": "teal",
+              "hex": "#345359",
+              "contrast": 2.270100950758392,
+              "selectedOutlineAgainstOverlap": 4.414966231895832
+            },
+            {
+              "under": "blue",
+              "over": "gold",
+              "hex": "#4d4d49",
+              "contrast": 2.2213731195170077,
+              "selectedOutlineAgainstOverlap": 4.266223099962961
+            },
+            {
+              "under": "blue",
+              "over": "violet",
+              "hex": "#454c66",
+              "contrast": 2.2261919451481216,
+              "selectedOutlineAgainstOverlap": 4.194065785147232
+            },
+            {
+              "under": "blue",
+              "over": "rose",
+              "hex": "#504957",
+              "contrast": 2.184029750276732,
+              "selectedOutlineAgainstOverlap": 4.177161242933674
+            },
+            {
+              "under": "blue",
+              "over": "green",
+              "hex": "#395354",
+              "contrast": 2.280630213908019,
+              "selectedOutlineAgainstOverlap": 4.402141793628532
+            },
+            {
+              "under": "teal",
+              "over": "blue",
+              "hex": "#36525c",
+              "contrast": 2.2617872673005186,
+              "selectedOutlineAgainstOverlap": 4.265998088989766
+            },
+            {
+              "under": "teal",
+              "over": "teal",
+              "hex": "#2f554e",
+              "contrast": 2.272534734534756,
+              "selectedOutlineAgainstOverlap": 4.410237999132172
+            },
+            {
+              "under": "teal",
+              "over": "gold",
+              "hex": "#484f3f",
+              "contrast": 2.2145453301275424,
+              "selectedOutlineAgainstOverlap": 4.279376532597072
+            },
+            {
+              "under": "teal",
+              "over": "violet",
+              "hex": "#404f5b",
+              "contrast": 2.2340745511677715,
+              "selectedOutlineAgainstOverlap": 4.179267636093733
+            },
+            {
+              "under": "teal",
+              "over": "rose",
+              "hex": "#4c4b4d",
+              "contrast": 2.1742930815950023,
+              "selectedOutlineAgainstOverlap": 4.195866924976673
+            },
+            {
+              "under": "teal",
+              "over": "green",
+              "hex": "#34554a",
+              "contrast": 2.2851231211308005,
+              "selectedOutlineAgainstOverlap": 4.393486498656717
+            },
+            {
+              "under": "gold",
+              "over": "blue",
+              "hex": "#494d4f",
+              "contrast": 2.2073910997789086,
+              "selectedOutlineAgainstOverlap": 4.371123975706805
+            },
+            {
+              "under": "gold",
+              "over": "teal",
+              "hex": "#425142",
+              "contrast": 2.2339260676089636,
+              "selectedOutlineAgainstOverlap": 4.486459595021517
+            },
+            {
+              "under": "gold",
+              "over": "gold",
+              "hex": "#5b4a32",
+              "contrast": 2.2187542207407724,
+              "selectedOutlineAgainstOverlap": 4.271258721462267
+            },
+            {
+              "under": "gold",
+              "over": "violet",
+              "hex": "#534a4e",
+              "contrast": 2.207010637313729,
+              "selectedOutlineAgainstOverlap": 4.230516749878657
+            },
+            {
+              "under": "gold",
+              "over": "rose",
+              "hex": "#5f4640",
+              "contrast": 2.188466347266055,
+              "selectedOutlineAgainstOverlap": 4.168693038239795
+            },
+            {
+              "under": "gold",
+              "over": "green",
+              "hex": "#47503d",
+              "contrast": 2.229862713573512,
+              "selectedOutlineAgainstOverlap": 4.502365782136969
+            },
+            {
+              "under": "violet",
+              "over": "blue",
+              "hex": "#434c66",
+              "contrast": 2.2132736552282775,
+              "selectedOutlineAgainstOverlap": 4.359506171870203
+            },
+            {
+              "under": "violet",
+              "over": "teal",
+              "hex": "#3d5059",
+              "contrast": 2.236482632489121,
+              "selectedOutlineAgainstOverlap": 4.4813310396416295
+            },
+            {
+              "under": "violet",
+              "over": "gold",
+              "hex": "#554a49",
+              "contrast": 2.211191600485218,
+              "selectedOutlineAgainstOverlap": 4.28586709267558
+            },
+            {
+              "under": "violet",
+              "over": "violet",
+              "hex": "#4e4966",
+              "contrast": 2.217335723741119,
+              "selectedOutlineAgainstOverlap": 4.210817229139723
+            },
+            {
+              "under": "violet",
+              "over": "rose",
+              "hex": "#594657",
+              "contrast": 2.1900659876054207,
+              "selectedOutlineAgainstOverlap": 4.165648194119051
+            },
+            {
+              "under": "violet",
+              "over": "green",
+              "hex": "#415054",
+              "contrast": 2.245561374849683,
+              "selectedOutlineAgainstOverlap": 4.470889859836728
+            },
+            {
+              "under": "rose",
+              "over": "blue",
+              "hex": "#4c4a5a",
+              "contrast": 2.1864660600542196,
+              "selectedOutlineAgainstOverlap": 4.412956750751544
+            },
+            {
+              "under": "rose",
+              "over": "teal",
+              "hex": "#464d4d",
+              "contrast": 2.1816922734272155,
+              "selectedOutlineAgainstOverlap": 4.593873830266964
+            },
+            {
+              "under": "rose",
+              "over": "gold",
+              "hex": "#5e473d",
+              "contrast": 2.195597990176008,
+              "selectedOutlineAgainstOverlap": 4.316306244824234
+            },
+            {
+              "under": "rose",
+              "over": "violet",
+              "hex": "#57475a",
+              "contrast": 2.2041871728002493,
+              "selectedOutlineAgainstOverlap": 4.2359358513344505
+            },
+            {
+              "under": "rose",
+              "over": "rose",
+              "hex": "#62434b",
+              "contrast": 2.1768984382699856,
+              "selectedOutlineAgainstOverlap": 4.19084522543013
+            },
+            {
+              "under": "rose",
+              "over": "green",
+              "hex": "#4a4d48",
+              "contrast": 2.1971065147348106,
+              "selectedOutlineAgainstOverlap": 4.5694906064525735
+            },
+            {
+              "under": "green",
+              "over": "blue",
+              "hex": "#395258",
+              "contrast": 2.264923776247268,
+              "selectedOutlineAgainstOverlap": 4.260090454784478
+            },
+            {
+              "under": "green",
+              "over": "teal",
+              "hex": "#32554a",
+              "contrast": 2.275790656354303,
+              "selectedOutlineAgainstOverlap": 4.403928372150148
+            },
+            {
+              "under": "green",
+              "over": "gold",
+              "hex": "#4b4f3b",
+              "contrast": 2.228021625585643,
+              "selectedOutlineAgainstOverlap": 4.253492518785231
+            },
+            {
+              "under": "green",
+              "over": "violet",
+              "hex": "#434f57",
+              "contrast": 2.240557639520365,
+              "selectedOutlineAgainstOverlap": 4.167174860234715
+            },
+            {
+              "under": "green",
+              "over": "rose",
+              "hex": "#4f4b49",
+              "contrast": 2.1870434435191615,
+              "selectedOutlineAgainstOverlap": 4.1714052152481385
+            },
+            {
+              "under": "green",
+              "over": "green",
+              "hex": "#375546",
+              "contrast": 2.2905020168701578,
+              "selectedOutlineAgainstOverlap": 4.383169063599034
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "mocha",
+      "name": "Mocha · 부드러운 파스텔",
+      "sourceLabel": "Catppuccin seeds → derived OKLCH",
+      "themes": {
+        "light": {
+          "bg": "#eff1f5",
+          "panel": "#e6e9ef",
+          "text": "#4c4f69",
+          "muted": "#63667c",
+          "border": "#9ca0b0",
+          "series": [
+            {
+              "hex": "#4e75b9",
+              "oklch": "oklch(0.5650000 0.1150000 260.98581)",
+              "L": 0.565,
+              "C": 0.115,
+              "h": 260.98581329038916,
+              "requestedC": 0.115,
+              "gamutMapped": false,
+              "name": "blue",
+              "sourceFamily": "Catppuccin"
+            },
+            {
+              "hex": "#008884",
+              "oklch": "oklch(0.5650000 0.0970216 191.92713)",
+              "L": 0.565,
+              "C": 0.0970215617488428,
+              "h": 191.92713070138228,
+              "requestedC": 0.115,
+              "gamutMapped": true,
+              "name": "teal",
+              "sourceFamily": "Catppuccin"
+            },
+            {
+              "hex": "#9b6c0b",
+              "oklch": "oklch(0.5650000 0.1150000 77.15237)",
+              "L": 0.565,
+              "C": 0.115,
+              "h": 77.15236879012807,
+              "requestedC": 0.115,
+              "gamutMapped": false,
+              "name": "gold",
+              "sourceFamily": "Catppuccin"
+            },
+            {
+              "hex": "#8264af",
+              "oklch": "oklch(0.5650000 0.1150000 300.89248)",
+              "L": 0.565,
+              "C": 0.115,
+              "h": 300.89247636338666,
+              "requestedC": 0.115,
+              "gamutMapped": false,
+              "name": "violet",
+              "sourceFamily": "Catppuccin"
+            },
+            {
+              "hex": "#a0598e",
+              "oklch": "oklch(0.5650000 0.1150000 337.36871)",
+              "L": 0.565,
+              "C": 0.115,
+              "h": 337.36871370534425,
+              "requestedC": 0.115,
+              "gamutMapped": false,
+              "name": "rose",
+              "sourceFamily": "Catppuccin"
+            },
+            {
+              "hex": "#4c8645",
+              "oklch": "oklch(0.5650000 0.1150000 141.58006)",
+              "L": 0.565,
+              "C": 0.115,
+              "h": 141.5800633034826,
+              "requestedC": 0.115,
+              "gamutMapped": false,
+              "name": "green",
+              "sourceFamily": "Catppuccin"
+            }
+          ],
+          "focus": "#4e75b9",
+          "ribbonAlpha": 0.16,
+          "selectedAlpha": 0.7,
+          "neutralOKLCH": {
+            "bg": "oklch(0.9577609 0.0057668 264.53212)",
+            "panel": "oklch(0.9334593 0.0087138 264.52058)",
+            "text": "oklch(0.4354696 0.0430079 279.32502)",
+            "muted": "oklch(0.5158013 0.0348730 278.99612)",
+            "border": "oklch(0.7076685 0.0236698 274.60084)",
+            "focus": "oklch(0.5650663 0.1147395 260.88390)"
+          },
+          "ribbonComposites": [
+            {
+              "series": "blue",
+              "kind": "context",
+              "alpha": 0.16,
+              "hex": "#d5ddeb",
+              "contrast": 1.2081352708262447,
+              "solidOutlineContrast": 4.064505634158012
+            },
+            {
+              "series": "blue",
+              "kind": "selected",
+              "alpha": 0.7,
+              "hex": "#7e9acb",
+              "contrast": 2.5191906465662304,
+              "solidOutlineContrast": 4.064505634158012
+            },
+            {
+              "series": "teal",
+              "kind": "context",
+              "alpha": 0.16,
+              "hex": "#c9e0e3",
+              "contrast": 1.2173588952163634,
+              "solidOutlineContrast": 3.825199229942322
+            },
+            {
+              "series": "teal",
+              "kind": "selected",
+              "alpha": 0.7,
+              "hex": "#48a8a6",
+              "contrast": 2.500363562052003,
+              "solidOutlineContrast": 3.825199229942322
+            },
+            {
+              "series": "gold",
+              "kind": "context",
+              "alpha": 0.16,
+              "hex": "#e2dcd0",
+              "contrast": 1.2073180887007886,
+              "solidOutlineContrast": 4.087265938367059
+            },
+            {
+              "series": "gold",
+              "kind": "selected",
+              "alpha": 0.7,
+              "hex": "#b49451",
+              "contrast": 2.5455330289285154,
+              "solidOutlineContrast": 4.087265938367059
+            },
+            {
+              "series": "violet",
+              "kind": "context",
+              "alpha": 0.16,
+              "hex": "#dedaea",
+              "contrast": 1.2119873978085172,
+              "solidOutlineContrast": 4.229221483509479
+            },
+            {
+              "series": "violet",
+              "kind": "selected",
+              "alpha": 0.7,
+              "hex": "#a38ec4",
+              "contrast": 2.570844130374183,
+              "solidOutlineContrast": 4.229221483509479
+            },
+            {
+              "series": "rose",
+              "kind": "context",
+              "alpha": 0.16,
+              "hex": "#e2d9e5",
+              "contrast": 1.214544702626738,
+              "solidOutlineContrast": 4.3045037343332275
+            },
+            {
+              "series": "rose",
+              "kind": "selected",
+              "alpha": 0.7,
+              "hex": "#b887ad",
+              "contrast": 2.6129951505365545,
+              "solidOutlineContrast": 4.3045037343332275
+            },
+            {
+              "series": "green",
+              "kind": "context",
+              "alpha": 0.16,
+              "hex": "#d5e0d9",
+              "contrast": 1.198622021607339,
+              "solidOutlineContrast": 3.8662756755636605
+            },
+            {
+              "series": "green",
+              "kind": "selected",
+              "alpha": 0.7,
+              "hex": "#7da67a",
+              "contrast": 2.44111111220552,
+              "solidOutlineContrast": 3.8662756755636605
+            }
+          ],
+          "overlapComposites": [
+            {
+              "under": "blue",
+              "over": "blue",
+              "hex": "#bfcce3",
+              "contrast": 1.4327502124070457,
+              "selectedOutlineAgainstOverlap": 2.836855719134441
+            },
+            {
+              "under": "blue",
+              "over": "teal",
+              "hex": "#b3cfdb",
+              "contrast": 1.4435380184699786,
+              "selectedOutlineAgainstOverlap": 2.6498777178010813
+            },
+            {
+              "under": "blue",
+              "over": "gold",
+              "hex": "#cccbc7",
+              "contrast": 1.4357495336292405,
+              "selectedOutlineAgainstOverlap": 2.8467820066327323
+            },
+            {
+              "under": "blue",
+              "over": "violet",
+              "hex": "#c8cae1",
+              "contrast": 1.429474435983483,
+              "selectedOutlineAgainstOverlap": 2.9585849015899055
+            },
+            {
+              "under": "blue",
+              "over": "rose",
+              "hex": "#cdc8dc",
+              "contrast": 1.4406003289034106,
+              "selectedOutlineAgainstOverlap": 2.9879930248314115
+            },
+            {
+              "under": "blue",
+              "over": "green",
+              "hex": "#bfcfd0",
+              "contrast": 1.4229155196779886,
+              "selectedOutlineAgainstOverlap": 2.7171505420354216
+            },
+            {
+              "under": "teal",
+              "over": "blue",
+              "hex": "#b5cfdc",
+              "contrast": 1.436994959707357,
+              "selectedOutlineAgainstOverlap": 2.8284759154518855
+            },
+            {
+              "under": "teal",
+              "over": "teal",
+              "hex": "#a9d2d4",
+              "contrast": 1.4444847115275161,
+              "selectedOutlineAgainstOverlap": 2.6481410287113696
+            },
+            {
+              "under": "teal",
+              "over": "gold",
+              "hex": "#c2cdc0",
+              "contrast": 1.4522545885526208,
+              "selectedOutlineAgainstOverlap": 2.814427973293996
+            },
+            {
+              "under": "teal",
+              "over": "violet",
+              "hex": "#beccdb",
+              "contrast": 1.4452562278341288,
+              "selectedOutlineAgainstOverlap": 2.926277985909405
+            },
+            {
+              "under": "teal",
+              "over": "rose",
+              "hex": "#c2cad5",
+              "contrast": 1.4619323691396962,
+              "selectedOutlineAgainstOverlap": 2.9443932053206407
+            },
+            {
+              "under": "teal",
+              "over": "green",
+              "hex": "#b5d2ca",
+              "contrast": 1.4245498932086789,
+              "selectedOutlineAgainstOverlap": 2.7140331791785823
+            },
+            {
+              "under": "gold",
+              "over": "blue",
+              "hex": "#cacccc",
+              "contrast": 1.4262849192492026,
+              "selectedOutlineAgainstOverlap": 2.84971507396823
+            },
+            {
+              "under": "gold",
+              "over": "teal",
+              "hex": "#becfc4",
+              "contrast": 1.4382947038828184,
+              "selectedOutlineAgainstOverlap": 2.659537867737272
+            },
+            {
+              "under": "gold",
+              "over": "gold",
+              "hex": "#d7cab0",
+              "contrast": 1.4324281065555464,
+              "selectedOutlineAgainstOverlap": 2.853382951410667
+            },
+            {
+              "under": "gold",
+              "over": "violet",
+              "hex": "#d3c9cb",
+              "contrast": 1.4299740117152182,
+              "selectedOutlineAgainstOverlap": 2.9575512903459225
+            },
+            {
+              "under": "gold",
+              "over": "rose",
+              "hex": "#d7c7c5",
+              "contrast": 1.4435085702606298,
+              "selectedOutlineAgainstOverlap": 2.981973105678227
+            },
+            {
+              "under": "gold",
+              "over": "green",
+              "hex": "#caceba",
+              "contrast": 1.4231715398747091,
+              "selectedOutlineAgainstOverlap": 2.716661742620312
+            },
+            {
+              "under": "violet",
+              "over": "blue",
+              "hex": "#c7cae2",
+              "contrast": 1.4312923361006629,
+              "selectedOutlineAgainstOverlap": 2.839745264919909
+            },
+            {
+              "under": "violet",
+              "over": "teal",
+              "hex": "#bacdda",
+              "contrast": 1.447140444450507,
+              "selectedOutlineAgainstOverlap": 2.6432812686641394
+            },
+            {
+              "under": "violet",
+              "over": "gold",
+              "hex": "#d3c8c6",
+              "contrast": 1.4455419720516804,
+              "selectedOutlineAgainstOverlap": 2.8274972414435933
+            },
+            {
+              "under": "violet",
+              "over": "violet",
+              "hex": "#cfc7e1",
+              "contrast": 1.438513752314839,
+              "selectedOutlineAgainstOverlap": 2.939993779485157
+            },
+            {
+              "under": "violet",
+              "over": "rose",
+              "hex": "#d4c5db",
+              "contrast": 1.4498446404801726,
+              "selectedOutlineAgainstOverlap": 2.9689413707855095
+            },
+            {
+              "under": "violet",
+              "over": "green",
+              "hex": "#c7cdd0",
+              "contrast": 1.4206786980280834,
+              "selectedOutlineAgainstOverlap": 2.721428624874921
+            },
+            {
+              "under": "rose",
+              "over": "blue",
+              "hex": "#cac9de",
+              "contrast": 1.437282781222945,
+              "selectedOutlineAgainstOverlap": 2.827909502053336
+            },
+            {
+              "under": "rose",
+              "over": "teal",
+              "hex": "#beccd5",
+              "contrast": 1.452272106236144,
+              "selectedOutlineAgainstOverlap": 2.6339411281926344
+            },
+            {
+              "under": "rose",
+              "over": "gold",
+              "hex": "#d7c8c2",
+              "contrast": 1.4362402036133897,
+              "selectedOutlineAgainstOverlap": 2.8458094461386336
+            },
+            {
+              "under": "rose",
+              "over": "violet",
+              "hex": "#d3c6dc",
+              "contrast": 1.441733006929268,
+              "selectedOutlineAgainstOverlap": 2.933429049056214
+            },
+            {
+              "under": "rose",
+              "over": "rose",
+              "hex": "#d7c5d7",
+              "contrast": 1.4443902272827787,
+              "selectedOutlineAgainstOverlap": 2.9801529067604973
+            },
+            {
+              "under": "rose",
+              "over": "green",
+              "hex": "#cacccb",
+              "contrast": 1.4273337149167937,
+              "selectedOutlineAgainstOverlap": 2.708739823881372
+            },
+            {
+              "under": "green",
+              "over": "blue",
+              "hex": "#bfcfd4",
+              "contrast": 1.418580834961831,
+              "selectedOutlineAgainstOverlap": 2.8651914180606943
+            },
+            {
+              "under": "green",
+              "over": "teal",
+              "hex": "#b3d2cb",
+              "contrast": 1.4287699775142282,
+              "selectedOutlineAgainstOverlap": 2.6772673629364734
+            },
+            {
+              "under": "green",
+              "over": "gold",
+              "hex": "#cccdb8",
+              "contrast": 1.4293854975166953,
+              "selectedOutlineAgainstOverlap": 2.8594567004268345
+            },
+            {
+              "under": "green",
+              "over": "violet",
+              "hex": "#c8ccd2",
+              "contrast": 1.425927604101494,
+              "selectedOutlineAgainstOverlap": 2.96594404326326
+            },
+            {
+              "under": "green",
+              "over": "rose",
+              "hex": "#cdcacd",
+              "contrast": 1.4367445491966886,
+              "selectedOutlineAgainstOverlap": 2.99601187750457
+            },
+            {
+              "under": "green",
+              "over": "green",
+              "hex": "#bfd2c1",
+              "contrast": 1.4064549826927486,
+              "selectedOutlineAgainstOverlap": 2.7489508893924404
+            }
+          ]
+        },
+        "dark": {
+          "bg": "#1e1e2e",
+          "panel": "#181825",
+          "text": "#cdd6f4",
+          "muted": "#a6adc8",
+          "border": "#6c7086",
+          "series": [
+            {
+              "hex": "#91baff",
+              "oklch": "oklch(0.7850000 0.1089143 260.98581)",
+              "L": 0.785,
+              "C": 0.10891429468096903,
+              "h": 260.98581329038916,
+              "requestedC": 0.115,
+              "gamutMapped": true,
+              "name": "blue",
+              "sourceFamily": "Catppuccin"
+            },
+            {
+              "hex": "#49d0cc",
+              "oklch": "oklch(0.7850000 0.1150000 191.92713)",
+              "L": 0.785,
+              "C": 0.115,
+              "h": 191.92713070138228,
+              "requestedC": 0.115,
+              "gamutMapped": false,
+              "name": "teal",
+              "sourceFamily": "Catppuccin"
+            },
+            {
+              "hex": "#e2af5f",
+              "oklch": "oklch(0.7850000 0.1150000 77.15237)",
+              "L": 0.785,
+              "C": 0.115,
+              "h": 77.15236879012807,
+              "requestedC": 0.115,
+              "gamutMapped": false,
+              "name": "gold",
+              "sourceFamily": "Catppuccin"
+            },
+            {
+              "hex": "#c5a8f7",
+              "oklch": "oklch(0.7850000 0.1150000 300.89248)",
+              "L": 0.785,
+              "C": 0.115,
+              "h": 300.89247636338666,
+              "requestedC": 0.115,
+              "gamutMapped": false,
+              "name": "violet",
+              "sourceFamily": "Catppuccin"
+            },
+            {
+              "hex": "#e99cd3",
+              "oklch": "oklch(0.7850000 0.1150000 337.36871)",
+              "L": 0.785,
+              "C": 0.115,
+              "h": 337.36871370534425,
+              "requestedC": 0.115,
+              "gamutMapped": false,
+              "name": "rose",
+              "sourceFamily": "Catppuccin"
+            },
+            {
+              "hex": "#8ecc86",
+              "oklch": "oklch(0.7850000 0.1150000 141.58006)",
+              "L": 0.785,
+              "C": 0.115,
+              "h": 141.5800633034826,
+              "requestedC": 0.115,
+              "gamutMapped": false,
+              "name": "green",
+              "sourceFamily": "Catppuccin"
+            }
+          ],
+          "focus": "#91baff",
+          "ribbonAlpha": 0.2,
+          "selectedAlpha": 0.62,
+          "neutralOKLCH": {
+            "bg": "oklch(0.2428669 0.0303574 283.91097)",
+            "panel": "oklch(0.2155216 0.0254169 284.06470)",
+            "text": "oklch(0.8786601 0.0425520 272.27674)",
+            "muted": "oklch(0.7509605 0.0395650 273.93199)",
+            "border": "oklch(0.5496912 0.0344939 277.09508)",
+            "focus": "oklch(0.7858451 0.1085473 260.54396)"
+          },
+          "ribbonComposites": [
+            {
+              "series": "blue",
+              "kind": "context",
+              "alpha": 0.2,
+              "hex": "#353d58",
+              "contrast": 1.5306502883371527,
+              "solidOutlineContrast": 8.334744168509388
+            },
+            {
+              "series": "blue",
+              "kind": "selected",
+              "alpha": 0.62,
+              "hex": "#657fb0",
+              "contrast": 4.073845252461033,
+              "solidOutlineContrast": 8.334744168509388
+            },
+            {
+              "series": "teal",
+              "kind": "context",
+              "alpha": 0.2,
+              "hex": "#27424e",
+              "contrast": 1.5429703893172937,
+              "solidOutlineContrast": 8.72999064714196
+            },
+            {
+              "series": "teal",
+              "kind": "selected",
+              "alpha": 0.62,
+              "hex": "#398c90",
+              "contrast": 4.161258824197209,
+              "solidOutlineContrast": 8.72999064714196
+            },
+            {
+              "series": "gold",
+              "kind": "context",
+              "alpha": 0.2,
+              "hex": "#453b38",
+              "contrast": 1.5118603985132637,
+              "solidOutlineContrast": 8.224988749984988
+            },
+            {
+              "series": "gold",
+              "kind": "selected",
+              "alpha": 0.62,
+              "hex": "#98784c",
+              "contrast": 4.00356994115272,
+              "solidOutlineContrast": 8.224988749984988
+            },
+            {
+              "series": "violet",
+              "kind": "context",
+              "alpha": 0.2,
+              "hex": "#3f3a56",
+              "contrast": 1.5237472255446252,
+              "solidOutlineContrast": 8.05879576611531
+            },
+            {
+              "series": "violet",
+              "kind": "selected",
+              "alpha": 0.62,
+              "hex": "#8674ab",
+              "contrast": 3.9831452288131306,
+              "solidOutlineContrast": 8.05879576611531
+            },
+            {
+              "series": "rose",
+              "kind": "context",
+              "alpha": 0.2,
+              "hex": "#47374f",
+              "contrast": 1.5052717721109226,
+              "solidOutlineContrast": 7.935821414177686
+            },
+            {
+              "series": "rose",
+              "kind": "selected",
+              "alpha": 0.62,
+              "hex": "#9c6c94",
+              "contrast": 3.8943850505146953,
+              "solidOutlineContrast": 7.935821414177686
+            },
+            {
+              "series": "green",
+              "kind": "context",
+              "alpha": 0.2,
+              "hex": "#344140",
+              "contrast": 1.543439096662953,
+              "solidOutlineContrast": 8.69404675210792
+            },
+            {
+              "series": "green",
+              "kind": "selected",
+              "alpha": 0.62,
+              "hex": "#638a65",
+              "contrast": 4.1814954510233155,
+              "solidOutlineContrast": 8.69404675210792
+            }
+          ],
+          "overlapComposites": [
+            {
+              "under": "blue",
+              "over": "blue",
+              "hex": "#475679",
+              "contrast": 2.2455552261205387,
+              "selectedOutlineAgainstOverlap": 3.711662964935688
+            },
+            {
+              "under": "blue",
+              "over": "teal",
+              "hex": "#395a6f",
+              "contrast": 2.2384067803319105,
+              "selectedOutlineAgainstOverlap": 3.9000912273181547
+            },
+            {
+              "under": "blue",
+              "over": "gold",
+              "hex": "#585459",
+              "contrast": 2.2082185465693147,
+              "selectedOutlineAgainstOverlap": 3.724716814267917
+            },
+            {
+              "under": "blue",
+              "over": "violet",
+              "hex": "#525278",
+              "contrast": 2.215695719382621,
+              "selectedOutlineAgainstOverlap": 3.637140107108571
+            },
+            {
+              "under": "blue",
+              "over": "rose",
+              "hex": "#595071",
+              "contrast": 2.195222186143196,
+              "selectedOutlineAgainstOverlap": 3.6150424609730254
+            },
+            {
+              "under": "blue",
+              "over": "green",
+              "hex": "#475a61",
+              "contrast": 2.267321375783089,
+              "selectedOutlineAgainstOverlap": 3.834501295214563
+            },
+            {
+              "under": "teal",
+              "over": "blue",
+              "hex": "#3c5a71",
+              "contrast": 2.259550576884505,
+              "selectedOutlineAgainstOverlap": 3.688673426377307
+            },
+            {
+              "under": "teal",
+              "over": "teal",
+              "hex": "#2e5e67",
+              "contrast": 2.2752148871685125,
+              "selectedOutlineAgainstOverlap": 3.836996099303115
+            },
+            {
+              "under": "teal",
+              "over": "gold",
+              "hex": "#4c5851",
+              "contrast": 2.204064168586506,
+              "selectedOutlineAgainstOverlap": 3.731737427254569
+            },
+            {
+              "under": "teal",
+              "over": "violet",
+              "hex": "#475670",
+              "contrast": 2.212654586545376,
+              "selectedOutlineAgainstOverlap": 3.642139091713149
+            },
+            {
+              "under": "teal",
+              "over": "rose",
+              "hex": "#4e5469",
+              "contrast": 2.1837952446203075,
+              "selectedOutlineAgainstOverlap": 3.6339585562003878
+            },
+            {
+              "under": "teal",
+              "over": "green",
+              "hex": "#3c5e59",
+              "contrast": 2.294242707033192,
+              "selectedOutlineAgainstOverlap": 3.789506108248964
+            },
+            {
+              "under": "gold",
+              "over": "blue",
+              "hex": "#545460",
+              "contrast": 2.197810599189829,
+              "selectedOutlineAgainstOverlap": 3.7922941001293724
+            },
+            {
+              "under": "gold",
+              "over": "teal",
+              "hex": "#465956",
+              "contrast": 2.205424111052107,
+              "selectedOutlineAgainstOverlap": 3.9584180672520537
+            },
+            {
+              "under": "gold",
+              "over": "gold",
+              "hex": "#645240",
+              "contrast": 2.204696717605335,
+              "selectedOutlineAgainstOverlap": 3.7306667553434223
+            },
+            {
+              "under": "gold",
+              "over": "violet",
+              "hex": "#5f515e",
+              "contrast": 2.206544654683179,
+              "selectedOutlineAgainstOverlap": 3.6522241908910793
+            },
+            {
+              "under": "gold",
+              "over": "rose",
+              "hex": "#664e57",
+              "contrast": 2.180891259949775,
+              "selectedOutlineAgainstOverlap": 3.6387973852306805
+            },
+            {
+              "under": "gold",
+              "over": "green",
+              "hex": "#545848",
+              "contrast": 2.2387600159419856,
+              "selectedOutlineAgainstOverlap": 3.8834205945248637
+            },
+            {
+              "under": "violet",
+              "over": "blue",
+              "hex": "#4f5478",
+              "contrast": 2.242951584339103,
+              "selectedOutlineAgainstOverlap": 3.715971502329714
+            },
+            {
+              "under": "violet",
+              "over": "teal",
+              "hex": "#41586e",
+              "contrast": 2.222656644595243,
+              "selectedOutlineAgainstOverlap": 3.9277279594085637
+            },
+            {
+              "under": "violet",
+              "over": "gold",
+              "hex": "#605158",
+              "contrast": 2.1987857496173335,
+              "selectedOutlineAgainstOverlap": 3.740695859710946
+            },
+            {
+              "under": "violet",
+              "over": "violet",
+              "hex": "#5a5076",
+              "contrast": 2.221084146557639,
+              "selectedOutlineAgainstOverlap": 3.6283162790591623
+            },
+            {
+              "under": "violet",
+              "over": "rose",
+              "hex": "#614e6f",
+              "contrast": 2.2084121386848596,
+              "selectedOutlineAgainstOverlap": 3.593451274409123
+            },
+            {
+              "under": "violet",
+              "over": "green",
+              "hex": "#4f5760",
+              "contrast": 2.2373601653223623,
+              "selectedOutlineAgainstOverlap": 3.885850336865753
+            },
+            {
+              "under": "rose",
+              "over": "blue",
+              "hex": "#565172",
+              "contrast": 2.199092158699427,
+              "selectedOutlineAgainstOverlap": 3.7900840742566553
+            },
+            {
+              "under": "rose",
+              "over": "teal",
+              "hex": "#475668",
+              "contrast": 2.186040941837929,
+              "selectedOutlineAgainstOverlap": 3.993516534874301
+            },
+            {
+              "under": "rose",
+              "over": "gold",
+              "hex": "#664f52",
+              "contrast": 2.190929379789958,
+              "selectedOutlineAgainstOverlap": 3.754109477857068
+            },
+            {
+              "under": "rose",
+              "over": "violet",
+              "hex": "#604e71",
+              "contrast": 2.2068448713635576,
+              "selectedOutlineAgainstOverlap": 3.6517273464427826
+            },
+            {
+              "under": "rose",
+              "over": "rose",
+              "hex": "#674b69",
+              "contrast": 2.1768237754465334,
+              "selectedOutlineAgainstOverlap": 3.645596627384229
+            },
+            {
+              "under": "rose",
+              "over": "green",
+              "hex": "#55555a",
+              "contrast": 2.2128822070798426,
+              "selectedOutlineAgainstOverlap": 3.928833954329965
+            },
+            {
+              "under": "green",
+              "over": "blue",
+              "hex": "#475966",
+              "contrast": 2.256179255892725,
+              "selectedOutlineAgainstOverlap": 3.694185267744382
+            },
+            {
+              "under": "green",
+              "over": "teal",
+              "hex": "#385e5c",
+              "contrast": 2.2835476656040785,
+              "selectedOutlineAgainstOverlap": 3.8229947106589393
+            },
+            {
+              "under": "green",
+              "over": "gold",
+              "hex": "#575746",
+              "contrast": 2.231368190974635,
+              "selectedOutlineAgainstOverlap": 3.6860742136834044
+            },
+            {
+              "under": "green",
+              "over": "violet",
+              "hex": "#515665",
+              "contrast": 2.240688891724461,
+              "selectedOutlineAgainstOverlap": 3.5965705885716077
+            },
+            {
+              "under": "green",
+              "over": "rose",
+              "hex": "#58535d",
+              "contrast": 2.1949270578740228,
+              "selectedOutlineAgainstOverlap": 3.6155285369092027
+            },
+            {
+              "under": "green",
+              "over": "green",
+              "hex": "#465d4e",
+              "contrast": 2.2932299267075003,
+              "selectedOutlineAgainstOverlap": 3.7911797028527254
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

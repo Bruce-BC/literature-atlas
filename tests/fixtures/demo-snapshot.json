@@ -1,0 +1,3474 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "id": "demo-server",
+    "serverId": "demo-server",
+    "epoch": "demo-epoch",
+    "alias": "synthetic-demo",
+    "zoteroApi": "3",
+    "schema": 44
+  },
+  "status": {
+    "phase": "idle",
+    "stale": false,
+    "lastSuccess": "2026-01-01T00:00:00Z",
+    "message": null,
+    "observedLag": 0,
+    "watcherInterval": 30
+  },
+  "papers": [
+    {
+      "id": "zotero:demo-server:0:D01",
+      "key": "D01",
+      "libraryID": 0,
+      "title": "<img src=x onerror=alert(1)> & 한국어 hostile fixture",
+      "year": 2026,
+      "authors": [
+        "Synthetic Author 1"
+      ],
+      "doi": "10.0000/demo-hostile",
+      "abstract": "Public synthetic abstract for paper 1; no real corpus content.",
+      "keywords": [
+        "Optimal transport",
+        "KL divergence",
+        "Wasserstein distance",
+        "Sinkhorn iteration"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:analysis",
+        "field:demo-server:demo-epoch:analysis-numerical",
+        "field:demo-server:demo-epoch:analysis-transport"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:optimal-transport",
+        "concept:demo-server:demo-epoch:kl-divergence",
+        "concept:demo-server:demo-epoch:wasserstein",
+        "concept:demo-server:demo-epoch:sinkhorn"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:analysis",
+      "attachmentIds": [
+        "attachment:demo-server:0:ATT01"
+      ],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D02",
+      "key": "D02",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 02",
+      "year": 2025,
+      "authors": [
+        "Synthetic Author 2"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 2; no real corpus content.",
+      "keywords": [
+        "Optimal transport",
+        "Graph Laplacian"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:analysis",
+        "field:demo-server:demo-epoch:analysis-numerical",
+        "field:demo-server:demo-epoch:analysis-transport"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:optimal-transport",
+        "concept:demo-server:demo-epoch:graph-laplacian"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:analysis",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D03",
+      "key": "D03",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 03",
+      "year": 2024,
+      "authors": [
+        "Synthetic Author 3"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 3; no real corpus content.",
+      "keywords": [
+        "Optimal transport"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:analysis",
+        "field:demo-server:demo-epoch:analysis-numerical",
+        "field:demo-server:demo-epoch:analysis-transport"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:optimal-transport"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:analysis",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D04",
+      "key": "D04",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 04",
+      "year": 2023,
+      "authors": [
+        "Synthetic Author 4"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 4; no real corpus content.",
+      "keywords": [
+        "Optimal transport",
+        "KL divergence"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:analysis",
+        "field:demo-server:demo-epoch:analysis-numerical",
+        "field:demo-server:demo-epoch:analysis-transport"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:optimal-transport",
+        "concept:demo-server:demo-epoch:kl-divergence"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:analysis",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D05",
+      "key": "D05",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 05",
+      "year": 2022,
+      "authors": [
+        "Synthetic Author 5"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 5; no real corpus content.",
+      "keywords": [
+        "Optimal transport"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:analysis",
+        "field:demo-server:demo-epoch:analysis-transport"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:optimal-transport"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:analysis",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D06",
+      "key": "D06",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 06",
+      "year": 2021,
+      "authors": [
+        "Synthetic Author 6"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 6; no real corpus content.",
+      "keywords": [
+        "Optimal transport",
+        "Wasserstein distance",
+        "Graph Laplacian"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:analysis",
+        "field:demo-server:demo-epoch:analysis-transport"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:optimal-transport",
+        "concept:demo-server:demo-epoch:wasserstein",
+        "concept:demo-server:demo-epoch:graph-laplacian"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:analysis",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D07",
+      "key": "D07",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 07",
+      "year": 2020,
+      "authors": [
+        "Synthetic Author 7"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 7; no real corpus content.",
+      "keywords": [
+        "Optimal transport",
+        "KL divergence",
+        "Sinkhorn iteration"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:analysis",
+        "field:demo-server:demo-epoch:analysis-transport"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:optimal-transport",
+        "concept:demo-server:demo-epoch:kl-divergence",
+        "concept:demo-server:demo-epoch:sinkhorn"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:analysis",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D08",
+      "key": "D08",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 08",
+      "year": 2019,
+      "authors": [
+        "Synthetic Author 8"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 8; no real corpus content.",
+      "keywords": [
+        "Optimal transport"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:analysis",
+        "field:demo-server:demo-epoch:analysis-transport"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:optimal-transport"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:analysis",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D09",
+      "key": "D09",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 09",
+      "year": 2026,
+      "authors": [
+        "Synthetic Author 9"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 9; no real corpus content.",
+      "keywords": [
+        "Optimal transport"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:analysis",
+        "field:demo-server:demo-epoch:analysis-numerical"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:optimal-transport"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:analysis",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D10",
+      "key": "D10",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 10",
+      "year": 2025,
+      "authors": [
+        "Synthetic Author 10"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 10; no real corpus content.",
+      "keywords": [
+        "KL divergence",
+        "Graph Laplacian"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:analysis",
+        "field:demo-server:demo-epoch:analysis-numerical"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:kl-divergence",
+        "concept:demo-server:demo-epoch:graph-laplacian"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:analysis",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D11",
+      "key": "D11",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 11",
+      "year": 2024,
+      "authors": [
+        "Synthetic Author 11"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 11; no real corpus content.",
+      "keywords": [
+        "Wasserstein distance"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:analysis",
+        "field:demo-server:demo-epoch:analysis-numerical"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:wasserstein"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:analysis",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D12",
+      "key": "D12",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 12",
+      "year": 2023,
+      "authors": [
+        "Synthetic Author 12"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 12; no real corpus content.",
+      "keywords": [],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:analysis",
+        "field:demo-server:demo-epoch:analysis-numerical"
+      ],
+      "conceptIds": [],
+      "displayFieldId": "field:demo-server:demo-epoch:analysis",
+      "attachmentIds": [],
+      "textStatus": "scan"
+    },
+    {
+      "id": "zotero:demo-server:0:D13",
+      "key": "D13",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 13",
+      "year": 2022,
+      "authors": [
+        "Synthetic Author 13"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 13; no real corpus content.",
+      "keywords": [
+        "Optimal transport",
+        "KL divergence",
+        "Graph Laplacian",
+        "Sinkhorn iteration"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:topology",
+        "field:demo-server:demo-epoch:topology-graph"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:optimal-transport",
+        "concept:demo-server:demo-epoch:kl-divergence",
+        "concept:demo-server:demo-epoch:graph-laplacian",
+        "concept:demo-server:demo-epoch:sinkhorn"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:topology",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D14",
+      "key": "D14",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 14",
+      "year": 2021,
+      "authors": [
+        "Synthetic Author 14"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 14; no real corpus content.",
+      "keywords": [
+        "Graph Laplacian"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:topology",
+        "field:demo-server:demo-epoch:topology-graph"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:graph-laplacian"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:topology",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D15",
+      "key": "D15",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 15",
+      "year": 2020,
+      "authors": [
+        "Synthetic Author 15"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 15; no real corpus content.",
+      "keywords": [
+        "Graph Laplacian"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:topology",
+        "field:demo-server:demo-epoch:topology-graph"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:graph-laplacian"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:topology",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D16",
+      "key": "D16",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 16",
+      "year": 2019,
+      "authors": [
+        "Synthetic Author 16"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 16; no real corpus content.",
+      "keywords": [
+        "KL divergence",
+        "Wasserstein distance",
+        "Graph Laplacian"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:topology",
+        "field:demo-server:demo-epoch:topology-graph"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:kl-divergence",
+        "concept:demo-server:demo-epoch:wasserstein",
+        "concept:demo-server:demo-epoch:graph-laplacian"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:topology",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D17",
+      "key": "D17",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 17",
+      "year": 2026,
+      "authors": [
+        "Synthetic Author 17"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 17; no real corpus content.",
+      "keywords": [
+        "Optimal transport",
+        "Graph Laplacian"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:topology",
+        "field:demo-server:demo-epoch:topology-graph"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:optimal-transport",
+        "concept:demo-server:demo-epoch:graph-laplacian"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:topology",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D18",
+      "key": "D18",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 18",
+      "year": 2025,
+      "authors": [
+        "Synthetic Author 18"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 18; no real corpus content.",
+      "keywords": [
+        "Graph Laplacian"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:topology",
+        "field:demo-server:demo-epoch:topology-graph",
+        "field:demo-server:demo-epoch:topology-dynamics"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:graph-laplacian"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:topology",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D19",
+      "key": "D19",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 19",
+      "year": 2024,
+      "authors": [
+        "Synthetic Author 19"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 19; no real corpus content.",
+      "keywords": [
+        "KL divergence",
+        "Graph Laplacian",
+        "Sinkhorn iteration"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:topology",
+        "field:demo-server:demo-epoch:topology-graph",
+        "field:demo-server:demo-epoch:topology-dynamics"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:kl-divergence",
+        "concept:demo-server:demo-epoch:graph-laplacian",
+        "concept:demo-server:demo-epoch:sinkhorn"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:topology",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D20",
+      "key": "D20",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 20",
+      "year": 2023,
+      "authors": [
+        "Synthetic Author 20"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 20; no real corpus content.",
+      "keywords": [
+        "Graph Laplacian"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:topology",
+        "field:demo-server:demo-epoch:topology-graph",
+        "field:demo-server:demo-epoch:topology-dynamics"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:graph-laplacian"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:topology",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D21",
+      "key": "D21",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 21",
+      "year": 2022,
+      "authors": [
+        "Synthetic Author 21"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 21; no real corpus content.",
+      "keywords": [
+        "Optimal transport",
+        "Wasserstein distance",
+        "Graph Laplacian"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:topology",
+        "field:demo-server:demo-epoch:topology-graph",
+        "field:demo-server:demo-epoch:topology-dynamics"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:optimal-transport",
+        "concept:demo-server:demo-epoch:wasserstein",
+        "concept:demo-server:demo-epoch:graph-laplacian"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:topology",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D22",
+      "key": "D22",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 22",
+      "year": 2021,
+      "authors": [
+        "Synthetic Author 22"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 22; no real corpus content.",
+      "keywords": [
+        "KL divergence",
+        "Graph Laplacian"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:topology",
+        "field:demo-server:demo-epoch:topology-graph",
+        "field:demo-server:demo-epoch:topology-dynamics"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:kl-divergence",
+        "concept:demo-server:demo-epoch:graph-laplacian"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:topology",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D23",
+      "key": "D23",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 23",
+      "year": 2020,
+      "authors": [
+        "Synthetic Author 23"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 23; no real corpus content.",
+      "keywords": [
+        "KL divergence",
+        "Bayesian inference"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:probability",
+        "field:demo-server:demo-epoch:probability-information"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:kl-divergence",
+        "concept:demo-server:demo-epoch:bayesian-inference"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:probability",
+      "attachmentIds": [],
+      "textStatus": "scan"
+    },
+    {
+      "id": "zotero:demo-server:0:D24",
+      "key": "D24",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 24",
+      "year": 2019,
+      "authors": [
+        "Synthetic Author 24"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 24; no real corpus content.",
+      "keywords": [
+        "KL divergence"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:probability",
+        "field:demo-server:demo-epoch:probability-information"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:kl-divergence"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:probability",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D25",
+      "key": "D25",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 25",
+      "year": 2026,
+      "authors": [
+        "Synthetic Author 25"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 25; no real corpus content.",
+      "keywords": [
+        "Optimal transport",
+        "KL divergence",
+        "Sinkhorn iteration",
+        "Information geometry"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:probability",
+        "field:demo-server:demo-epoch:probability-information"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:optimal-transport",
+        "concept:demo-server:demo-epoch:kl-divergence",
+        "concept:demo-server:demo-epoch:sinkhorn",
+        "concept:demo-server:demo-epoch:information-geometry"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:probability",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D26",
+      "key": "D26",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 26",
+      "year": 2025,
+      "authors": [
+        "Synthetic Author 26"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 26; no real corpus content.",
+      "keywords": [
+        "KL divergence",
+        "Wasserstein distance",
+        "Graph Laplacian"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:probability",
+        "field:demo-server:demo-epoch:probability-information"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:kl-divergence",
+        "concept:demo-server:demo-epoch:wasserstein",
+        "concept:demo-server:demo-epoch:graph-laplacian"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:probability",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D27",
+      "key": "D27",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 27",
+      "year": 2024,
+      "authors": [
+        "Synthetic Author 27"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 27; no real corpus content.",
+      "keywords": [
+        "KL divergence",
+        "Bayesian inference"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:probability",
+        "field:demo-server:demo-epoch:probability-information"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:kl-divergence",
+        "concept:demo-server:demo-epoch:bayesian-inference"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:probability",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D28",
+      "key": "D28",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 28",
+      "year": 2023,
+      "authors": [
+        "Synthetic Author 28"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 28; no real corpus content.",
+      "keywords": [
+        "KL divergence"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:probability",
+        "field:demo-server:demo-epoch:probability-statistics"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:kl-divergence"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:probability",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D29",
+      "key": "D29",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 29",
+      "year": 2022,
+      "authors": [
+        "Synthetic Author 29"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 29; no real corpus content.",
+      "keywords": [
+        "Optimal transport",
+        "KL divergence"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:probability",
+        "field:demo-server:demo-epoch:probability-statistics"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:optimal-transport",
+        "concept:demo-server:demo-epoch:kl-divergence"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:probability",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D30",
+      "key": "D30",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 30",
+      "year": 2021,
+      "authors": [
+        "Synthetic Author 30"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 30; no real corpus content.",
+      "keywords": [
+        "KL divergence",
+        "Graph Laplacian",
+        "Information geometry"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:probability",
+        "field:demo-server:demo-epoch:probability-statistics"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:kl-divergence",
+        "concept:demo-server:demo-epoch:graph-laplacian",
+        "concept:demo-server:demo-epoch:information-geometry"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:probability",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D31",
+      "key": "D31",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 31",
+      "year": 2020,
+      "authors": [
+        "Synthetic Author 31"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 31; no real corpus content.",
+      "keywords": [
+        "KL divergence",
+        "Wasserstein distance",
+        "Sinkhorn iteration",
+        "Bayesian inference"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:probability",
+        "field:demo-server:demo-epoch:probability-statistics"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:kl-divergence",
+        "concept:demo-server:demo-epoch:wasserstein",
+        "concept:demo-server:demo-epoch:sinkhorn",
+        "concept:demo-server:demo-epoch:bayesian-inference"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:probability",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D32",
+      "key": "D32",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 32",
+      "year": 2019,
+      "authors": [
+        "Synthetic Author 32"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 32; no real corpus content.",
+      "keywords": [
+        "KL divergence"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:probability",
+        "field:demo-server:demo-epoch:probability-statistics"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:kl-divergence"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:probability",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D33",
+      "key": "D33",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 33",
+      "year": 2026,
+      "authors": [
+        "Synthetic Author 33"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 33; no real corpus content.",
+      "keywords": [
+        "Optimal transport",
+        "Phage therapy"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:biology",
+        "field:demo-server:demo-epoch:biology-phage"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:optimal-transport",
+        "concept:demo-server:demo-epoch:phage-therapy"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:biology",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D34",
+      "key": "D34",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 34",
+      "year": 2025,
+      "authors": [
+        "Synthetic Author 34"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 34; no real corpus content.",
+      "keywords": [
+        "KL divergence",
+        "Graph Laplacian",
+        "Phage therapy"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:biology",
+        "field:demo-server:demo-epoch:biology-phage"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:kl-divergence",
+        "concept:demo-server:demo-epoch:graph-laplacian",
+        "concept:demo-server:demo-epoch:phage-therapy"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:biology",
+      "attachmentIds": [],
+      "textStatus": "scan"
+    },
+    {
+      "id": "zotero:demo-server:0:D35",
+      "key": "D35",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 35",
+      "year": 2024,
+      "authors": [
+        "Synthetic Author 35"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 35; no real corpus content.",
+      "keywords": [
+        "Phage therapy",
+        "Host range",
+        "Bayesian inference",
+        "Information geometry"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:biology",
+        "field:demo-server:demo-epoch:biology-phage"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:phage-therapy",
+        "concept:demo-server:demo-epoch:host-range",
+        "concept:demo-server:demo-epoch:bayesian-inference",
+        "concept:demo-server:demo-epoch:information-geometry"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:biology",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D36",
+      "key": "D36",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 36",
+      "year": 2023,
+      "authors": [
+        "Synthetic Author 36"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 36; no real corpus content.",
+      "keywords": [
+        "Wasserstein distance",
+        "Phage therapy"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:biology",
+        "field:demo-server:demo-epoch:biology-phage"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:wasserstein",
+        "concept:demo-server:demo-epoch:phage-therapy"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:biology",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D37",
+      "key": "D37",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 37",
+      "year": 2022,
+      "authors": [
+        "Synthetic Author 37"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 37; no real corpus content.",
+      "keywords": [
+        "Optimal transport",
+        "KL divergence",
+        "Sinkhorn iteration",
+        "Phage therapy"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:biology",
+        "field:demo-server:demo-epoch:biology-phage"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:optimal-transport",
+        "concept:demo-server:demo-epoch:kl-divergence",
+        "concept:demo-server:demo-epoch:sinkhorn",
+        "concept:demo-server:demo-epoch:phage-therapy"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:biology",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D38",
+      "key": "D38",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 38",
+      "year": 2021,
+      "authors": [
+        "Synthetic Author 38"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 38; no real corpus content.",
+      "keywords": [
+        "Graph Laplacian",
+        "Phage therapy"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:biology",
+        "field:demo-server:demo-epoch:biology-phage"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:graph-laplacian",
+        "concept:demo-server:demo-epoch:phage-therapy"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:biology",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D39",
+      "key": "D39",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 39",
+      "year": 2020,
+      "authors": [
+        "Synthetic Author 39"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 39; no real corpus content.",
+      "keywords": [
+        "Phage therapy",
+        "Host range",
+        "Bayesian inference"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:biology",
+        "field:demo-server:demo-epoch:biology-phage"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:phage-therapy",
+        "concept:demo-server:demo-epoch:host-range",
+        "concept:demo-server:demo-epoch:bayesian-inference"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:biology",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D40",
+      "key": "D40",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 40",
+      "year": 2019,
+      "authors": [
+        "Synthetic Author 40"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 40; no real corpus content.",
+      "keywords": [
+        "KL divergence",
+        "Phage therapy",
+        "Resistance evolution",
+        "Information geometry"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:biology",
+        "field:demo-server:demo-epoch:biology-phage",
+        "field:demo-server:demo-epoch:biology-microbiome"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:kl-divergence",
+        "concept:demo-server:demo-epoch:phage-therapy",
+        "concept:demo-server:demo-epoch:resistance",
+        "concept:demo-server:demo-epoch:information-geometry"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:biology",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D41",
+      "key": "D41",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 41",
+      "year": 2026,
+      "authors": [
+        "Synthetic Author 41"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 41; no real corpus content.",
+      "keywords": [
+        "Optimal transport",
+        "Wasserstein distance",
+        "Phage therapy",
+        "Host range"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:biology",
+        "field:demo-server:demo-epoch:biology-phage",
+        "field:demo-server:demo-epoch:biology-microbiome"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:optimal-transport",
+        "concept:demo-server:demo-epoch:wasserstein",
+        "concept:demo-server:demo-epoch:phage-therapy",
+        "concept:demo-server:demo-epoch:host-range"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:biology",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D42",
+      "key": "D42",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 42",
+      "year": 2025,
+      "authors": [
+        "Synthetic Author 42"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 42; no real corpus content.",
+      "keywords": [
+        "Graph Laplacian",
+        "Phage therapy",
+        "Microbiome"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:biology",
+        "field:demo-server:demo-epoch:biology-phage",
+        "field:demo-server:demo-epoch:biology-microbiome"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:graph-laplacian",
+        "concept:demo-server:demo-epoch:phage-therapy",
+        "concept:demo-server:demo-epoch:microbiome"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:biology",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D43",
+      "key": "D43",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 43",
+      "year": 2024,
+      "authors": [
+        "Synthetic Author 43"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 43; no real corpus content.",
+      "keywords": [
+        "KL divergence",
+        "Sinkhorn iteration",
+        "Phage therapy",
+        "Host range"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:biology",
+        "field:demo-server:demo-epoch:biology-phage",
+        "field:demo-server:demo-epoch:biology-microbiome"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:kl-divergence",
+        "concept:demo-server:demo-epoch:sinkhorn",
+        "concept:demo-server:demo-epoch:phage-therapy",
+        "concept:demo-server:demo-epoch:host-range"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:biology",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D44",
+      "key": "D44",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 44",
+      "year": 2023,
+      "authors": [
+        "Synthetic Author 44"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 44; no real corpus content.",
+      "keywords": [
+        "Phage therapy",
+        "Microbiome"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:biology",
+        "field:demo-server:demo-epoch:biology-microbiome"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:phage-therapy",
+        "concept:demo-server:demo-epoch:microbiome"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:biology",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D45",
+      "key": "D45",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 45",
+      "year": 2022,
+      "authors": [
+        "Synthetic Author 45"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 45; no real corpus content.",
+      "keywords": [
+        "Optimal transport",
+        "Phage therapy",
+        "Host range",
+        "Information geometry"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:biology",
+        "field:demo-server:demo-epoch:biology-microbiome"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:optimal-transport",
+        "concept:demo-server:demo-epoch:phage-therapy",
+        "concept:demo-server:demo-epoch:host-range",
+        "concept:demo-server:demo-epoch:information-geometry"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:biology",
+      "attachmentIds": [],
+      "textStatus": "scan"
+    },
+    {
+      "id": "zotero:demo-server:0:D46",
+      "key": "D46",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 46",
+      "year": 2021,
+      "authors": [
+        "Synthetic Author 46"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 46; no real corpus content.",
+      "keywords": [
+        "KL divergence",
+        "Wasserstein distance",
+        "Graph Laplacian",
+        "Phage therapy"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:biology",
+        "field:demo-server:demo-epoch:biology-microbiome"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:kl-divergence",
+        "concept:demo-server:demo-epoch:wasserstein",
+        "concept:demo-server:demo-epoch:graph-laplacian",
+        "concept:demo-server:demo-epoch:phage-therapy"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:biology",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D47",
+      "key": "D47",
+      "libraryID": 0,
+      "title": "Synthetic literature atlas paper 47",
+      "year": 2020,
+      "authors": [
+        "Synthetic Author 47"
+      ],
+      "doi": null,
+      "abstract": "Public synthetic abstract for paper 47; no real corpus content.",
+      "keywords": [
+        "Phage therapy",
+        "Host range",
+        "Bayesian inference",
+        "Microbiome"
+      ],
+      "fieldIds": [
+        "field:demo-server:demo-epoch:biology",
+        "field:demo-server:demo-epoch:biology-microbiome"
+      ],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:phage-therapy",
+        "concept:demo-server:demo-epoch:host-range",
+        "concept:demo-server:demo-epoch:bayesian-inference",
+        "concept:demo-server:demo-epoch:microbiome"
+      ],
+      "displayFieldId": "field:demo-server:demo-epoch:biology",
+      "attachmentIds": [],
+      "textStatus": "indexed"
+    },
+    {
+      "id": "zotero:demo-server:0:D48",
+      "key": "D48",
+      "libraryID": 0,
+      "title": "Unknown source record with no DOI",
+      "year": 2019,
+      "authors": [
+        "Synthetic Author 48"
+      ],
+      "doi": null,
+      "abstract": null,
+      "keywords": [
+        "Unknown source"
+      ],
+      "fieldIds": [],
+      "conceptIds": [
+        "concept:demo-server:demo-epoch:unknown-source"
+      ],
+      "displayFieldId": null,
+      "attachmentIds": [],
+      "textStatus": "missing"
+    }
+  ],
+  "fields": [
+    {
+      "id": "field:demo-server:demo-epoch:analysis",
+      "label": {
+        "en": "Analysis",
+        "ko": "해석학"
+      },
+      "parentIds": [],
+      "aliases": [],
+      "source": "user"
+    },
+    {
+      "id": "field:demo-server:demo-epoch:topology",
+      "label": {
+        "en": "Topology",
+        "ko": "위상수학"
+      },
+      "parentIds": [],
+      "aliases": [],
+      "source": "user"
+    },
+    {
+      "id": "field:demo-server:demo-epoch:probability",
+      "label": {
+        "en": "Probability",
+        "ko": "확률론"
+      },
+      "parentIds": [],
+      "aliases": [],
+      "source": "user"
+    },
+    {
+      "id": "field:demo-server:demo-epoch:biology",
+      "label": {
+        "en": "Biological sciences",
+        "ko": "생명과학"
+      },
+      "parentIds": [],
+      "aliases": [],
+      "source": "user"
+    },
+    {
+      "id": "field:demo-server:demo-epoch:analysis-numerical",
+      "label": {
+        "en": "Numerical analysis",
+        "ko": "수치해석"
+      },
+      "parentIds": [
+        "field:demo-server:demo-epoch:analysis"
+      ],
+      "aliases": [],
+      "source": "user"
+    },
+    {
+      "id": "field:demo-server:demo-epoch:analysis-transport",
+      "label": {
+        "en": "Optimal transport",
+        "ko": "최적수송"
+      },
+      "parentIds": [
+        "field:demo-server:demo-epoch:analysis"
+      ],
+      "aliases": [],
+      "source": "user"
+    },
+    {
+      "id": "field:demo-server:demo-epoch:topology-graph",
+      "label": {
+        "en": "Graph topology",
+        "ko": "그래프 위상"
+      },
+      "parentIds": [
+        "field:demo-server:demo-epoch:topology"
+      ],
+      "aliases": [],
+      "source": "user"
+    },
+    {
+      "id": "field:demo-server:demo-epoch:topology-dynamics",
+      "label": {
+        "en": "Dynamical systems",
+        "ko": "동역학계"
+      },
+      "parentIds": [
+        "field:demo-server:demo-epoch:topology"
+      ],
+      "aliases": [],
+      "source": "user"
+    },
+    {
+      "id": "field:demo-server:demo-epoch:probability-information",
+      "label": {
+        "en": "Information theory",
+        "ko": "정보이론"
+      },
+      "parentIds": [
+        "field:demo-server:demo-epoch:probability"
+      ],
+      "aliases": [],
+      "source": "user"
+    },
+    {
+      "id": "field:demo-server:demo-epoch:probability-statistics",
+      "label": {
+        "en": "Statistical inference",
+        "ko": "통계적 추론"
+      },
+      "parentIds": [
+        "field:demo-server:demo-epoch:probability"
+      ],
+      "aliases": [],
+      "source": "user"
+    },
+    {
+      "id": "field:demo-server:demo-epoch:biology-phage",
+      "label": {
+        "en": "Phage biology",
+        "ko": "파지생물학"
+      },
+      "parentIds": [
+        "field:demo-server:demo-epoch:biology"
+      ],
+      "aliases": [],
+      "source": "user"
+    },
+    {
+      "id": "field:demo-server:demo-epoch:biology-microbiome",
+      "label": {
+        "en": "Microbiome",
+        "ko": "마이크로바이옴"
+      },
+      "parentIds": [
+        "field:demo-server:demo-epoch:biology"
+      ],
+      "aliases": [],
+      "source": "user"
+    }
+  ],
+  "concepts": [
+    {
+      "id": "concept:demo-server:demo-epoch:optimal-transport",
+      "label": {
+        "en": "Optimal transport",
+        "ko": "최적수송"
+      },
+      "aliases": [],
+      "source": "user"
+    },
+    {
+      "id": "concept:demo-server:demo-epoch:kl-divergence",
+      "label": {
+        "en": "KL divergence",
+        "ko": "KL 발산"
+      },
+      "aliases": [],
+      "source": "user"
+    },
+    {
+      "id": "concept:demo-server:demo-epoch:wasserstein",
+      "label": {
+        "en": "Wasserstein distance",
+        "ko": "Wasserstein 거리"
+      },
+      "aliases": [],
+      "source": "extracted"
+    },
+    {
+      "id": "concept:demo-server:demo-epoch:graph-laplacian",
+      "label": {
+        "en": "Graph Laplacian",
+        "ko": "그래프 라플라시안"
+      },
+      "aliases": [],
+      "source": "extracted"
+    },
+    {
+      "id": "concept:demo-server:demo-epoch:sinkhorn",
+      "label": {
+        "en": "Sinkhorn iteration",
+        "ko": "Sinkhorn 반복"
+      },
+      "aliases": [],
+      "source": "extracted"
+    },
+    {
+      "id": "concept:demo-server:demo-epoch:phage-therapy",
+      "label": {
+        "en": "Phage therapy",
+        "ko": "파지치료"
+      },
+      "aliases": [],
+      "source": "user"
+    },
+    {
+      "id": "concept:demo-server:demo-epoch:host-range",
+      "label": {
+        "en": "Host range",
+        "ko": "숙주범위"
+      },
+      "aliases": [],
+      "source": "extracted"
+    },
+    {
+      "id": "concept:demo-server:demo-epoch:resistance",
+      "label": {
+        "en": "Resistance evolution",
+        "ko": "내성 진화"
+      },
+      "aliases": [],
+      "source": "extracted"
+    },
+    {
+      "id": "concept:demo-server:demo-epoch:bayesian-inference",
+      "label": {
+        "en": "Bayesian inference",
+        "ko": "베이지안 추론"
+      },
+      "aliases": [],
+      "source": "extracted"
+    },
+    {
+      "id": "concept:demo-server:demo-epoch:information-geometry",
+      "label": {
+        "en": "Information geometry",
+        "ko": "정보기하"
+      },
+      "aliases": [],
+      "source": "extracted"
+    },
+    {
+      "id": "concept:demo-server:demo-epoch:microbiome",
+      "label": {
+        "en": "Microbiome",
+        "ko": "마이크로바이옴"
+      },
+      "aliases": [],
+      "source": "user"
+    },
+    {
+      "id": "concept:demo-server:demo-epoch:unknown-source",
+      "label": {
+        "en": "Unknown source",
+        "ko": "출처 미상"
+      },
+      "aliases": [],
+      "source": "extracted"
+    }
+  ],
+  "memberships": [
+    {
+      "id": "membership:demo-server:demo-epoch:D01:analysis",
+      "paperId": "zotero:demo-server:0:D01",
+      "fieldId": "field:demo-server:demo-epoch:analysis",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D01:analysis-numerical",
+      "paperId": "zotero:demo-server:0:D01",
+      "fieldId": "field:demo-server:demo-epoch:analysis-numerical",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D01:analysis-transport",
+      "paperId": "zotero:demo-server:0:D01",
+      "fieldId": "field:demo-server:demo-epoch:analysis-transport",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D02:analysis",
+      "paperId": "zotero:demo-server:0:D02",
+      "fieldId": "field:demo-server:demo-epoch:analysis",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D02:analysis-numerical",
+      "paperId": "zotero:demo-server:0:D02",
+      "fieldId": "field:demo-server:demo-epoch:analysis-numerical",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D02:analysis-transport",
+      "paperId": "zotero:demo-server:0:D02",
+      "fieldId": "field:demo-server:demo-epoch:analysis-transport",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D03:analysis",
+      "paperId": "zotero:demo-server:0:D03",
+      "fieldId": "field:demo-server:demo-epoch:analysis",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D03:analysis-numerical",
+      "paperId": "zotero:demo-server:0:D03",
+      "fieldId": "field:demo-server:demo-epoch:analysis-numerical",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D03:analysis-transport",
+      "paperId": "zotero:demo-server:0:D03",
+      "fieldId": "field:demo-server:demo-epoch:analysis-transport",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D04:analysis",
+      "paperId": "zotero:demo-server:0:D04",
+      "fieldId": "field:demo-server:demo-epoch:analysis",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D04:analysis-numerical",
+      "paperId": "zotero:demo-server:0:D04",
+      "fieldId": "field:demo-server:demo-epoch:analysis-numerical",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D04:analysis-transport",
+      "paperId": "zotero:demo-server:0:D04",
+      "fieldId": "field:demo-server:demo-epoch:analysis-transport",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D05:analysis",
+      "paperId": "zotero:demo-server:0:D05",
+      "fieldId": "field:demo-server:demo-epoch:analysis",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D05:analysis-transport",
+      "paperId": "zotero:demo-server:0:D05",
+      "fieldId": "field:demo-server:demo-epoch:analysis-transport",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D06:analysis",
+      "paperId": "zotero:demo-server:0:D06",
+      "fieldId": "field:demo-server:demo-epoch:analysis",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D06:analysis-transport",
+      "paperId": "zotero:demo-server:0:D06",
+      "fieldId": "field:demo-server:demo-epoch:analysis-transport",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D07:analysis",
+      "paperId": "zotero:demo-server:0:D07",
+      "fieldId": "field:demo-server:demo-epoch:analysis",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D07:analysis-transport",
+      "paperId": "zotero:demo-server:0:D07",
+      "fieldId": "field:demo-server:demo-epoch:analysis-transport",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D08:analysis",
+      "paperId": "zotero:demo-server:0:D08",
+      "fieldId": "field:demo-server:demo-epoch:analysis",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D08:analysis-transport",
+      "paperId": "zotero:demo-server:0:D08",
+      "fieldId": "field:demo-server:demo-epoch:analysis-transport",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D09:analysis",
+      "paperId": "zotero:demo-server:0:D09",
+      "fieldId": "field:demo-server:demo-epoch:analysis",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D09:analysis-numerical",
+      "paperId": "zotero:demo-server:0:D09",
+      "fieldId": "field:demo-server:demo-epoch:analysis-numerical",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D10:analysis",
+      "paperId": "zotero:demo-server:0:D10",
+      "fieldId": "field:demo-server:demo-epoch:analysis",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D10:analysis-numerical",
+      "paperId": "zotero:demo-server:0:D10",
+      "fieldId": "field:demo-server:demo-epoch:analysis-numerical",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D11:analysis",
+      "paperId": "zotero:demo-server:0:D11",
+      "fieldId": "field:demo-server:demo-epoch:analysis",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D11:analysis-numerical",
+      "paperId": "zotero:demo-server:0:D11",
+      "fieldId": "field:demo-server:demo-epoch:analysis-numerical",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D12:analysis",
+      "paperId": "zotero:demo-server:0:D12",
+      "fieldId": "field:demo-server:demo-epoch:analysis",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D12:analysis-numerical",
+      "paperId": "zotero:demo-server:0:D12",
+      "fieldId": "field:demo-server:demo-epoch:analysis-numerical",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D13:topology",
+      "paperId": "zotero:demo-server:0:D13",
+      "fieldId": "field:demo-server:demo-epoch:topology",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D13:topology-graph",
+      "paperId": "zotero:demo-server:0:D13",
+      "fieldId": "field:demo-server:demo-epoch:topology-graph",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D14:topology",
+      "paperId": "zotero:demo-server:0:D14",
+      "fieldId": "field:demo-server:demo-epoch:topology",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D14:topology-graph",
+      "paperId": "zotero:demo-server:0:D14",
+      "fieldId": "field:demo-server:demo-epoch:topology-graph",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D15:topology",
+      "paperId": "zotero:demo-server:0:D15",
+      "fieldId": "field:demo-server:demo-epoch:topology",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D15:topology-graph",
+      "paperId": "zotero:demo-server:0:D15",
+      "fieldId": "field:demo-server:demo-epoch:topology-graph",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D16:topology",
+      "paperId": "zotero:demo-server:0:D16",
+      "fieldId": "field:demo-server:demo-epoch:topology",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D16:topology-graph",
+      "paperId": "zotero:demo-server:0:D16",
+      "fieldId": "field:demo-server:demo-epoch:topology-graph",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D17:topology",
+      "paperId": "zotero:demo-server:0:D17",
+      "fieldId": "field:demo-server:demo-epoch:topology",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D17:topology-graph",
+      "paperId": "zotero:demo-server:0:D17",
+      "fieldId": "field:demo-server:demo-epoch:topology-graph",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D18:topology",
+      "paperId": "zotero:demo-server:0:D18",
+      "fieldId": "field:demo-server:demo-epoch:topology",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D18:topology-graph",
+      "paperId": "zotero:demo-server:0:D18",
+      "fieldId": "field:demo-server:demo-epoch:topology-graph",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D18:topology-dynamics",
+      "paperId": "zotero:demo-server:0:D18",
+      "fieldId": "field:demo-server:demo-epoch:topology-dynamics",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D19:topology",
+      "paperId": "zotero:demo-server:0:D19",
+      "fieldId": "field:demo-server:demo-epoch:topology",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D19:topology-graph",
+      "paperId": "zotero:demo-server:0:D19",
+      "fieldId": "field:demo-server:demo-epoch:topology-graph",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D19:topology-dynamics",
+      "paperId": "zotero:demo-server:0:D19",
+      "fieldId": "field:demo-server:demo-epoch:topology-dynamics",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D20:topology",
+      "paperId": "zotero:demo-server:0:D20",
+      "fieldId": "field:demo-server:demo-epoch:topology",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D20:topology-graph",
+      "paperId": "zotero:demo-server:0:D20",
+      "fieldId": "field:demo-server:demo-epoch:topology-graph",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D20:topology-dynamics",
+      "paperId": "zotero:demo-server:0:D20",
+      "fieldId": "field:demo-server:demo-epoch:topology-dynamics",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D21:topology",
+      "paperId": "zotero:demo-server:0:D21",
+      "fieldId": "field:demo-server:demo-epoch:topology",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D21:topology-graph",
+      "paperId": "zotero:demo-server:0:D21",
+      "fieldId": "field:demo-server:demo-epoch:topology-graph",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D21:topology-dynamics",
+      "paperId": "zotero:demo-server:0:D21",
+      "fieldId": "field:demo-server:demo-epoch:topology-dynamics",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D22:topology",
+      "paperId": "zotero:demo-server:0:D22",
+      "fieldId": "field:demo-server:demo-epoch:topology",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D22:topology-graph",
+      "paperId": "zotero:demo-server:0:D22",
+      "fieldId": "field:demo-server:demo-epoch:topology-graph",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D22:topology-dynamics",
+      "paperId": "zotero:demo-server:0:D22",
+      "fieldId": "field:demo-server:demo-epoch:topology-dynamics",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D23:probability",
+      "paperId": "zotero:demo-server:0:D23",
+      "fieldId": "field:demo-server:demo-epoch:probability",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D23:probability-information",
+      "paperId": "zotero:demo-server:0:D23",
+      "fieldId": "field:demo-server:demo-epoch:probability-information",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D24:probability",
+      "paperId": "zotero:demo-server:0:D24",
+      "fieldId": "field:demo-server:demo-epoch:probability",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D24:probability-information",
+      "paperId": "zotero:demo-server:0:D24",
+      "fieldId": "field:demo-server:demo-epoch:probability-information",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D25:probability",
+      "paperId": "zotero:demo-server:0:D25",
+      "fieldId": "field:demo-server:demo-epoch:probability",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D25:probability-information",
+      "paperId": "zotero:demo-server:0:D25",
+      "fieldId": "field:demo-server:demo-epoch:probability-information",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D26:probability",
+      "paperId": "zotero:demo-server:0:D26",
+      "fieldId": "field:demo-server:demo-epoch:probability",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D26:probability-information",
+      "paperId": "zotero:demo-server:0:D26",
+      "fieldId": "field:demo-server:demo-epoch:probability-information",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D27:probability",
+      "paperId": "zotero:demo-server:0:D27",
+      "fieldId": "field:demo-server:demo-epoch:probability",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D27:probability-information",
+      "paperId": "zotero:demo-server:0:D27",
+      "fieldId": "field:demo-server:demo-epoch:probability-information",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D28:probability",
+      "paperId": "zotero:demo-server:0:D28",
+      "fieldId": "field:demo-server:demo-epoch:probability",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D28:probability-statistics",
+      "paperId": "zotero:demo-server:0:D28",
+      "fieldId": "field:demo-server:demo-epoch:probability-statistics",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D29:probability",
+      "paperId": "zotero:demo-server:0:D29",
+      "fieldId": "field:demo-server:demo-epoch:probability",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D29:probability-statistics",
+      "paperId": "zotero:demo-server:0:D29",
+      "fieldId": "field:demo-server:demo-epoch:probability-statistics",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D30:probability",
+      "paperId": "zotero:demo-server:0:D30",
+      "fieldId": "field:demo-server:demo-epoch:probability",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D30:probability-statistics",
+      "paperId": "zotero:demo-server:0:D30",
+      "fieldId": "field:demo-server:demo-epoch:probability-statistics",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D31:probability",
+      "paperId": "zotero:demo-server:0:D31",
+      "fieldId": "field:demo-server:demo-epoch:probability",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D31:probability-statistics",
+      "paperId": "zotero:demo-server:0:D31",
+      "fieldId": "field:demo-server:demo-epoch:probability-statistics",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D32:probability",
+      "paperId": "zotero:demo-server:0:D32",
+      "fieldId": "field:demo-server:demo-epoch:probability",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D32:probability-statistics",
+      "paperId": "zotero:demo-server:0:D32",
+      "fieldId": "field:demo-server:demo-epoch:probability-statistics",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D33:biology",
+      "paperId": "zotero:demo-server:0:D33",
+      "fieldId": "field:demo-server:demo-epoch:biology",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D33:biology-phage",
+      "paperId": "zotero:demo-server:0:D33",
+      "fieldId": "field:demo-server:demo-epoch:biology-phage",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D34:biology",
+      "paperId": "zotero:demo-server:0:D34",
+      "fieldId": "field:demo-server:demo-epoch:biology",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D34:biology-phage",
+      "paperId": "zotero:demo-server:0:D34",
+      "fieldId": "field:demo-server:demo-epoch:biology-phage",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D35:biology",
+      "paperId": "zotero:demo-server:0:D35",
+      "fieldId": "field:demo-server:demo-epoch:biology",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D35:biology-phage",
+      "paperId": "zotero:demo-server:0:D35",
+      "fieldId": "field:demo-server:demo-epoch:biology-phage",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D36:biology",
+      "paperId": "zotero:demo-server:0:D36",
+      "fieldId": "field:demo-server:demo-epoch:biology",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D36:biology-phage",
+      "paperId": "zotero:demo-server:0:D36",
+      "fieldId": "field:demo-server:demo-epoch:biology-phage",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D37:biology",
+      "paperId": "zotero:demo-server:0:D37",
+      "fieldId": "field:demo-server:demo-epoch:biology",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D37:biology-phage",
+      "paperId": "zotero:demo-server:0:D37",
+      "fieldId": "field:demo-server:demo-epoch:biology-phage",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D38:biology",
+      "paperId": "zotero:demo-server:0:D38",
+      "fieldId": "field:demo-server:demo-epoch:biology",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D38:biology-phage",
+      "paperId": "zotero:demo-server:0:D38",
+      "fieldId": "field:demo-server:demo-epoch:biology-phage",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D39:biology",
+      "paperId": "zotero:demo-server:0:D39",
+      "fieldId": "field:demo-server:demo-epoch:biology",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D39:biology-phage",
+      "paperId": "zotero:demo-server:0:D39",
+      "fieldId": "field:demo-server:demo-epoch:biology-phage",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D40:biology",
+      "paperId": "zotero:demo-server:0:D40",
+      "fieldId": "field:demo-server:demo-epoch:biology",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D40:biology-phage",
+      "paperId": "zotero:demo-server:0:D40",
+      "fieldId": "field:demo-server:demo-epoch:biology-phage",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D40:biology-microbiome",
+      "paperId": "zotero:demo-server:0:D40",
+      "fieldId": "field:demo-server:demo-epoch:biology-microbiome",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D41:biology",
+      "paperId": "zotero:demo-server:0:D41",
+      "fieldId": "field:demo-server:demo-epoch:biology",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D41:biology-phage",
+      "paperId": "zotero:demo-server:0:D41",
+      "fieldId": "field:demo-server:demo-epoch:biology-phage",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D41:biology-microbiome",
+      "paperId": "zotero:demo-server:0:D41",
+      "fieldId": "field:demo-server:demo-epoch:biology-microbiome",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D42:biology",
+      "paperId": "zotero:demo-server:0:D42",
+      "fieldId": "field:demo-server:demo-epoch:biology",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D42:biology-phage",
+      "paperId": "zotero:demo-server:0:D42",
+      "fieldId": "field:demo-server:demo-epoch:biology-phage",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D42:biology-microbiome",
+      "paperId": "zotero:demo-server:0:D42",
+      "fieldId": "field:demo-server:demo-epoch:biology-microbiome",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D43:biology",
+      "paperId": "zotero:demo-server:0:D43",
+      "fieldId": "field:demo-server:demo-epoch:biology",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D43:biology-phage",
+      "paperId": "zotero:demo-server:0:D43",
+      "fieldId": "field:demo-server:demo-epoch:biology-phage",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D43:biology-microbiome",
+      "paperId": "zotero:demo-server:0:D43",
+      "fieldId": "field:demo-server:demo-epoch:biology-microbiome",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D44:biology",
+      "paperId": "zotero:demo-server:0:D44",
+      "fieldId": "field:demo-server:demo-epoch:biology",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D44:biology-microbiome",
+      "paperId": "zotero:demo-server:0:D44",
+      "fieldId": "field:demo-server:demo-epoch:biology-microbiome",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D45:biology",
+      "paperId": "zotero:demo-server:0:D45",
+      "fieldId": "field:demo-server:demo-epoch:biology",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D45:biology-microbiome",
+      "paperId": "zotero:demo-server:0:D45",
+      "fieldId": "field:demo-server:demo-epoch:biology-microbiome",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D46:biology",
+      "paperId": "zotero:demo-server:0:D46",
+      "fieldId": "field:demo-server:demo-epoch:biology",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D46:biology-microbiome",
+      "paperId": "zotero:demo-server:0:D46",
+      "fieldId": "field:demo-server:demo-epoch:biology-microbiome",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D47:biology",
+      "paperId": "zotero:demo-server:0:D47",
+      "fieldId": "field:demo-server:demo-epoch:biology",
+      "method": "user",
+      "score": 1,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": null
+    },
+    {
+      "id": "membership:demo-server:demo-epoch:D47:biology-microbiome",
+      "paperId": "zotero:demo-server:0:D47",
+      "fieldId": "field:demo-server:demo-epoch:biology-microbiome",
+      "method": "model",
+      "score": 0.82,
+      "weight": 1,
+      "evidenceSpan": null,
+      "modelVersion": "demo-model-v1"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:demo-server:demo-epoch:zotero_demo-server_0_D01:zotero_demo-server_0_D02:citation",
+      "source": "zotero:demo-server:0:D01",
+      "target": "zotero:demo-server:0:D02",
+      "type": "citation",
+      "directed": true,
+      "score": 0.72,
+      "provenance": {
+        "provider": "pdf-reference",
+        "method": "verified-reference",
+        "modelRevision": null
+      },
+      "evidenceTier": "fulltext",
+      "verified": true
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:zotero_demo-server_0_D02:zotero_demo-server_0_D03:citation",
+      "source": "zotero:demo-server:0:D02",
+      "target": "zotero:demo-server:0:D03",
+      "type": "citation",
+      "directed": true,
+      "score": 0.72,
+      "provenance": {
+        "provider": "pdf-reference",
+        "method": "verified-reference",
+        "modelRevision": null
+      },
+      "evidenceTier": "fulltext",
+      "verified": true
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:zotero_demo-server_0_D03:zotero_demo-server_0_D04:citation",
+      "source": "zotero:demo-server:0:D03",
+      "target": "zotero:demo-server:0:D04",
+      "type": "citation",
+      "directed": true,
+      "score": 0.72,
+      "provenance": {
+        "provider": "pdf-reference",
+        "method": "verified-reference",
+        "modelRevision": null
+      },
+      "evidenceTier": "fulltext",
+      "verified": true
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:zotero_demo-server_0_D04:zotero_demo-server_0_D05:citation",
+      "source": "zotero:demo-server:0:D04",
+      "target": "zotero:demo-server:0:D05",
+      "type": "citation",
+      "directed": true,
+      "score": 0.72,
+      "provenance": {
+        "provider": "pdf-reference",
+        "method": "verified-reference",
+        "modelRevision": null
+      },
+      "evidenceTier": "fulltext",
+      "verified": true
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:zotero_demo-server_0_D05:zotero_demo-server_0_D06:citation",
+      "source": "zotero:demo-server:0:D05",
+      "target": "zotero:demo-server:0:D06",
+      "type": "citation",
+      "directed": true,
+      "score": 0.72,
+      "provenance": {
+        "provider": "pdf-reference",
+        "method": "verified-reference",
+        "modelRevision": null
+      },
+      "evidenceTier": "fulltext",
+      "verified": true
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:zotero_demo-server_0_D06:zotero_demo-server_0_D07:citation",
+      "source": "zotero:demo-server:0:D06",
+      "target": "zotero:demo-server:0:D07",
+      "type": "citation",
+      "directed": true,
+      "score": 0.72,
+      "provenance": {
+        "provider": "pdf-reference",
+        "method": "verified-reference",
+        "modelRevision": null
+      },
+      "evidenceTier": "fulltext",
+      "verified": true
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:zotero_demo-server_0_D07:zotero_demo-server_0_D08:citation",
+      "source": "zotero:demo-server:0:D07",
+      "target": "zotero:demo-server:0:D08",
+      "type": "citation",
+      "directed": true,
+      "score": 0.72,
+      "provenance": {
+        "provider": "pdf-reference",
+        "method": "verified-reference",
+        "modelRevision": null
+      },
+      "evidenceTier": "fulltext",
+      "verified": true
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:zotero_demo-server_0_D08:zotero_demo-server_0_D09:citation",
+      "source": "zotero:demo-server:0:D08",
+      "target": "zotero:demo-server:0:D09",
+      "type": "citation",
+      "directed": true,
+      "score": 0.72,
+      "provenance": {
+        "provider": "pdf-reference",
+        "method": "verified-reference",
+        "modelRevision": null
+      },
+      "evidenceTier": "fulltext",
+      "verified": true
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:zotero_demo-server_0_D09:zotero_demo-server_0_D10:citation",
+      "source": "zotero:demo-server:0:D09",
+      "target": "zotero:demo-server:0:D10",
+      "type": "citation",
+      "directed": true,
+      "score": 0.72,
+      "provenance": {
+        "provider": "pdf-reference",
+        "method": "verified-reference",
+        "modelRevision": null
+      },
+      "evidenceTier": "fulltext",
+      "verified": true
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:zotero_demo-server_0_D10:zotero_demo-server_0_D11:citation",
+      "source": "zotero:demo-server:0:D10",
+      "target": "zotero:demo-server:0:D11",
+      "type": "citation",
+      "directed": true,
+      "score": 0.72,
+      "provenance": {
+        "provider": "pdf-reference",
+        "method": "verified-reference",
+        "modelRevision": null
+      },
+      "evidenceTier": "fulltext",
+      "verified": true
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:zotero_demo-server_0_D11:zotero_demo-server_0_D12:citation",
+      "source": "zotero:demo-server:0:D11",
+      "target": "zotero:demo-server:0:D12",
+      "type": "citation",
+      "directed": true,
+      "score": 0.72,
+      "provenance": {
+        "provider": "pdf-reference",
+        "method": "verified-reference",
+        "modelRevision": null
+      },
+      "evidenceTier": "fulltext",
+      "verified": true
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:zotero_demo-server_0_D12:zotero_demo-server_0_D13:citation",
+      "source": "zotero:demo-server:0:D12",
+      "target": "zotero:demo-server:0:D13",
+      "type": "citation",
+      "directed": true,
+      "score": 0.72,
+      "provenance": {
+        "provider": "pdf-reference",
+        "method": "verified-reference",
+        "modelRevision": null
+      },
+      "evidenceTier": "fulltext",
+      "verified": true
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:zotero_demo-server_0_D13:zotero_demo-server_0_D14:citation",
+      "source": "zotero:demo-server:0:D13",
+      "target": "zotero:demo-server:0:D14",
+      "type": "citation",
+      "directed": true,
+      "score": 0.72,
+      "provenance": {
+        "provider": "pdf-reference",
+        "method": "verified-reference",
+        "modelRevision": null
+      },
+      "evidenceTier": "fulltext",
+      "verified": true
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:zotero_demo-server_0_D14:zotero_demo-server_0_D15:citation",
+      "source": "zotero:demo-server:0:D14",
+      "target": "zotero:demo-server:0:D15",
+      "type": "citation",
+      "directed": true,
+      "score": 0.72,
+      "provenance": {
+        "provider": "pdf-reference",
+        "method": "verified-reference",
+        "modelRevision": null
+      },
+      "evidenceTier": "fulltext",
+      "verified": true
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:zotero_demo-server_0_D15:zotero_demo-server_0_D16:citation",
+      "source": "zotero:demo-server:0:D15",
+      "target": "zotero:demo-server:0:D16",
+      "type": "citation",
+      "directed": true,
+      "score": 0.72,
+      "provenance": {
+        "provider": "pdf-reference",
+        "method": "verified-reference",
+        "modelRevision": null
+      },
+      "evidenceTier": "fulltext",
+      "verified": true
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:zotero_demo-server_0_D17:zotero_demo-server_0_D18:semantic",
+      "source": "zotero:demo-server:0:D17",
+      "target": "zotero:demo-server:0:D18",
+      "type": "semantic",
+      "directed": false,
+      "score": 0.86,
+      "provenance": {
+        "provider": "embedding",
+        "method": "cosine-similarity",
+        "modelRevision": "demo-e5-revision"
+      },
+      "evidenceTier": "metadata",
+      "verified": false
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:zotero_demo-server_0_D19:zotero_demo-server_0_D20:semantic",
+      "source": "zotero:demo-server:0:D19",
+      "target": "zotero:demo-server:0:D20",
+      "type": "semantic",
+      "directed": false,
+      "score": 0.86,
+      "provenance": {
+        "provider": "embedding",
+        "method": "cosine-similarity",
+        "modelRevision": "demo-e5-revision"
+      },
+      "evidenceTier": "metadata",
+      "verified": false
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:zotero_demo-server_0_D21:zotero_demo-server_0_D25:semantic",
+      "source": "zotero:demo-server:0:D21",
+      "target": "zotero:demo-server:0:D25",
+      "type": "semantic",
+      "directed": false,
+      "score": 0.86,
+      "provenance": {
+        "provider": "embedding",
+        "method": "cosine-similarity",
+        "modelRevision": "demo-e5-revision"
+      },
+      "evidenceTier": "metadata",
+      "verified": false
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:zotero_demo-server_0_D23:zotero_demo-server_0_D24:semantic",
+      "source": "zotero:demo-server:0:D23",
+      "target": "zotero:demo-server:0:D24",
+      "type": "semantic",
+      "directed": false,
+      "score": 0.86,
+      "provenance": {
+        "provider": "embedding",
+        "method": "cosine-similarity",
+        "modelRevision": "demo-e5-revision"
+      },
+      "evidenceTier": "metadata",
+      "verified": false
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:zotero_demo-server_0_D25:zotero_demo-server_0_D26:semantic",
+      "source": "zotero:demo-server:0:D25",
+      "target": "zotero:demo-server:0:D26",
+      "type": "semantic",
+      "directed": false,
+      "score": 0.86,
+      "provenance": {
+        "provider": "embedding",
+        "method": "cosine-similarity",
+        "modelRevision": "demo-e5-revision"
+      },
+      "evidenceTier": "metadata",
+      "verified": false
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:zotero_demo-server_0_D27:zotero_demo-server_0_D28:semantic",
+      "source": "zotero:demo-server:0:D27",
+      "target": "zotero:demo-server:0:D28",
+      "type": "semantic",
+      "directed": false,
+      "score": 0.86,
+      "provenance": {
+        "provider": "embedding",
+        "method": "cosine-similarity",
+        "modelRevision": "demo-e5-revision"
+      },
+      "evidenceTier": "metadata",
+      "verified": false
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:zotero_demo-server_0_D29:zotero_demo-server_0_D30:semantic",
+      "source": "zotero:demo-server:0:D29",
+      "target": "zotero:demo-server:0:D30",
+      "type": "semantic",
+      "directed": false,
+      "score": 0.86,
+      "provenance": {
+        "provider": "embedding",
+        "method": "cosine-similarity",
+        "modelRevision": "demo-e5-revision"
+      },
+      "evidenceTier": "metadata",
+      "verified": false
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:zotero_demo-server_0_D31:zotero_demo-server_0_D33:semantic",
+      "source": "zotero:demo-server:0:D31",
+      "target": "zotero:demo-server:0:D33",
+      "type": "semantic",
+      "directed": false,
+      "score": 0.86,
+      "provenance": {
+        "provider": "embedding",
+        "method": "cosine-similarity",
+        "modelRevision": "demo-e5-revision"
+      },
+      "evidenceTier": "metadata",
+      "verified": false
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:zotero_demo-server_0_D33:zotero_demo-server_0_D34:semantic",
+      "source": "zotero:demo-server:0:D33",
+      "target": "zotero:demo-server:0:D34",
+      "type": "semantic",
+      "directed": false,
+      "score": 0.83,
+      "provenance": {
+        "provider": "embedding",
+        "method": "cosine-similarity",
+        "modelRevision": "demo-e5-revision"
+      },
+      "evidenceTier": "metadata",
+      "verified": false
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:zotero_demo-server_0_D35:zotero_demo-server_0_D36:semantic",
+      "source": "zotero:demo-server:0:D35",
+      "target": "zotero:demo-server:0:D36",
+      "type": "semantic",
+      "directed": false,
+      "score": 0.83,
+      "provenance": {
+        "provider": "embedding",
+        "method": "cosine-similarity",
+        "modelRevision": "demo-e5-revision"
+      },
+      "evidenceTier": "metadata",
+      "verified": false
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:zotero_demo-server_0_D37:zotero_demo-server_0_D38:semantic",
+      "source": "zotero:demo-server:0:D37",
+      "target": "zotero:demo-server:0:D38",
+      "type": "semantic",
+      "directed": false,
+      "score": 0.83,
+      "provenance": {
+        "provider": "embedding",
+        "method": "cosine-similarity",
+        "modelRevision": "demo-e5-revision"
+      },
+      "evidenceTier": "metadata",
+      "verified": false
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:zotero_demo-server_0_D39:zotero_demo-server_0_D40:semantic",
+      "source": "zotero:demo-server:0:D39",
+      "target": "zotero:demo-server:0:D40",
+      "type": "semantic",
+      "directed": false,
+      "score": 0.83,
+      "provenance": {
+        "provider": "embedding",
+        "method": "cosine-similarity",
+        "modelRevision": "demo-e5-revision"
+      },
+      "evidenceTier": "metadata",
+      "verified": false
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:zotero_demo-server_0_D41:zotero_demo-server_0_D42:semantic",
+      "source": "zotero:demo-server:0:D41",
+      "target": "zotero:demo-server:0:D42",
+      "type": "semantic",
+      "directed": false,
+      "score": 0.83,
+      "provenance": {
+        "provider": "embedding",
+        "method": "cosine-similarity",
+        "modelRevision": "demo-e5-revision"
+      },
+      "evidenceTier": "metadata",
+      "verified": false
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:zotero_demo-server_0_D43:zotero_demo-server_0_D44:semantic",
+      "source": "zotero:demo-server:0:D43",
+      "target": "zotero:demo-server:0:D44",
+      "type": "semantic",
+      "directed": false,
+      "score": 0.83,
+      "provenance": {
+        "provider": "embedding",
+        "method": "cosine-similarity",
+        "modelRevision": "demo-e5-revision"
+      },
+      "evidenceTier": "metadata",
+      "verified": false
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:zotero_demo-server_0_D45:zotero_demo-server_0_D46:semantic",
+      "source": "zotero:demo-server:0:D45",
+      "target": "zotero:demo-server:0:D46",
+      "type": "semantic",
+      "directed": false,
+      "score": 0.83,
+      "provenance": {
+        "provider": "embedding",
+        "method": "cosine-similarity",
+        "modelRevision": "demo-e5-revision"
+      },
+      "evidenceTier": "metadata",
+      "verified": false
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:zotero_demo-server_0_D06:zotero_demo-server_0_D19:related",
+      "source": "zotero:demo-server:0:D06",
+      "target": "zotero:demo-server:0:D19",
+      "type": "related",
+      "directed": false,
+      "score": 1,
+      "provenance": {
+        "provider": "zotero-related",
+        "method": "zotero-related",
+        "modelRevision": null
+      },
+      "evidenceTier": "metadata",
+      "verified": false
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:zotero_demo-server_0_D29:zotero_demo-server_0_D40:related",
+      "source": "zotero:demo-server:0:D29",
+      "target": "zotero:demo-server:0:D40",
+      "type": "related",
+      "directed": false,
+      "score": 1,
+      "provenance": {
+        "provider": "zotero-related",
+        "method": "zotero-related",
+        "modelRevision": null
+      },
+      "evidenceTier": "metadata",
+      "verified": false
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:concept_demo-server_demo-epoch_kl-divergence:concept_demo-server_demo-epoch_optimal-transport:keyword",
+      "source": "concept:demo-server:demo-epoch:kl-divergence",
+      "target": "concept:demo-server:demo-epoch:optimal-transport",
+      "type": "keyword",
+      "directed": false,
+      "score": 1,
+      "provenance": {
+        "provider": "cooccurrence",
+        "method": "concept-cooccurrence",
+        "modelRevision": null
+      },
+      "evidenceTier": "metadata",
+      "verified": false
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:concept_demo-server_demo-epoch_graph-laplacian:concept_demo-server_demo-epoch_optimal-transport:keyword",
+      "source": "concept:demo-server:demo-epoch:graph-laplacian",
+      "target": "concept:demo-server:demo-epoch:optimal-transport",
+      "type": "keyword",
+      "directed": false,
+      "score": 1,
+      "provenance": {
+        "provider": "cooccurrence",
+        "method": "concept-cooccurrence",
+        "modelRevision": null
+      },
+      "evidenceTier": "metadata",
+      "verified": false
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:concept_demo-server_demo-epoch_optimal-transport:concept_demo-server_demo-epoch_wasserstein:keyword",
+      "source": "concept:demo-server:demo-epoch:optimal-transport",
+      "target": "concept:demo-server:demo-epoch:wasserstein",
+      "type": "keyword",
+      "directed": false,
+      "score": 1,
+      "provenance": {
+        "provider": "cooccurrence",
+        "method": "concept-cooccurrence",
+        "modelRevision": null
+      },
+      "evidenceTier": "metadata",
+      "verified": false
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:concept_demo-server_demo-epoch_graph-laplacian:concept_demo-server_demo-epoch_kl-divergence:keyword",
+      "source": "concept:demo-server:demo-epoch:graph-laplacian",
+      "target": "concept:demo-server:demo-epoch:kl-divergence",
+      "type": "keyword",
+      "directed": false,
+      "score": 1,
+      "provenance": {
+        "provider": "cooccurrence",
+        "method": "concept-cooccurrence",
+        "modelRevision": null
+      },
+      "evidenceTier": "metadata",
+      "verified": false
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:concept_demo-server_demo-epoch_graph-laplacian:concept_demo-server_demo-epoch_wasserstein:keyword",
+      "source": "concept:demo-server:demo-epoch:graph-laplacian",
+      "target": "concept:demo-server:demo-epoch:wasserstein",
+      "type": "keyword",
+      "directed": false,
+      "score": 0.5,
+      "provenance": {
+        "provider": "cooccurrence",
+        "method": "concept-cooccurrence",
+        "modelRevision": null
+      },
+      "evidenceTier": "metadata",
+      "verified": false
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:concept_demo-server_demo-epoch_phage-therapy:concept_demo-server_demo-epoch_sinkhorn:keyword",
+      "source": "concept:demo-server:demo-epoch:phage-therapy",
+      "target": "concept:demo-server:demo-epoch:sinkhorn",
+      "type": "keyword",
+      "directed": false,
+      "score": 0.5,
+      "provenance": {
+        "provider": "cooccurrence",
+        "method": "concept-cooccurrence",
+        "modelRevision": null
+      },
+      "evidenceTier": "metadata",
+      "verified": false
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:concept_demo-server_demo-epoch_host-range:concept_demo-server_demo-epoch_resistance:keyword",
+      "source": "concept:demo-server:demo-epoch:host-range",
+      "target": "concept:demo-server:demo-epoch:resistance",
+      "type": "keyword",
+      "directed": false,
+      "score": 0.5,
+      "provenance": {
+        "provider": "cooccurrence",
+        "method": "concept-cooccurrence",
+        "modelRevision": null
+      },
+      "evidenceTier": "metadata",
+      "verified": false
+    },
+    {
+      "id": "edge:demo-server:demo-epoch:concept_demo-server_demo-epoch_bayesian-inference:concept_demo-server_demo-epoch_information-geometry:keyword",
+      "source": "concept:demo-server:demo-epoch:bayesian-inference",
+      "target": "concept:demo-server:demo-epoch:information-geometry",
+      "type": "keyword",
+      "directed": false,
+      "score": 0.5,
+      "provenance": {
+        "provider": "cooccurrence",
+        "method": "concept-cooccurrence",
+        "modelRevision": null
+      },
+      "evidenceTier": "metadata",
+      "verified": false
+    }
+  ],
+  "attachments": [
+    {
+      "id": "attachment:demo-server:0:ATT01",
+      "parentId": "zotero:demo-server:0:D01",
+      "name": "synthetic-hostile.pdf",
+      "status": "indexed",
+      "contentHash": "sha256:synthetic-hostile"
+    },
+    {
+      "id": "attachment:demo-server:0:ATT-STANDALONE",
+      "parentId": null,
+      "standalone": true,
+      "name": "synthetic-standalone.pdf",
+      "status": "readable",
+      "contentHash": "sha256:synthetic-standalone"
+    }
+  ],
+  "collections": [
+    {
+      "id": "collection:demo-server:0:C01",
+      "label": "Synthetic analysis and topology",
+      "paperIds": [
+        "zotero:demo-server:0:D01",
+        "zotero:demo-server:0:D02",
+        "zotero:demo-server:0:D03",
+        "zotero:demo-server:0:D04",
+        "zotero:demo-server:0:D05",
+        "zotero:demo-server:0:D06",
+        "zotero:demo-server:0:D07",
+        "zotero:demo-server:0:D08",
+        "zotero:demo-server:0:D09",
+        "zotero:demo-server:0:D10",
+        "zotero:demo-server:0:D11",
+        "zotero:demo-server:0:D12",
+        "zotero:demo-server:0:D13",
+        "zotero:demo-server:0:D14",
+        "zotero:demo-server:0:D15",
+        "zotero:demo-server:0:D16",
+        "zotero:demo-server:0:D17",
+        "zotero:demo-server:0:D18",
+        "zotero:demo-server:0:D19",
+        "zotero:demo-server:0:D20",
+        "zotero:demo-server:0:D21",
+        "zotero:demo-server:0:D22"
+      ]
+    },
+    {
+      "id": "collection:demo-server:0:C02",
+      "label": "Synthetic probability and phage",
+      "paperIds": [
+        "zotero:demo-server:0:D23",
+        "zotero:demo-server:0:D24",
+        "zotero:demo-server:0:D25",
+        "zotero:demo-server:0:D26",
+        "zotero:demo-server:0:D27",
+        "zotero:demo-server:0:D28",
+        "zotero:demo-server:0:D29",
+        "zotero:demo-server:0:D30",
+        "zotero:demo-server:0:D31",
+        "zotero:demo-server:0:D32",
+        "zotero:demo-server:0:D33",
+        "zotero:demo-server:0:D34",
+        "zotero:demo-server:0:D35",
+        "zotero:demo-server:0:D36",
+        "zotero:demo-server:0:D37",
+        "zotero:demo-server:0:D38",
+        "zotero:demo-server:0:D39",
+        "zotero:demo-server:0:D40",
+        "zotero:demo-server:0:D41",
+        "zotero:demo-server:0:D42",
+        "zotero:demo-server:0:D43",
+        "zotero:demo-server:0:D44",
+        "zotero:demo-server:0:D45",
+        "zotero:demo-server:0:D46",
+        "zotero:demo-server:0:D47"
+      ]
+    }
+  ],
+  "overview": {
+    "fields": [
+      {
+        "fieldId": "field:demo-server:demo-epoch:analysis",
+        "paperWeight": 12
+      },
+      {
+        "fieldId": "field:demo-server:demo-epoch:topology",
+        "paperWeight": 10
+      },
+      {
+        "fieldId": "field:demo-server:demo-epoch:probability",
+        "paperWeight": 10
+      },
+      {
+        "fieldId": "field:demo-server:demo-epoch:biology",
+        "paperWeight": 15
+      },
+      {
+        "fieldId": "field:demo-server:demo-epoch:analysis-numerical",
+        "paperWeight": 0
+      },
+      {
+        "fieldId": "field:demo-server:demo-epoch:analysis-transport",
+        "paperWeight": 0
+      },
+      {
+        "fieldId": "field:demo-server:demo-epoch:topology-graph",
+        "paperWeight": 0
+      },
+      {
+        "fieldId": "field:demo-server:demo-epoch:topology-dynamics",
+        "paperWeight": 0
+      },
+      {
+        "fieldId": "field:demo-server:demo-epoch:probability-information",
+        "paperWeight": 0
+      },
+      {
+        "fieldId": "field:demo-server:demo-epoch:probability-statistics",
+        "paperWeight": 0
+      },
+      {
+        "fieldId": "field:demo-server:demo-epoch:biology-phage",
+        "paperWeight": 0
+      },
+      {
+        "fieldId": "field:demo-server:demo-epoch:biology-microbiome",
+        "paperWeight": 0
+      }
+    ],
+    "ribbons": [
+      {
+        "sourceFieldId": "field:demo-server:demo-epoch:analysis",
+        "targetFieldId": "field:demo-server:demo-epoch:analysis",
+        "weight": 7.919999999999998
+      },
+      {
+        "sourceFieldId": "field:demo-server:demo-epoch:analysis",
+        "targetFieldId": "field:demo-server:demo-epoch:topology",
+        "weight": 1.72
+      },
+      {
+        "sourceFieldId": "field:demo-server:demo-epoch:topology",
+        "targetFieldId": "field:demo-server:demo-epoch:topology",
+        "weight": 3.88
+      },
+      {
+        "sourceFieldId": "field:demo-server:demo-epoch:probability",
+        "targetFieldId": "field:demo-server:demo-epoch:topology",
+        "weight": 0.86
+      },
+      {
+        "sourceFieldId": "field:demo-server:demo-epoch:probability",
+        "targetFieldId": "field:demo-server:demo-epoch:probability",
+        "weight": 3.44
+      },
+      {
+        "sourceFieldId": "field:demo-server:demo-epoch:biology",
+        "targetFieldId": "field:demo-server:demo-epoch:probability",
+        "weight": 1.8599999999999999
+      },
+      {
+        "sourceFieldId": "field:demo-server:demo-epoch:biology",
+        "targetFieldId": "field:demo-server:demo-epoch:biology",
+        "weight": 5.81
+      }
+    ],
+    "keywordAggregate": {
+      "conceptIds": ["concept:demo-server:demo-epoch:optimal-transport", "concept:demo-server:demo-epoch:kl-divergence", "concept:demo-server:demo-epoch:wasserstein", "concept:demo-server:demo-epoch:sinkhorn", "concept:demo-server:demo-epoch:graph-laplacian", "concept:demo-server:demo-epoch:bayesian-inference", "concept:demo-server:demo-epoch:information-geometry", "concept:demo-server:demo-epoch:phage-therapy", "concept:demo-server:demo-epoch:host-range", "concept:demo-server:demo-epoch:resistance", "concept:demo-server:demo-epoch:microbiome", "concept:demo-server:demo-epoch:unknown-source"],
+      "pairs": [[0,1,7],[0,2,4],[0,3,5],[0,4,5],[0,6,2],[0,7,4],[0,8,2],[1,2,5],[1,3,8],[1,4,9],[1,5,3],[1,6,3],[1,7,5],[1,8,1],[1,9,1],[2,3,2],[2,4,5],[2,5,1],[2,7,3],[2,8,1],[3,4,2],[3,5,1],[3,6,1],[3,7,2],[3,8,1],[4,6,1],[4,7,4],[4,10,1],[5,6,1],[5,7,3],[5,8,3],[5,10,1],[6,7,3],[6,8,2],[6,9,1],[7,8,6],[7,9,1],[7,10,3],[8,10,1]],
+      "encoding": "concept-index-pairs",
+      "totalPairs": 39,
+      "totalWeight": 114
+    },
+    "totalPapers": 48,
+    "totalEdges": 71,
+    "displayedEdges": 40,
+    "fullGraphEdgeCounts": {"citation": 15, "semantic": 15, "related": 2, "keyword": 39}
+  },
+  "modelStatus": {
+    "provider": "fake",
+    "state": "ready",
+    "label": "synthetic-test-only",
+    "revision": "demo-e5-revision"
+  },
+  "allocationMode": "primary-display-field",
+  "fixture": "public-synthetic-demo-v1"
+}
+

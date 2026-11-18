@@ -1,0 +1,11 @@
+{
+  "fixture": "overlay_two_writer_conflict",
+  "source": {"serverId": "server-A", "epoch": "epoch-A"},
+  "overlay": {"entityType": "paper", "entityId": "zotero:server-A:0:A1", "revision": 7, "patch": {"pinned": true}},
+  "writers": [
+    {"writer": "one", "ifMatch": 7, "result": 200, "newRevision": 8},
+    {"writer": "two", "ifMatch": 7, "result": 409, "unchanged": true}
+  ],
+  "sourceDeletion": {"action": "archive-overlay", "archivedEpoch": "epoch-A", "retarget": false, "handwrittenNotesDeleted": false},
+  "expected": {"conflictStatus": 409, "lastWriteWins": false, "crossEpochRetarget": false}
+}

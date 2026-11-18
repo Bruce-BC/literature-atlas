@@ -1,0 +1,452 @@
+{
+  "retrieved": "2026-11-18",
+  "categoryOrder": [
+    "blue",
+    "teal",
+    "gold",
+    "violet",
+    "rose",
+    "green"
+  ],
+  "families": [
+    {
+      "id": "tailwind",
+      "repository": "https://github.com/tailwindlabs/tailwindcss",
+      "commit": "5e9d8c9f6f2c5a4d8123beb377a95f9493092de8",
+      "license": "MIT",
+      "licenseText": "MIT License\n\nCopyright (c) Tailwind Labs, Inc.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+      "sourceURLs": [
+        "https://raw.githubusercontent.com/tailwindlabs/tailwindcss/5e9d8c9f6f2c5a4d8123beb377a95f9493092de8/packages/tailwindcss/theme.css",
+        "https://raw.githubusercontent.com/tailwindlabs/tailwindcss/5e9d8c9f6f2c5a4d8123beb377a95f9493092de8/LICENSE"
+      ],
+      "sourceSeeds": {
+        "light": [
+          {
+            "sourceToken": "blue-600",
+            "nativeOKLCH": "54.6% 0.245 262.881",
+            "lch": [
+              0.546,
+              0.245,
+              262.881
+            ]
+          },
+          {
+            "sourceToken": "teal-600",
+            "nativeOKLCH": "60% 0.118 184.704",
+            "lch": [
+              0.6,
+              0.118,
+              184.704
+            ]
+          },
+          {
+            "sourceToken": "amber-600",
+            "nativeOKLCH": "66.6% 0.179 58.318",
+            "lch": [
+              0.6659999999999999,
+              0.179,
+              58.318
+            ]
+          },
+          {
+            "sourceToken": "violet-600",
+            "nativeOKLCH": "54.1% 0.281 293.009",
+            "lch": [
+              0.541,
+              0.281,
+              293.009
+            ]
+          },
+          {
+            "sourceToken": "rose-600",
+            "nativeOKLCH": "58.6% 0.253 17.585",
+            "lch": [
+              0.586,
+              0.253,
+              17.585
+            ]
+          },
+          {
+            "sourceToken": "green-600",
+            "nativeOKLCH": "62.7% 0.194 149.214",
+            "lch": [
+              0.627,
+              0.194,
+              149.214
+            ]
+          }
+        ],
+        "dark": [
+          {
+            "sourceToken": "blue-400",
+            "nativeOKLCH": "70.7% 0.165 254.624",
+            "lch": [
+              0.7070000000000001,
+              0.165,
+              254.624
+            ]
+          },
+          {
+            "sourceToken": "teal-400",
+            "nativeOKLCH": "77.7% 0.152 181.912",
+            "lch": [
+              0.777,
+              0.152,
+              181.912
+            ]
+          },
+          {
+            "sourceToken": "amber-400",
+            "nativeOKLCH": "82.8% 0.189 84.429",
+            "lch": [
+              0.828,
+              0.189,
+              84.429
+            ]
+          },
+          {
+            "sourceToken": "violet-400",
+            "nativeOKLCH": "70.2% 0.183 293.541",
+            "lch": [
+              0.7020000000000001,
+              0.183,
+              293.541
+            ]
+          },
+          {
+            "sourceToken": "rose-400",
+            "nativeOKLCH": "71.2% 0.194 13.428",
+            "lch": [
+              0.7120000000000001,
+              0.194,
+              13.428
+            ]
+          },
+          {
+            "sourceToken": "green-400",
+            "nativeOKLCH": "79.2% 0.209 151.711",
+            "lch": [
+              0.792,
+              0.209,
+              151.711
+            ]
+          }
+        ]
+      },
+      "note": "Six-color selection curated for this project; not an upstream categorical/CVD-safe palette."
+    },
+    {
+      "id": "radix",
+      "repository": "https://github.com/radix-ui/colors",
+      "commit": "dbdb85470547c7d34b9001f48fddb08ded335979",
+      "license": "MIT",
+      "licenseText": "MIT License\n\nCopyright (c) 2021-2022 Modulz\nCopyright (c) 2022-Present WorkOS\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+      "sourceURLs": [
+        "https://raw.githubusercontent.com/radix-ui/colors/dbdb85470547c7d34b9001f48fddb08ded335979/src/light.ts",
+        "https://raw.githubusercontent.com/radix-ui/colors/dbdb85470547c7d34b9001f48fddb08ded335979/src/dark.ts",
+        "https://raw.githubusercontent.com/radix-ui/colors/dbdb85470547c7d34b9001f48fddb08ded335979/LICENSE"
+      ],
+      "sourceSeeds": {
+        "light": [
+          {
+            "sourceToken": "blue11",
+            "hex": "#0d74ce",
+            "lch": [
+              0.5557500884677831,
+              0.16221957334158887,
+              252.19470354126057
+            ]
+          },
+          {
+            "sourceToken": "teal11",
+            "hex": "#008573",
+            "lch": [
+              0.5520727394893431,
+              0.10100732272268044,
+              178.79421557224438
+            ]
+          },
+          {
+            "sourceToken": "amber11",
+            "hex": "#ab6400",
+            "lch": [
+              0.5706475207465989,
+              0.129136756667438,
+              63.93791065802321
+            ]
+          },
+          {
+            "sourceToken": "violet11",
+            "hex": "#6550b9",
+            "lch": [
+              0.5078319020176888,
+              0.15891791215238762,
+              288.6372430860704
+            ]
+          },
+          {
+            "sourceToken": "crimson11",
+            "hex": "#cb1d63",
+            "lch": [
+              0.552179944704761,
+              0.20728977116953257,
+              4.4881546179974885
+            ]
+          },
+          {
+            "sourceToken": "green11",
+            "hex": "#218358",
+            "lch": [
+              0.5434642691717653,
+              0.11159672115493444,
+              159.49729481901002
+            ]
+          }
+        ],
+        "dark": [
+          {
+            "sourceToken": "blue11",
+            "hex": "#70b8ff",
+            "lch": [
+              0.7642204791916298,
+              0.12574734910973304,
+              249.46439157875594
+            ]
+          },
+          {
+            "sourceToken": "teal11",
+            "hex": "#0bd8b6",
+            "lch": [
+              0.7885615888808668,
+              0.14669661755692648,
+              175.72724620250528
+            ]
+          },
+          {
+            "sourceToken": "amber11",
+            "hex": "#ffca16",
+            "lch": [
+              0.8616673911125172,
+              0.17297361467703523,
+              89.01771087560587
+            ]
+          },
+          {
+            "sourceToken": "violet11",
+            "hex": "#baa7ff",
+            "lch": [
+              0.7778318029372868,
+              0.12462457346797294,
+              293.19424711139595
+            ]
+          },
+          {
+            "sourceToken": "crimson11",
+            "hex": "#ff92ad",
+            "lch": [
+              0.782477257891325,
+              0.13381271543364082,
+              4.738933992960195
+            ]
+          },
+          {
+            "sourceToken": "green11",
+            "hex": "#3dd68c",
+            "lch": [
+              0.7794304343989095,
+              0.16548018635414408,
+              157.28649281030633
+            ]
+          }
+        ]
+      },
+      "note": "Six-color selection curated for this project; not an upstream categorical/CVD-safe palette."
+    },
+    {
+      "id": "catppuccin",
+      "repository": "https://github.com/catppuccin/palette",
+      "commit": "07d02aa110ef9eb7e7427afca5c73ba9cf7f8ebd",
+      "license": "MIT",
+      "licenseText": "MIT License\n\nCopyright (c) 2021 Catppuccin\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+      "sourceURLs": [
+        "https://raw.githubusercontent.com/catppuccin/palette/07d02aa110ef9eb7e7427afca5c73ba9cf7f8ebd/palette.json",
+        "https://raw.githubusercontent.com/catppuccin/palette/07d02aa110ef9eb7e7427afca5c73ba9cf7f8ebd/LICENSE"
+      ],
+      "sourceSeeds": {
+        "light": [
+          {
+            "sourceToken": "latte.blue",
+            "hex": "#1e66f5",
+            "nativeOKLCH": {
+              "l": 0.5586168519157438,
+              "c": 0.22550252265688878,
+              "h": 262.08665056049813
+            },
+            "lch": [
+              0.5586168519157438,
+              0.22550252265688878,
+              262.08665056049813
+            ]
+          },
+          {
+            "sourceToken": "latte.teal",
+            "hex": "#179299",
+            "nativeOKLCH": {
+              "l": 0.6022689684480229,
+              "c": 0.09811495789237053,
+              "h": 201.1047483772147
+            },
+            "lch": [
+              0.6022689684480229,
+              0.09811495789237053,
+              201.1047483772147
+            ]
+          },
+          {
+            "sourceToken": "latte.yellow",
+            "hex": "#df8e1d",
+            "nativeOKLCH": {
+              "l": 0.7139917309504697,
+              "c": 0.14944164080684152,
+              "h": 67.77665534753208
+            },
+            "lch": [
+              0.7139917309504697,
+              0.14944164080684152,
+              67.77665534753208
+            ]
+          },
+          {
+            "sourceToken": "latte.mauve",
+            "hex": "#8839ef",
+            "nativeOKLCH": {
+              "l": 0.5546698483756871,
+              "c": 0.25034607990295016,
+              "h": 297.0156483500495
+            },
+            "lch": [
+              0.5546698483756871,
+              0.25034607990295016,
+              297.0156483500495
+            ]
+          },
+          {
+            "sourceToken": "latte.pink",
+            "hex": "#ea76cb",
+            "nativeOKLCH": {
+              "l": 0.7255597313429507,
+              "c": 0.17393264562602528,
+              "h": 338.4333428586893
+            },
+            "lch": [
+              0.7255597313429507,
+              0.17393264562602528,
+              338.4333428586893
+            ]
+          },
+          {
+            "sourceToken": "latte.green",
+            "hex": "#40a02b",
+            "nativeOKLCH": {
+              "l": 0.6250443904295363,
+              "c": 0.17715816108762134,
+              "h": 140.44483759142634
+            },
+            "lch": [
+              0.6250443904295363,
+              0.17715816108762134,
+              140.44483759142634
+            ]
+          }
+        ],
+        "dark": [
+          {
+            "sourceToken": "mocha.blue",
+            "hex": "#89b4fa",
+            "nativeOKLCH": {
+              "l": 0.7664203616291358,
+              "c": 0.11134426678812931,
+              "h": 259.88497602028025
+            },
+            "lch": [
+              0.7664203616291358,
+              0.11134426678812931,
+              259.88497602028025
+            ]
+          },
+          {
+            "sourceToken": "mocha.teal",
+            "hex": "#94e2d5",
+            "nativeOKLCH": {
+              "l": 0.8584890398993206,
+              "c": 0.07920670052090036,
+              "h": 182.74951302554985
+            },
+            "lch": [
+              0.8584890398993206,
+              0.07920670052090036,
+              182.74951302554985
+            ]
+          },
+          {
+            "sourceToken": "mocha.yellow",
+            "hex": "#f9e2af",
+            "nativeOKLCH": {
+              "l": 0.9193028538212243,
+              "c": 0.07041462719493903,
+              "h": 86.52808223272405
+            },
+            "lch": [
+              0.9193028538212243,
+              0.07041462719493903,
+              86.52808223272405
+            ]
+          },
+          {
+            "sourceToken": "mocha.mauve",
+            "hex": "#cba6f7",
+            "nativeOKLCH": {
+              "l": 0.7871462525760659,
+              "c": 0.11867011135986587,
+              "h": 304.7693043767238
+            },
+            "lch": [
+              0.7871462525760659,
+              0.11867011135986587,
+              304.7693043767238
+            ]
+          },
+          {
+            "sourceToken": "mocha.pink",
+            "hex": "#f5c2e7",
+            "nativeOKLCH": {
+              "l": 0.8700326070585575,
+              "c": 0.0751577539668794,
+              "h": 336.30408455199915
+            },
+            "lch": [
+              0.8700326070585575,
+              0.0751577539668794,
+              336.30408455199915
+            ]
+          },
+          {
+            "sourceToken": "mocha.green",
+            "hex": "#a6e3a1",
+            "nativeOKLCH": {
+              "l": 0.8577042231793516,
+              "c": 0.109228579658491,
+              "h": 142.71528901553893
+            },
+            "lch": [
+              0.8577042231793516,
+              0.109228579658491,
+              142.71528901553893
+            ]
+          }
+        ]
+      },
+      "note": "Six-color selection curated for this project; not an upstream categorical/CVD-safe palette."
+    }
+  ]
+}

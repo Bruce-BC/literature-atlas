@@ -1,0 +1,7 @@
+{
+  "fixture": "privacy_gate_first_push",
+  "trackedRoots": ["atlas", "frontend", "obsidian-plugin", "docs", "tests", "scripts", "assets"],
+  "forbiddenPatterns": [".zotero", "\.omx/", "Bearer ", "\.pdf$", "Users/[^/]+/", "zotero.sqlite", "\.safetensors$", "real DOI"],
+  "allowedFixtureMarkers": ["synthetic", "fixture", "example.test"],
+  "expected": {"privateCorpus": false, "pdfs": false, "tokens": false, "homePaths": false, "historyClean": true, "paletteNotices": true}
+}

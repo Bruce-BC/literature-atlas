@@ -1,0 +1,14 @@
+{
+  "fixture": "plugin_takeover_and_token_leak",
+  "bootstrap": {"port": 43127, "token": "synthetic-token-never-persist", "pid": 12345, "launchId": "launch-fixture"},
+  "cases": [
+    {"name": "malformed-bootstrap", "stdout": "{\"port\":43127}\n", "accept": false},
+    {"name": "wrong-origin", "origin": "https://evil.example", "accept": false},
+    {"name": "port-takeover", "portOwner": "unknown-process", "accept": false},
+    {"name": "pid-reuse", "pid": 12345, "startTimeChanged": true, "accept": false},
+    {"name": "launch-nonce-mismatch", "launchId": "other", "accept": false},
+    {"name": "token-in-url", "url": "http://127.0.0.1:43127/?token=synthetic-token-never-persist", "accept": false},
+    {"name": "token-in-log", "log": "Authorization: Bearer synthetic-token-never-persist", "accept": false}
+  ],
+  "expected": {"exactBootstrapKeys": ["port", "token", "pid", "launchId"], "tokenPersistence": false, "recovery": true}
+}

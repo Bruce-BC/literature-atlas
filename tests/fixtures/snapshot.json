@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "source": {"id": "fixture-server", "serverId": "fixture-server", "epoch": "epoch-001", "alias": "synthetic-fixture", "zoteroApi": "3", "schema": 44},
+  "status": {"phase": "idle", "stale": false, "lastSuccess": "2026-01-01T00:00:00Z", "message": null, "observedLag": 0, "watcherInterval": 30},
+  "papers": [
+    {"id": "zotero:fixture-server:0:A1", "key": "A1", "libraryID": 0, "title": "<img src=x onerror=alert(1)> & Unicode 한국어", "year": 2026, "authors": ["Example, Ada"], "doi": "10.0000/fixture.a1", "abstract": "Synthetic text only.", "keywords": ["optimal transport", "KL divergence"], "fieldIds": ["field:fixture-server:epoch-001:analysis", "field:fixture-server:epoch-001:topology"], "conceptIds": ["concept:fixture-server:epoch-001:kl"], "displayFieldId": "field:fixture-server:epoch-001:analysis", "attachmentIds": ["attachment:fixture-server:0:ATT1"], "textStatus": "indexed"},
+    {"id": "zotero:fixture-server:0:B2", "key": "B2", "libraryID": 0, "title": "Transport on graphs", "year": 2025, "authors": ["Example, Grace"], "doi": null, "abstract": null, "keywords": ["optimal transport"], "fieldIds": ["field:fixture-server:epoch-001:topology"], "conceptIds": [], "displayFieldId": "field:fixture-server:epoch-001:topology", "attachmentIds": [], "textStatus": "missing"}
+  ],
+  "fields": [
+    {"id": "field:fixture-server:epoch-001:analysis", "label": {"en": "Analysis", "ko": "해석학"}, "parentIds": [], "aliases": ["real analysis"], "source": "user"},
+    {"id": "field:fixture-server:epoch-001:topology", "label": {"en": "Topology", "ko": "위상수학"}, "parentIds": [], "aliases": [], "source": "user"}
+  ],
+  "concepts": [{"id": "concept:fixture-server:epoch-001:kl", "label": {"en": "KL divergence", "ko": "KL 발산"}, "aliases": ["relative entropy"], "source": "user"}],
+  "memberships": [
+    {"id": "membership:fixture-server:epoch-001:A1:analysis", "paperId": "zotero:fixture-server:0:A1", "fieldId": "field:fixture-server:epoch-001:analysis", "method": "user", "score": 1, "weight": 1, "evidenceSpan": null, "modelVersion": null},
+    {"id": "membership:fixture-server:epoch-001:A1:topology", "paperId": "zotero:fixture-server:0:A1", "fieldId": "field:fixture-server:epoch-001:topology", "method": "model", "score": 0.8, "weight": 1, "evidenceSpan": "graphs", "modelVersion": "fixture-model"},
+    {"id": "membership:fixture-server:epoch-001:B2:topology", "paperId": "zotero:fixture-server:0:B2", "fieldId": "field:fixture-server:epoch-001:topology", "method": "user", "score": 1, "weight": 1, "evidenceSpan": null, "modelVersion": null}
+  ],
+  "edges": [
+    {"id": "edge:fixture-server:epoch-001:A1:B2:semantic", "source": "zotero:fixture-server:0:A1", "target": "zotero:fixture-server:0:B2", "type": "semantic", "directed": false, "score": 0.81, "provenance": {"provider": "embedding", "method": "cosine", "modelRevision": "fixture-model"}, "evidenceTier": "metadata", "verified": false},
+    {"id": "edge:fixture-server:epoch-001:A1:B2:keyword", "source": "zotero:fixture-server:0:A1", "target": "zotero:fixture-server:0:B2", "type": "keyword", "directed": false, "score": 1, "provenance": {"provider": "cooccurrence", "method": "shared-keyword", "modelRevision": null}, "evidenceTier": "metadata", "verified": true}
+  ],
+  "attachments": [{"id": "attachment:fixture-server:0:ATT1", "parentId": "zotero:fixture-server:0:A1", "name": "fixture.pdf", "status": "indexed", "contentHash": "sha256:fixture"}],
+  "collections": [{"id": "collection:fixture-server:0:C1", "label": "Synthetic", "paperIds": ["zotero:fixture-server:0:A1", "zotero:fixture-server:0:B2"]}],
+  "overview": {"fields": [{"fieldId": "field:fixture-server:epoch-001:analysis", "paperWeight": 1}, {"fieldId": "field:fixture-server:epoch-001:topology", "paperWeight": 1}], "ribbons": [{"sourceFieldId": "field:fixture-server:epoch-001:analysis", "targetFieldId": "field:fixture-server:epoch-001:topology", "weight": 1}], "keywordAggregate": {"conceptIds": ["concept:fixture-server:epoch-001:kl"], "pairs": [], "encoding": "concept-index-pairs", "totalPairs": 0, "totalWeight": 0}, "totalPapers": 2, "totalEdges": 2},
+  "modelStatus": {"provider": "fake", "label": "synthetic-test-only", "revision": "fixture-model"},
+  "allocationMode": "primary-display-field",
+  "fixtureUnknownField": "clients must ignore this"
+}

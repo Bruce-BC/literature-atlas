@@ -1,0 +1,10 @@
+{
+  "fixture": "overview_allocation_multimembership",
+  "allocationMode": "primary-display-field",
+  "papers": [
+    {"id": "P1", "displayFieldId": "analysis", "fieldIds": ["analysis", "topology"]},
+    {"id": "P2", "displayFieldId": "topology", "fieldIds": ["topology"]},
+    {"id": "P3", "displayFieldId": null, "fieldIds": []}
+  ],
+  "expected": {"totalPapers": 3, "fieldWeights": {"analysis": 1, "topology": 1}, "unassignedPapers": 1, "detailMemberships": 3, "noDoubleCount": true}
+}

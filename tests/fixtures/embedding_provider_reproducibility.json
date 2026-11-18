@@ -1,0 +1,14 @@
+{
+  "fixture": "embedding_provider_reproducibility",
+  "provider": "fake",
+  "label": "synthetic-test-only",
+  "modelRevision": "fixture-e5-revision",
+  "dimensions": 4,
+  "maxTokens": 512,
+  "prefix": "query: ",
+  "documents": [
+    {"id": "P1", "title": "A title", "abstract": "A short abstract", "inputHash": "sha256:fixture-p1", "vector": [0.5, 0.5, 0.5, 0.5], "truncated": false},
+    {"id": "P2", "title": "B title", "abstract": null, "inputHash": "sha256:fixture-p2", "vector": [0, 1, 0, 0], "truncated": false}
+  ],
+  "expected": {"sameInputSameHash": true, "symmetricPrefix": true, "failurePreservesPrior": true}
+}

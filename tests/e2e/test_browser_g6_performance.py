@@ -20,12 +20,12 @@ def large_fixture():
         c = copy.deepcopy(concept_template); c.update(id=f'concept:demo-server:demo-epoch:c{i:04}', label={'en': f'Synthetic concept {i:04}'}); concepts.append(c)
     papers, memberships = [], []
     field = base['fields'][0]['id']
-    for i in range(780):
+    for i in range(1000):
         p = copy.deepcopy(paper_template); p.update(id=f'zotero:demo-server:0:P{i:04}', key=f'P{i:04}', title=f'Synthetic paper {i:04}', attachmentIds=[], fieldIds=[field], displayFieldId=field, conceptIds=[concepts[0]['id']] + [concepts[1 + (i * 7 + j * 19) % (len(concepts)-1)]['id'] for j in range(4)]); papers.append(p)
         m = copy.deepcopy(membership_template); m.update(id=f'membership:demo-server:demo-epoch:m{i:04}', paperId=p['id'], fieldId=field); memberships.append(m)
     edges = []
-    for i in range(3060):
-        e = copy.deepcopy(edge_template); e.update(id=f'edge:demo-server:demo-epoch:e{i:05}', source=papers[i % 780]['id'], target=papers[(i * 7 + 1) % 780]['id']); edges.append(e)
+    for i in range(4000):
+        e = copy.deepcopy(edge_template); e.update(id=f'edge:demo-server:demo-epoch:e{i:05}', source=papers[i % 1000]['id'], target=papers[(i * 7 + 1) % 1000]['id']); edges.append(e)
     pairs = []
     for a in range(1410):
         for b in range(a + 1, 1410):
@@ -33,7 +33,7 @@ def large_fixture():
             if len(pairs) >= 50000: break
         if len(pairs) >= 50000: break
     base.update(papers=papers, concepts=concepts, memberships=memberships, edges=edges, attachments=[])
-    base['overview'].update(totalPapers=780, totalEdges=len(edges), keywordAggregate={'conceptIds':[c['id'] for c in concepts], 'pairs':pairs, 'encoding':'concept-index-pairs'})
+    base['overview'].update(totalPapers=1000, totalEdges=len(edges), keywordAggregate={'conceptIds':[c['id'] for c in concepts], 'pairs':pairs, 'encoding':'concept-index-pairs'})
     return base
 
 
@@ -85,9 +85,12 @@ def test_large_synthetic_g6_reuses_graphs_on_selection_and_theme():
                 hub=page.evaluate('() => ({stats:AtlasDebug.getState().conceptStats,notice:document.querySelector("#atlas-sampling").textContent})')
                 assert hub['stats']['neighborCandidates'] == 1409 and hub['stats']['visibleNodes'] <= 105
                 assert '104/1409 neighboring concepts shown' in hub['notice']
-                assert hub['stats']['directPaperCandidates'] == 780 and hub['stats']['visibleConceptPapers'] <= 150
-                assert '/780 connected papers shown' in hub['notice']
-                receipt={'papers':780,'concepts':1410,'initial':counts,'selected':selected_counts,'firstReadyMs':first_ready,'sameSelectionMs':selection_ms,'themeEventMs':theme_ms,'sameSelectionInstances':same_selection,'sameThemeInstances':same_theme,'oldInstanceRenderCalls':render_calls,'hub':hub, 'pageErrors':errors}
+                assert hub['stats']['inducedEdges'] > 600 and hub['stats']['visibleEdges'] == 600 and hub['stats']['hiddenEdges'] == hub['stats']['inducedEdges'] - 600
+                assert hub['stats']['visibleEdges'] + hub['stats']['visibleMembershipEdges'] <= 1000
+                assert 'keyword links 600/' in hub['notice']
+                assert hub['stats']['directPaperCandidates'] == 1000 and hub['stats']['visibleConceptPapers'] <= 150
+                assert '/1000 connected papers shown' in hub['notice']
+                receipt={'papers':1000,'concepts':1410,'initial':counts,'selected':selected_counts,'firstReadyMs':first_ready,'sameSelectionMs':selection_ms,'themeEventMs':theme_ms,'sameSelectionInstances':same_selection,'sameThemeInstances':same_theme,'oldInstanceRenderCalls':render_calls,'hub':hub, 'pageErrors':errors}
                 path=ROOT/'.omx/context/g6-performance-browser.json';path.parent.mkdir(parents=True,exist_ok=True);path.write_text(json.dumps(receipt,indent=2))
                 assert same_selection and same_theme and render_calls == 0
                 assert selected_counts['conceptNodes'] < 400

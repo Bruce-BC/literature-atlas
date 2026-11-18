@@ -179,3 +179,18 @@ test('field presentation matches paper and explorer colors across order and rena
   assert.equal(categoryForPaper(paper,data,palette).color,style.color);assert.equal(categoryGroups(data,[paper.id],palette).find(group=>group.id===field.id).color,style.color);assert.equal(style.depth,1);
   const reordered={...data,fields:[...data.fields].reverse().map(row=>({...row,label:{en:'renamed'}}))};assert.equal(fieldPresentation(reordered.fields.find(row=>row.id===field.id),reordered,palette).color,style.color);
 });
+
+test('dense concept edges are bounded, favor selected spokes and expose full counts', () => {
+  const data=structuredClone(fixture);data.concepts=Array.from({length:100},(_,i)=>({...data.concepts[0],id:`c${String(i).padStart(3,'0')}`,label:{en:`C${i}`}}));data.edges=[];const pairs=[];for(let i=0;i<100;i++)for(let j=i+1;j<100;j++)pairs.push([i,j,i+j]);data.overview.keywordAggregate={conceptIds:data.concepts.map(c=>c.id),pairs,encoding:'concept-index-pairs'};
+  const graph=graphProjection(data,{papers:[],edges:[]},{maxConceptNodes:100,selectedConceptIds:['c000']});const edges=graph.conceptEdges.filter(edge=>edge.data.relation==='concept-cooccurrence');
+  assert.equal(edges.length,600);assert.equal(graph.conceptStats.inducedEdges,4950);assert.equal(graph.conceptStats.hiddenEdges,4350);assert.equal(graph.conceptStats.totalEdges,4950);assert.equal(edges.filter(edge=>edge.data.source==='c000'||edge.data.target==='c000').length,99);
+  assert.ok(edges.some(edge=>edge.data.source==='c098'&&edge.data.target==='c099'));assert.ok(!edges.some(edge=>edge.data.source==='c001'&&edge.data.target==='c002'));
+});
+
+test('dense paper-concept links remain bounded with selected spokes retained', () => {
+  const data=structuredClone(fixture);data.concepts=Array.from({length:105},(_,i)=>({...data.concepts[0],id:`c${String(i).padStart(3,'0')}`,label:{en:`C${i}`}}));const all=data.concepts.map(c=>c.id);
+  data.papers=Array.from({length:150},(_,i)=>({...data.papers[0],id:`p${String(i).padStart(3,'0')}`,conceptIds:all}));data.edges=[];data.overview.keywordAggregate={conceptIds:all,pairs:[],encoding:'concept-index-pairs'};
+  const graph=graphProjection(data,{papers:data.papers,edges:[]},{maxConceptNodes:105,selectedConceptIds:['c000'],selectedPaperId:'p000'});const edges=graph.conceptEdges;
+  assert.equal(graph.conceptStats.inducedMembershipEdges,15750);assert.equal(graph.conceptStats.visibleMembershipEdges,400);assert.equal(graph.conceptStats.hiddenMembershipEdges,15350);assert.equal(edges.length,400);
+  assert.equal(edges.filter(edge=>edge.data.source==='c000').length,150);assert.equal(edges.filter(edge=>edge.data.target==='p000').length,105);
+});

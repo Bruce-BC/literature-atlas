@@ -13,7 +13,7 @@ from pathlib import Path
 
 from atlas.server import AtlasHTTPServer
 from atlas.storage import SQLiteStore
-from atlas.sync import SyncManager
+from atlas.sync import GRAPH_RECIPE_VERSION, SyncManager
 from atlas.zotero import ZoteroClient
 from atlas.graph import GraphEngine
 
@@ -98,10 +98,10 @@ class BackendTests(unittest.TestCase):
 
     def test_recipe_upgrade_rebuilds_same_source_cache(self):
         manager, _ = self.make_manager(); first = manager.sync(); manager.wait_for_idle()
-        stored = manager.store.get_snapshot()[2]; stored["modelStatus"].pop("recipeVersion", None)
+        stored = manager.store.get_snapshot()[2]; stored["modelStatus"]["recipeVersion"] = "atlas-graph-v1"
         manager.store.publish_snapshot(stored, int(manager.store.state()["generation"]))
         manager.sync(); manager.wait_for_idle()
-        self.assertEqual(manager.store.get_snapshot()[2]["modelStatus"].get("recipeVersion"), "atlas-graph-v1")
+        self.assertEqual(manager.store.get_snapshot()[2]["modelStatus"].get("recipeVersion"), GRAPH_RECIPE_VERSION)
         manager.stop_watcher()
 
     def test_demo_cas_edits_change_snapshot_and_survive_watcher_restart(self):

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hmac
+import hashlib
 import copy
 import json
 import mimetypes
@@ -14,12 +15,17 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
+from .graph import MAX_TAXONOMY_REDIRECTS_PER_KIND, canonical_context_matches, canonical_entity_key, canonical_identity_matches, resolve_taxonomy_id
 from .storage import SQLiteStore
 from .sync import SyncManager
 
+class RedirectLimitError(ValueError):
+    """Reject oversized or excessively deep redirect state without mutation."""
+
+
 MAX_BODY = 1024 * 1024
 MAX_RESPONSE = 16 * 1024 * 1024
-DEFAULT_SETTINGS = {"provider": "e5", "threshold": 0.8, "topK": 5, "includeIndexedText": False, "openAlex": False}
+DEFAULT_SETTINGS = {"provider": "tfidf", "threshold": 0.8, "topK": 5, "includeIndexedText": False, "openAlex": False}
 
 
 def _json_bytes(value: Any) -> bytes:
@@ -37,6 +43,7 @@ class AtlasHTTPServer(ThreadingHTTPServer):
         self.token = token or secrets.token_urlsafe(32)
         self.launch_id = launch_id
         self.parent_origin = parent_origin
+        self.taxonomy_lock = threading.RLock()
         self.pid = os.getpid()
         super().__init__(address, AtlasRequestHandler)
 
@@ -171,10 +178,24 @@ class AtlasRequestHandler(BaseHTTPRequestHandler):
             if path == "/api/v1/settings":
                 revision, payload, _ = self.server.store.read_json("settings")
                 settings = dict(DEFAULT_SETTINGS); settings.update(payload)
+                if self.server.manager.embedding_provider in {"e5", "tfidf"}: settings["provider"] = self.server.manager.embedding_provider
                 self._send(200, {"revision": revision, "settings": settings}); return
             if path == "/api/v1/taxonomy":
                 revision, payload, source = self.server.store.read_json("taxonomy")
-                self._send(200, {"revision": revision, "taxonomy": payload, "source": source}); return
+                state, snapshot, redirects = self._taxonomy_view()
+                self._send(200, {"revision": revision, "taxonomy": payload, "source": source, "sourceId": state.get("server_id"), "sourceEpoch": state.get("epoch"), "redirects": redirects}); return
+            if path == "/api/v1/taxonomy/resolve":
+                kind = query.get("entityType", [""])[0]
+                entity_id = query.get("entityId", [""])[0]
+                if kind not in {"field", "concept"} or not entity_id: raise ValueError("entityType and entityId required")
+                state, snapshot, redirects = self._taxonomy_view()
+                prefix = f"{kind}:{state.get('server_id')}:{state.get('epoch')}:"
+                canonical = redirects.get(entity_id, entity_id)
+                known = {str(row.get("id")) for row in snapshot.get(kind + "s", []) if isinstance(row, dict)}
+                if not entity_id.startswith(prefix) or canonical not in known:
+                    self._reject(404, "taxonomy entity not found"); return
+                revision = self.server.store.read_json("taxonomy")[0]
+                self._send(200, {"requestedId": entity_id, "canonicalId": canonical, "redirected": canonical != entity_id, "sourceId": state.get("server_id"), "sourceEpoch": state.get("epoch"), "revision": revision}); return
             if path == "/api/v1/overlays":
                 revision, payload, source = self.server.store.read_json("overlays")
                 self._send(200, {"revision": revision, "overlays": payload, "source": source}); return
@@ -206,6 +227,8 @@ class AtlasRequestHandler(BaseHTTPRequestHandler):
             if self._serve_static(path):
                 return
             self._reject(404, "not found")
+        except RedirectLimitError as exc:
+            self._reject(503, str(exc))
         except (ValueError, TypeError):
             self._reject(400, "invalid request")
         except Exception:
@@ -240,6 +263,8 @@ class AtlasRequestHandler(BaseHTTPRequestHandler):
             if path == "/api/v1/taxonomy":
                 body = self._body(); self._taxonomy_write(body, create=True); return
             self._reject(404, "not found")
+        except RedirectLimitError as exc:
+            self._reject(503, str(exc))
         except ValueError as exc:
             self._reject(400, str(exc))
         except Exception:
@@ -254,6 +279,8 @@ class AtlasRequestHandler(BaseHTTPRequestHandler):
             if path == "/api/v1/taxonomy": self._taxonomy_write(body, create=False); return
             if path == "/api/v1/overlays": self._overlay_write(body); return
             self._reject(404, "not found")
+        except RedirectLimitError as exc:
+            self._reject(503, str(exc))
         except ValueError as exc:
             self._reject(400, str(exc))
         except Exception:
@@ -294,15 +321,91 @@ class AtlasRequestHandler(BaseHTTPRequestHandler):
         self.server.manager.request_reindex(provider=merged.get("provider"))
         self._send(200, {"revision": revision, "settings": result})
 
+    def _taxonomy_view(self) -> tuple[dict[str, Any], dict[str, Any], dict[str, str]]:
+        state = self.server.store.state() or {}
+        snapshot = self.server.manager.snapshot()
+        source = snapshot.get("source", {})
+        if not state or source.get("serverId") != state.get("server_id") or source.get("epoch") != state.get("epoch"):
+            return state, {}, {}
+        raw = snapshot.get("taxonomyRedirects", {})
+        if not isinstance(raw, dict):
+            return state, snapshot, {}
+        redirects: dict[str, str] = {}
+        for kind in ("field", "concept"):
+            count = sum(isinstance(key, str) and key.startswith(kind + ":") for key in raw)
+            if count > MAX_TAXONOMY_REDIRECTS_PER_KIND:
+                raise RedirectLimitError(f"{kind} taxonomy redirect limit exceeded")
+            prefix = f"{kind}:{state['server_id']}:{state['epoch']}:"
+            known = {str(row.get("id")) for row in snapshot.get(kind + "s", []) if isinstance(row, dict) and str(row.get("id", "")).startswith(prefix)}
+            scoped = {old: target for old, target in raw.items() if isinstance(old, str) and isinstance(target, str) and old.startswith(prefix) and target.startswith(prefix)}
+            for old in scoped:
+                try:
+                    target = resolve_taxonomy_id(old, scoped)
+                except ValueError as exc:
+                    raise RedirectLimitError(str(exc)) from exc
+                if target in known and target != old:
+                    redirects[old] = target
+        return state, snapshot, redirects
+
+    def _reject_redirected_write(self, payload: Any, redirects: dict[str, str], revision: int) -> bool:
+        def values(node: Any):
+            if isinstance(node, dict):
+                for key, value in node.items():
+                    if key in {"entityId", "id", "fieldId", "conceptId", "paperId"} and isinstance(value, str):
+                        yield value
+                    elif key in {"parentIds", "fieldIds", "conceptIds"} and isinstance(value, list):
+                        yield from (item for item in value if isinstance(item, str))
+                    elif key in {"aliases", "pins", "entities", "paperFields", "paperConcepts", "conceptAliases", "fieldAliases"} and isinstance(value, dict):
+                        yield from value.keys()
+                        yield from values(value)
+                    elif isinstance(value, (dict, list)):
+                        yield from values(value)
+            elif isinstance(node, list):
+                for value in node:
+                    yield from values(value)
+        for value in values(payload):
+            if value in redirects:
+                self._send(409, {"error": "taxonomy id has been merged", "message": "Use the canonical entity ID and retry.", "requestedId": value, "canonicalId": redirects[value], "revision": revision})
+                return True
+        return False
+
     def _taxonomy_write(self, body: dict[str, Any], *, create: bool) -> None:
+        with self.server.taxonomy_lock:
+            self._taxonomy_write_locked(body, create=create)
+
+    def _taxonomy_write_locked(self, body: dict[str, Any], *, create: bool) -> None:
         payload = body.get("taxonomy", body)
         if not isinstance(payload, dict): raise ValueError("taxonomy object required")
         allowed = {"fields", "concepts", "revision", "sourceEpoch", "sourceId", "entityType", "entityId", "label", "aliases", "parentIds", "patch", "source"}
         if set(payload) - allowed: raise ValueError("unknown taxonomy key")
-        current = self.server.store.read_json("taxonomy")[1]
-        merged = {"fields": list(current.get("fields", [])), "concepts": list(current.get("concepts", []))}
+        current_revision, current, _ = self.server.store.read_json("taxonomy")
+        if self._expected_revision(body) != current_revision:
+            self._send(409, {"error": "revision conflict", "revision": current_revision}); return
+        merged = {"fields": copy.deepcopy(current.get("fields", [])), "concepts": copy.deepcopy(current.get("concepts", []))}
         state = self.server.store.state() or {}
         if payload.get("sourceId") != state.get("server_id") or payload.get("sourceEpoch") != state.get("epoch"): raise ValueError("source identity required")
+        _, snapshot, redirects = self._taxonomy_view()
+        if self._reject_redirected_write(payload, redirects, current_revision): return
+        scoped_prefix = {kind: f"{kind}:{state.get('server_id')}:{state.get('epoch')}:" for kind in ("field", "concept")}
+        active = {kind: {str(row.get("id")): row for row in snapshot.get(kind + "s", [])
+                         if str(row.get("id", "")).startswith(scoped_prefix[kind])} for kind in ("field", "concept")}
+        for kind in ("field", "concept"):
+            for row in merged[kind + "s"]:
+                if isinstance(row, dict) and str(row.get("id", "")).startswith(scoped_prefix[kind]):
+                    active[kind].setdefault(str(row["id"]), row)
+        # Include alias edits that are committed but whose graph rebuild is
+        # still pending, fenced to the active source and epoch.
+        _, saved_overlays, overlay_source = self.server.store.read_json("overlays")
+        if overlay_source and overlay_source.get("server_id") == state.get("server_id") and overlay_source.get("epoch") == state.get("epoch"):
+            saved_entities = saved_overlays.get("entities", {})
+            for kind in ("field", "concept"):
+                saved_aliases = saved_overlays.get(kind + "Aliases", {})
+                if not isinstance(saved_aliases, dict): saved_aliases = {}
+                for entity_id, row in list(active[kind].items()):
+                    patch = saved_entities.get(entity_id, {}) if isinstance(saved_entities, dict) else {}
+                    aliases = patch.get("aliases") if isinstance(patch, dict) and "aliases" in patch else saved_aliases.get(entity_id)
+                    if isinstance(aliases, list):
+                        active[kind][entity_id] = {**row, "aliases": aliases}
         if payload.get("entityType"):
             kind = str(payload["entityType"])
             if kind not in {"field", "concept"}: raise ValueError("invalid taxonomy entity type")
@@ -311,6 +414,19 @@ class AtlasRequestHandler(BaseHTTPRequestHandler):
             import re
             raw_label = label.get("en", "") if isinstance(label, dict) else label
             slug = re.sub(r"[^A-Za-z0-9_-]+", "-", str(raw_label)).strip("-").lower() or "item"
+            aliases, parent_ids = payload.get("aliases", []), payload.get("parentIds", [])
+            if not isinstance(aliases, list) or any(not isinstance(x, str) for x in aliases): raise ValueError("aliases must be string array")
+            if not isinstance(parent_ids, list) or any(not isinstance(x, str) for x in parent_ids): raise ValueError("parentIds must be string array")
+            candidate_key = canonical_entity_key(kind, label, aliases)
+            candidate_parents = set(parent_ids) if kind == "field" else set()
+            for entity_id, existing in active[kind].items():
+                candidate = {"label": label, "aliases": aliases, "parentIds": parent_ids}
+                same_context = canonical_context_matches(kind, candidate, existing, snapshot.get("taxonomyRedirects"))
+                if same_context and candidate_key and canonical_identity_matches(kind, candidate, existing):
+                    self._send(409, {"error": "duplicate taxonomy entity", "message": "An equivalent entity already exists in this context.", "existingEntityId": entity_id, "revision": current_revision}); return
+            if f"{kind}:{state.get('server_id')}:{state.get('epoch')}:{slug}" in active[kind]:
+                digest = hashlib.sha256(_json_bytes({"label": label, "parents": sorted(candidate_parents)})).hexdigest()[:12]
+                slug = f"{slug}-{digest}"
             payload = dict(payload)
             payload["fields" if kind == "field" else "concepts"] = [{"id": f"{kind}:{state.get('server_id')}:{state.get('epoch')}:{slug}", "label": label if isinstance(label, dict) else {"en": str(label), "ko": str(label)}, "parentIds": list(payload.get("parentIds", [])) if kind == "field" else [], "aliases": list(payload.get("aliases", [])), "source": str(payload.get("source") or "user")}]
         if payload.get("entityId") and isinstance(payload.get("patch"), dict):
@@ -330,8 +446,30 @@ class AtlasRequestHandler(BaseHTTPRequestHandler):
                 if not create and not any(old.get("id") == entry.get("id") for old in merged[kind]): raise ValueError("unknown taxonomy entity")
             if create: merged[kind].extend(payload.get(kind, []))
             elif payload.get(kind): merged[kind] = payload[kind]
-        ids = {str(f.get("id")) for f in merged["fields"]}
-        parents = {str(f.get("id")): [str(x) for x in f.get("parentIds", [])] for f in merged["fields"]}
+        # Validate every create/edit surface, including bulk payloads, against
+        # the active graph and persisted definitions before committing the CAS.
+        for kind in ("field", "concept"):
+            original = {str(row.get("id")): row for row in current.get(kind + "s", []) if isinstance(row, dict)}
+            candidates = dict(active[kind])
+            for entry in merged[kind + "s"]:
+                entity_id = str(entry.get("id"))
+                if original.get(entity_id) == entry:
+                    continue
+                aliases, parent_ids = entry.get("aliases", []), entry.get("parentIds", [])
+                if not isinstance(aliases, list) or any(not isinstance(x, str) for x in aliases): raise ValueError("aliases must be string array")
+                if not isinstance(parent_ids, list) or any(not isinstance(x, str) for x in parent_ids): raise ValueError("parentIds must be string array")
+                key = canonical_entity_key(kind, entry.get("label", {}), aliases)
+                if not key: raise ValueError("taxonomy label required")
+                for other_id, other in candidates.items():
+                    if other_id == entity_id: continue
+                    same_context = canonical_context_matches(kind, entry, other, snapshot.get("taxonomyRedirects"))
+                    if same_context and canonical_identity_matches(kind, entry, other):
+                        self._send(409, {"error": "duplicate taxonomy entity", "message": "An equivalent entity already exists in this context.", "existingEntityId": other_id, "revision": current_revision}); return
+                candidates[entity_id] = entry
+        all_fields = dict(active["field"])
+        all_fields.update({str(f.get("id")): f for f in merged["fields"]})
+        ids = set(all_fields)
+        parents = {key: [str(x) for x in field.get("parentIds", [])] for key, field in all_fields.items()}
         for child, parent_ids in parents.items():
             for parent in parent_ids:
                 if parent not in ids: raise ValueError("unknown taxonomy parent")
@@ -347,6 +485,10 @@ class AtlasRequestHandler(BaseHTTPRequestHandler):
         self._send(200, {"revision": revision, "taxonomy": result})
 
     def _overlay_write(self, body: dict[str, Any]) -> None:
+        with self.server.taxonomy_lock:
+            self._overlay_write_locked(body)
+
+    def _overlay_write_locked(self, body: dict[str, Any]) -> None:
         payload = body.get("overlays", body)
         if not isinstance(payload, dict): raise ValueError("overlay object required")
         if payload.get("entityType"):
@@ -363,6 +505,11 @@ class AtlasRequestHandler(BaseHTTPRequestHandler):
             raise ValueError("unknown overlay key")
         state = self.server.store.state() or {}
         if payload.get("sourceId") != state.get("server_id") or payload.get("sourceEpoch") != state.get("epoch"): raise ValueError("source identity required")
+        current_revision = self.server.store.read_json("overlays")[0]
+        if self._expected_revision(body) != current_revision:
+            self._send(412, {"error": "revision conflict", "revision": current_revision}); return
+        _, _, redirects = self._taxonomy_view()
+        if self._reject_redirected_write(payload, redirects, current_revision): return
         if payload.get("entityType"):
             entity_id = str(payload.get("entityId"))
             if not (entity_id.startswith(f"zotero:{state.get('server_id')}:") or entity_id.startswith(f"field:{state.get('server_id')}:{state.get('epoch')}:") or entity_id.startswith(f"concept:{state.get('server_id')}:{state.get('epoch')}:") ):

@@ -181,7 +181,8 @@ class EmbeddingProvider:
             # failed local-only load in a way that could start a download.
             try:
                 self._model = SentenceTransformer(
-                    self.model_name, device="cpu",
+                    self.model_name, device="cpu", trust_remote_code=False,
+                    local_files_only=not self.allow_download,
                     model_kwargs={"local_files_only": not self.allow_download},
                 )
             except TypeError:

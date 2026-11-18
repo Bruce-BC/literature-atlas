@@ -28,7 +28,7 @@ from .zotero import (
 # reported by the engine itself rather than masked as a missing backend module.
 from .graph import GraphEngine  # type: ignore
 
-GRAPH_RECIPE_VERSION = "atlas-graph-v1"
+GRAPH_RECIPE_VERSION = "atlas-graph-v2"
 
 
 def now_iso() -> str:
@@ -36,18 +36,17 @@ def now_iso() -> str:
 
 
 class SyncManager:
-    def __init__(self, store: SQLiteStore, client: ZoteroClient, *, cache_dir: Path | str | None = None, graph_engine: Any = None, embedding_provider: str = "e5", poll_interval: float = 30.0, library_id: int = 0, demo_snapshot: dict[str, Any] | None = None):
+    def __init__(self, store: SQLiteStore, client: ZoteroClient, *, cache_dir: Path | str | None = None, graph_engine: Any = None, embedding_provider: str | None = None, poll_interval: float = 30.0, library_id: int = 0, demo_snapshot: dict[str, Any] | None = None):
         if not 5 <= float(poll_interval) <= 300:
             raise ValueError("poll_interval must be between 5 and 300 seconds")
         self.store, self.client = store, client
         self.cache_dir = Path(cache_dir or store.data_dir / "models")
         self.graph_engine = graph_engine
-        self.embedding_provider = embedding_provider
         self.poll_interval = float(poll_interval)
         self.library_id = int(library_id)
         persisted_settings = store.read_json("settings")[1]
-        if embedding_provider == "e5" and persisted_settings.get("provider") in {"e5", "tfidf"}:
-            self.embedding_provider = persisted_settings["provider"]
+        saved_provider = persisted_settings.get("provider")
+        self.embedding_provider = embedding_provider if embedding_provider is not None else (saved_provider if saved_provider in {"e5", "tfidf"} else "tfidf")
         self.include_indexed_text = bool(persisted_settings.get("includeIndexedText", False))
         self.demo_snapshot = copy.deepcopy(demo_snapshot)
         self._generation_lock = threading.RLock()
@@ -55,18 +54,48 @@ class SyncManager:
         self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="atlas-enrichment")
         self._future: Future[Any] | None = None
         self._engine_instance: Any = graph_engine
-        self._engine_provider: str | None = embedding_provider if graph_engine is None else None
+        self._engine_provider: str | None = self.embedding_provider if graph_engine is None else None
         self._reindex_pending = False
         self._watch_stop = threading.Event()
         self._watch_thread: threading.Thread | None = None
         self._status_lock = threading.RLock()
-        self._status: dict[str, Any] = {"phase": "idle", "stale": True, "lastSuccess": None, "message": None, "observedLag": None, "observedLatency": None, "triggerMode": None, "watcherInterval": self.poll_interval, "lastError": None, "indexing": False, "modelStatus": {"provider": embedding_provider, "state": "pending"}}
+        self._status: dict[str, Any] = {"phase": "idle", "stale": True, "lastSuccess": None, "message": None, "observedLag": None, "observedLatency": None, "triggerMode": None, "watcherInterval": self.poll_interval, "lastError": None, "indexing": False, "modelStatus": {"provider": self.embedding_provider, "state": "pending"}}
 
     @property
     def status(self) -> dict[str, Any]:
         with self._status_lock:
             result = copy.deepcopy(self._status)
-        result["revision"] = (self.store.get_snapshot() or (0, 0, {}))[0]
+        stored = self.store.get_snapshot()
+        result["revision"] = (stored or (0, 0, {}))[0]
+        running = bool(self._future and not self._future.done())
+        if running:
+            result["indexing"] = True
+        # A restarted bridge starts with a pending in-memory status even when
+        # a completed graph is already cached. Restore only the matching
+        # source/generation/recipe/provider, and never mask an active job or
+        # a reported error. Connectivity remains independently stale/offline.
+        model = result.get("modelStatus", {})
+        if stored and not result.get("indexing") and isinstance(model, dict) and model.get("state") == "pending":
+            state = self.store.state() or {}
+            snapshot = stored[2]
+            source = snapshot.get("source", {})
+            cached = snapshot.get("modelStatus", {})
+            if (source.get("serverId") == state.get("server_id") and source.get("epoch") == state.get("epoch")
+                    and stored[1] == state.get("generation") and isinstance(cached, dict)
+                    and cached.get("provider") == self.embedding_provider
+                    and cached.get("recipeVersion") == GRAPH_RECIPE_VERSION
+                    and (cached.get("state") == "ready" or cached.get("status") == "ready")
+                    and not cached.get("failed")):
+                result["modelStatus"] = copy.deepcopy(cached)
+        if stored and not running and result.get("phase") != "offline":
+            state = self.store.state() or {}
+            snapshot = stored[2]
+            source, snapshot_status = snapshot.get("source", {}), snapshot.get("status", {})
+            cached_model = snapshot.get("modelStatus", {})
+            if (source.get("serverId") == state.get("server_id") and source.get("epoch") == state.get("epoch")
+                    and stored[1] == state.get("generation") and snapshot_status.get("phase") == "error"
+                    and isinstance(cached_model, dict) and cached_model.get("state") == "error"):
+                result.update(phase="error", stale=True, message="enrichment failed", lastError=cached_model.get("error"), modelStatus=copy.deepcopy(cached_model))
         return result
 
     def _set_status(self, **updates: Any) -> None:
@@ -100,7 +129,8 @@ class SyncManager:
         while not self._watch_stop.is_set():
             try:
                 self.sync(trigger="automatic")
-                if self.status.get("phase") in {"offline", "error"}:
+                status = self.status
+                if status.get("phase") == "offline" or (status.get("phase") == "error" and status.get("message") != "enrichment failed"):
                     raise ZoteroError("automatic sync failed")
                 try:
                     self.sync_fulltext()
@@ -313,7 +343,7 @@ class SyncManager:
         if self._engine_instance is not None and self._engine_provider == self.embedding_provider:
             return self._engine_instance
         self.cache_dir.mkdir(parents=True, exist_ok=True)
-        self._engine_instance = GraphEngine(cache_dir=self.cache_dir, provider=self.embedding_provider, allow_download=True)
+        self._engine_instance = GraphEngine(cache_dir=self.cache_dir, provider=self.embedding_provider, allow_download=False)
         self._engine_provider = self.embedding_provider
         return self._engine_instance
 
@@ -345,15 +375,19 @@ class SyncManager:
                 return
             self._set_status(modelStatus=result.get("modelStatus", {}), indexing=False)
         except Exception as exc:
-            # Preserve the metadata snapshot and expose a bounded model error.
-            self._set_status(modelStatus={"provider": self.embedding_provider, "state": "error", "error": type(exc).__name__}, indexing=False)
+            # Publish errors only for the still-current source and generation;
+            # an older worker must not overwrite a newer job's state.
             current = self.store.get_snapshot()
             source_state = self.store.state()
-            if current and source_state and int(source_state["generation"]) == generation:
+            if (current and source_state and source_state["server_id"] == state["server_id"]
+                    and source_state["epoch"] == state["epoch"] and int(source_state["generation"]) == generation):
                 failed = copy.deepcopy(current[2])
                 failed["status"] = {**failed.get("status", {}), "phase": "error", "stale": True, "message": "enrichment failed"}
                 failed["modelStatus"] = {"provider": self.embedding_provider, "state": "error", "error": type(exc).__name__}
-                self.store.publish_snapshot(failed, generation)
+                if self.store.publish_snapshot(failed, generation) is not None:
+                    latest = self.store.state()
+                    if latest and latest["server_id"] == state["server_id"] and latest["epoch"] == state["epoch"] and int(latest["generation"]) == generation:
+                        self._set_status(phase="error", stale=True, message="enrichment failed", lastError=type(exc).__name__, modelStatus=failed["modelStatus"], indexing=False)
 
     def wait_for_idle(self, timeout: float = 10) -> None:
         if self._future:

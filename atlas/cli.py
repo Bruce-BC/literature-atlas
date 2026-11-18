@@ -33,7 +33,7 @@ def build_parser() -> argparse.ArgumentParser:
     serve.add_argument("--poll-interval", type=float, default=30.0)
     serve.add_argument("--launch-id", default=None)
     serve.add_argument("--parent-origin", default=None)
-    serve.add_argument("--embedding-provider", choices=("e5", "tfidf", "fake"), default="e5")
+    serve.add_argument("--embedding-provider", choices=("e5", "tfidf", "fake"), default=None)
     serve.add_argument("--demo", action="store_true", help="use the public synthetic fixture")
     serve.add_argument("--demo-fixture", type=Path, default=None, help="synthetic fixture path (only with --demo)")
     serve.add_argument("--zotero-url", default=os.environ.get("ATLAS_ZOTERO_URL", "http://127.0.0.1:23119/api"))

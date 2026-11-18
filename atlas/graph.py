@@ -11,6 +11,7 @@ import urllib.parse
 import urllib.request
 import unicodedata
 from collections import Counter, defaultdict
+from itertools import combinations
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
@@ -28,6 +29,15 @@ _HYPHENS = re.compile(r"[‐‑‒–—−-]")
 KEYWORD_TOPK_PER_PAPER = 12
 KEYWORD_MIN_COOCCURRENCE = 2
 OPENALEX_MAX_RESPONSE_BYTES = 2 * 1024 * 1024
+MAX_TAXONOMY_REDIRECTS_PER_KIND = 10_000
+MAX_REDIRECT_CHAIN = 64
+_CURATED_CANONICALS = {
+    "kl divergence": "kl-divergence", "kullback leibler divergence": "kl-divergence",
+    "relative entropy": "kl-divergence", "kl 발산": "kl-divergence",
+    "optimal transport": "optimal-transport", "optimal-transport": "optimal-transport",
+    "ot": "optimal-transport", "life science": "life-science", "life-science": "life-science",
+    "biology": "life-science", "biological science": "life-science", "생명과학": "life-science",
+}
 _PROVIDER_POOL: dict[tuple[str, str, bool], EmbeddingProvider] = {}
 
 
@@ -69,6 +79,242 @@ def _valid_id(value: Any) -> bool:
     return bool(value) and len(value) <= 512 and bool(_ID_RE.fullmatch(value))
 
 
+def _entity_key(value: Any) -> str:
+    text = unicodedata.normalize("NFKC", normalize_text(value)).casefold()
+    text = "".join(" " if unicodedata.category(char)[0] in {"P", "S"} else char for char in text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _canonical_entity_key(row: Mapping[str, Any]) -> str:
+    label = row.get("label", {})
+    labels = ([label.get("en"), label.get("ko")] + [value for key, value in label.items() if key not in {"en", "ko"}]) if isinstance(label, Mapping) else [label]
+    aliases = list(row.get("aliases", []) or [])
+    primary = next((_entity_key(value) for value in labels if _entity_key(value)), "")
+    for candidate in labels + aliases:
+        key = _entity_key(candidate)
+        # This legacy built-in hint is a broader/narrower classification,
+        # never a declaration that Optimization and Optimal Transport are equal.
+        if primary in {"optimization", "optimisation", "최적화"} and _CURATED_CANONICALS.get(key) == "optimal-transport":
+            continue
+        if key in _CURATED_CANONICALS:
+            return _CURATED_CANONICALS[key]
+    return next((key for value in labels if (key := _entity_key(value))), _entity_key(row.get("id")))
+
+
+def canonical_entity_key(kind: str, label: Any, aliases: Iterable[Any] = ()) -> str:
+    """Public write-boundary identity key for field/concept deduplication.
+
+    Callers must still apply source/epoch scoping and parent-context conflict
+    checks; this helper only supplies the deterministic type-local label key.
+    """
+    if kind not in {"field", "concept"}:
+        raise ValueError("canonical identity kind must be field or concept")
+    label_value = label if isinstance(label, Mapping) else {"en": label}
+    return _canonical_entity_key({"label": label_value, "aliases": list(aliases)})
+
+
+def _identity_tokens(row: Mapping[str, Any]) -> set[str]:
+    label = row.get("label", {})
+    labels = list(label.values()) if isinstance(label, Mapping) else [label]
+    tokens = set()
+    primary = next((_entity_key(value) for value in labels if _entity_key(value)), "")
+    for value in labels + list(row.get("aliases", []) or []):
+        key = _entity_key(value)
+        normalized = _CURATED_CANONICALS.get(key, key)
+        if primary in {"optimization", "optimisation", "최적화"} and normalized == "optimal-transport":
+            continue
+        if key:
+            tokens.add(normalized)
+    return tokens or {_entity_key(row.get("id"))}
+
+
+def canonical_identity_matches(kind: str, left: Mapping[str, Any], right: Mapping[str, Any]) -> bool:
+    """Whether two records share a normalized label or declared alias."""
+    if kind not in {"field", "concept"}:
+        raise ValueError("canonical identity kind must be field or concept")
+    return bool(_identity_tokens(left) & _identity_tokens(right))
+
+
+def canonical_context_matches(kind: str, left: Mapping[str, Any], right: Mapping[str, Any],
+                              redirects: Mapping[str, str] | None = None) -> bool:
+    """Compare taxonomy contexts after parent redirects, with a narrow legacy migration."""
+    if kind == "concept":
+        return True
+    if kind != "field":
+        raise ValueError("canonical identity kind must be field or concept")
+    def primary(row: Mapping[str, Any]) -> str:
+        label = row.get("label", {})
+        values = list(label.values()) if isinstance(label, Mapping) else [label]
+        return next((_entity_key(value) for value in values if _entity_key(value)), "")
+    left_label, right_label = primary(left), primary(right)
+    broad = {"optimization", "optimisation", "최적화"}
+    if ((left_label in broad and _CURATED_CANONICALS.get(right_label) == "optimal-transport") or
+            (right_label in broad and _CURATED_CANONICALS.get(left_label) == "optimal-transport")):
+        return False
+    redirects = redirects or {}
+    def parents(row: Mapping[str, Any]) -> frozenset[str]:
+        return frozenset(redirects.get(str(p), str(p)) for p in row.get("parentIds", []) or [])
+    a, b = parents(left), parents(right)
+    if a == b:
+        return True
+    # Earlier versions generated root copies of these two built-in child fields.
+    # Only the actual model field may absorb such a root copy; arbitrary
+    # user-created homonyms (including Life Science) retain their context.
+    for builtin, legacy, bp, lp in ((left, right, a, b), (right, left, b, a)):
+        key = _canonical_entity_key(builtin)
+        if (key in {"kl-divergence", "optimal-transport"} and bp and not lp
+                and builtin.get("source") == "model"
+                and str(builtin.get("id", "")).endswith(":" + _slug(key))
+                and key in _identity_tokens(legacy)):
+            return True
+    return False
+
+
+def _canonicalize_entities(entities: Mapping[str, Mapping[str, Any]], kind: str,
+                           server: str, epoch: str) -> tuple[dict[str, dict], dict[str, str]]:
+    """Resolve alias components, respecting canonicalized parent contexts."""
+    ids = sorted(entities)
+    groups = {i: {i} for i in ids}
+    owner = {i: i for i in ids}
+    tokens = {i: _identity_tokens(entities[i]) for i in ids}
+    inverted: dict[str, list[str]] = defaultdict(list)
+    for entity_id in ids:
+        for token in tokens[entity_id]:
+            inverted[token].append(entity_id)
+    candidates = sorted({pair for group in inverted.values() for pair in combinations(group, 2)})
+    # Revisit after each pass: merging equivalent parents may make their
+    # children compatible. Components require pairwise compatible contexts,
+    # preventing a root alias from bridging distinct child contexts.
+    changed = True
+    while changed:
+        changed = False
+        redirects = {i: owner[i] for i in ids}
+        for left, right in candidates:
+            a, b = owner[left], owner[right]
+            if a == b:
+                continue
+            if not all(canonical_context_matches(kind, entities[x], entities[y], redirects)
+                       for x in groups[a] for y in groups[b]):
+                continue
+            target, removed = sorted((a, b))
+            groups[target].update(groups.pop(removed))
+            for member in groups[target]:
+                owner[member] = target
+            changed = True
+    output: dict[str, dict] = {}
+    redirects: dict[str, str] = {}
+    used: set[str] = set()
+    # Built-in ID is retained for curated concepts where possible. Other
+    # distinct-context components retain their stable original IDs.
+    clusters = sorted(groups.values(), key=lambda c: (not any(entities[i].get("source") == "model" for i in c), min(c)))
+    for cluster in clusters:
+        members = sorted(cluster)
+        curated = sorted(set.union(*(tokens[i] for i in members)) & set(_CURATED_CANONICALS.values()))
+        candidate = _id(kind, server, epoch, curated[0]) if curated else min(members)
+        target = candidate if candidate not in used else min(members)
+        if target in used:
+            target = f"{target}-{hashlib.sha256('|'.join(members).encode()).hexdigest()[:12]}"
+        used.add(target)
+        preferred = next((i for i in members if i == target), members[0])
+        merged = copy.deepcopy(dict(entities[preferred]))
+        merged["id"] = target
+        aliases, parents, origins = set(), set(), set()
+        for member in members:
+            item = entities[member]
+            aliases.update(str(v) for v in item.get("aliases", []) or [])
+            if member != preferred:
+                label = item.get("label", {})
+                for value in (label.values() if isinstance(label, Mapping) else [label]):
+                    if value:
+                        aliases.add(str(value))
+            parents.update(str(p) for p in item.get("parentIds", []) or [])
+            origins.update(str(i) for i in item.get("mergedFrom", []) or [])
+            origins.add(member)
+            if item.get("pinned"):
+                merged["pinned"] = True
+            if item.get("source") == "user":
+                merged["source"] = "user"
+            if member != target:
+                redirects[member] = target
+        merged["aliases"] = list(dict.fromkeys(entities[preferred].get("aliases", []) or [])) if len(members) == 1 else sorted(aliases)
+        if kind == "field":
+            merged["parentIds"] = sorted(parents)
+        if len(origins) > 1:
+            merged["mergedFrom"] = sorted(origins)
+        output[target] = merged
+    if kind == "field":
+        for entity_id, row in output.items():
+            row["parentIds"] = sorted({redirects.get(parent, parent) for parent in row.get("parentIds", [])
+                                       if redirects.get(parent, parent) != entity_id})
+        # Deterministic edge insertion rejects any edge that would form a cycle.
+        accepted: dict[str, list[str]] = {i: [] for i in output}
+        def reaches(start: str, target: str, seen: set[str]) -> bool:
+            if start == target:
+                return True
+            if start in seen:
+                return False
+            seen.add(start)
+            return any(reaches(p, target, seen) for p in accepted.get(start, []))
+        for entity_id in sorted(output):
+            for parent in output[entity_id]["parentIds"]:
+                if parent in output and not reaches(parent, entity_id, set()):
+                    accepted[entity_id].append(parent)
+        for entity_id in output:
+            output[entity_id]["parentIds"] = accepted[entity_id]
+    return output, redirects
+
+def resolve_taxonomy_id(entity_id: str, redirects: Mapping[str, str]) -> str | None:
+    """Follow a redirect chain; return None for malformed or cyclic chains.
+
+    Callers enforce active source, epoch, type and target existence.
+    """
+    if not isinstance(entity_id, str) or not entity_id:
+        return None
+    seen: set[str] = set()
+    current = entity_id
+    while current in redirects:
+        if current in seen:
+            return None
+        if len(seen) >= MAX_REDIRECT_CHAIN:
+            raise ValueError(f"taxonomy redirect chain exceeds {MAX_REDIRECT_CHAIN} links")
+        seen.add(current)
+        current = redirects[current]
+        if not isinstance(current, str) or not current:
+            return None
+    return current
+
+
+def _validated_redirects(previous: Mapping[str, Any] | None, server: str, epoch: str) -> dict[str, str]:
+    if not isinstance(previous, Mapping):
+        return {}
+    source = previous.get("source")
+    if not isinstance(source, Mapping) or source.get("id") != server or source.get("serverId") != server or source.get("epoch") != epoch:
+        return {}
+    raw = previous.get("taxonomyRedirects")
+    if not isinstance(raw, Mapping):
+        return {}
+    for kind in ("field", "concept"):
+        count = sum(isinstance(key, str) and key.startswith(kind + ":") for key in raw)
+        if count > MAX_TAXONOMY_REDIRECTS_PER_KIND:
+            raise ValueError(f"{kind} taxonomy redirects exceed {MAX_TAXONOMY_REDIRECTS_PER_KIND}")
+    active = {kind: {str(row.get("id")) for row in previous.get(kind + "s", []) or [] if isinstance(row, Mapping)}
+              for kind in ("field", "concept")}
+    output: dict[str, str] = {}
+    for old in sorted(key for key in raw if isinstance(key, str)):
+        kind = next((k for k in ("field", "concept") if old.startswith(f"{k}:{server}:{epoch}:")), None)
+        if not kind:
+            continue
+        target = resolve_taxonomy_id(old, raw)
+        if target and target != old and target.startswith(f"{kind}:{server}:{epoch}:") and target in active[kind]:
+            # Validate every intermediate identity, not just the endpoint.
+            step = old
+            while step in raw and isinstance(raw[step], str) and raw[step].startswith(f"{kind}:{server}:{epoch}:"):
+                step = raw[step]
+            if step == target:
+                output[old] = target
+    return output
+
+
 def _legacy_id_map(previous: Mapping[str, Any] | None, server: str, epoch: str,
                    *contexts: Any) -> dict[str, str]:
     """Map legacy active-epoch Unicode IDs from every active graph input."""
@@ -97,6 +343,8 @@ def _legacy_id_map(previous: Mapping[str, Any] | None, server: str, epoch: str,
                         if kind == "field":
                             for parent in row.get("parentIds", []) or []:
                                 register("field", parent)
+            if value.get("displayFieldId"):
+                register("field", value["displayFieldId"])
             for key in ("fieldIds", "conceptIds", "parentIds"):
                 for item in value.get(key, []) or []:
                     register("field" if key != "conceptIds" else "concept", item)
@@ -183,7 +431,10 @@ def _migrate_overlay(overlays: Any, migrations: Mapping[str, str]) -> Any:
             for entity, payload in value.items():
                 new_entity = _replace_id(entity, migrations)
                 if key in {"conceptAliases", "fieldAliases"}:
-                    converted[new_entity] = payload
+                    if isinstance(payload, list):
+                        converted[new_entity] = list(dict.fromkeys((converted.get(new_entity) or []) + payload))
+                    else:
+                        converted[new_entity] = payload
                 elif isinstance(payload, list):
                     converted[new_entity] = [_replace_id(item, migrations) for item in payload]
                 else:
@@ -203,10 +454,25 @@ def _migrate_overlay(overlays: Any, migrations: Mapping[str, str]) -> Any:
                         row[key] = [_replace_id(item, migrations) for item in row[key]]
                 if isinstance(row.get("memberships"), list):
                     row["memberships"] = [dict(item, fieldId=_replace_id(item.get("fieldId"), migrations)) if isinstance(item, Mapping) else item for item in row["memberships"]]
+            if new_entity in entities and isinstance(row, Mapping) and isinstance(entities[new_entity], Mapping):
+                merged = dict(entities[new_entity])
+                for key, value in row.items():
+                    if key in {"aliases", "fieldIds", "conceptIds", "memberships"} and isinstance(value, list):
+                        existing = list(merged.get(key, []) or [])
+                        merged[key] = existing + [item for item in value if item not in existing]
+                    elif key == "pinned":
+                        merged[key] = bool(merged.get(key)) or bool(value)
+                    else:
+                        merged[key] = value
+                row = merged
             entities[new_entity] = row
         out["entities"] = entities
     if isinstance(out.get("pins"), Mapping):
-        out["pins"] = {_replace_id(key, migrations): value for key, value in out["pins"].items()}
+        pins: dict[str, bool] = {}
+        for key, value in out["pins"].items():
+            target = _replace_id(key, migrations)
+            pins[target] = pins.get(target, False) or bool(value)
+        out["pins"] = pins
     return out
 
 
@@ -327,7 +593,7 @@ def _builtin_taxonomy(server: str, epoch: str) -> list[dict[str, Any]]:
         {"id": "analysis", "label": {"en": "Analysis", "ko": "해석학"}, "parentIds": ["mathematics"], "aliases": ["mathematical analysis"]},
         {"id": "topology", "label": {"en": "Topology", "ko": "위상수학"}, "parentIds": ["mathematics"], "aliases": ["graph topology"]},
         {"id": "probability", "label": {"en": "Probability", "ko": "확률론"}, "parentIds": ["mathematics"], "aliases": ["stochastic"]},
-        {"id": "optimization", "label": {"en": "Optimization", "ko": "최적화"}, "parentIds": ["mathematics"], "aliases": ["optimal transport"]},
+        {"id": "optimization", "label": {"en": "Optimization", "ko": "최적화"}, "parentIds": ["mathematics"], "aliases": []},
         {"id": "optimal-transport", "label": {"en": "Optimal Transport", "ko": "최적수송"}, "parentIds": ["optimization"], "aliases": ["OT"]},
         {"id": "information", "label": {"en": "Information Theory", "ko": "정보이론"}, "parentIds": ["mathematics"], "aliases": ["entropy", "information theory"]},
         {"id": "kl-divergence", "label": {"en": "KL Divergence", "ko": "KL 발산"}, "parentIds": ["information"], "aliases": ["Kullback–Leibler divergence", "relative entropy"]},
@@ -533,6 +799,8 @@ class GraphEngine:
         source_papers = [copy.deepcopy(dict(p)) for p in papers]
         migrations = _legacy_id_map(previous, server, epoch, raw_taxonomy, raw_overlay,
                                      source, source_papers)
+        prior_redirects = _validated_redirects(previous, server, epoch)
+        migrations.update(prior_redirects)
         settings = copy.deepcopy(dict(settings or {}))
         taxonomy = _migrate_taxonomy(raw_taxonomy, migrations)
         overlay_copy = _migrate_overlay(raw_overlay, migrations)
@@ -577,6 +845,8 @@ class GraphEngine:
             overlay_copy["conceptAliases"] = concept_aliases
             overlay_copy["pins"] = pins
         for paper in source_papers:
+            if paper.get("displayFieldId"):
+                paper["displayFieldId"] = _replace_id(paper["displayFieldId"], migrations)
             for key in ("fieldIds", "conceptIds"):
                 if isinstance(paper.get(key), list):
                     paper[key] = [_replace_id(item, migrations) for item in paper[key]]
@@ -589,15 +859,6 @@ class GraphEngine:
             for field in fields.values():
                 field["source"] = "model"
         paper_rows: list[dict[str, Any]] = []
-        by_old_field: dict[str, str] = {}
-        for fid in fields:
-            by_old_field[fid.rsplit(":", 1)[-1]] = fid
-        raw_top_concepts = []
-        if isinstance(taxonomy, Mapping):
-            raw_top_concepts = taxonomy.get("concepts", []) or []
-        for raw in raw_top_concepts:
-            if isinstance(raw, Mapping) and raw.get("id"):
-                by_old_field[str(raw["id"])] = str(raw["id"])
 
         # Preserve source-supplied fields/concepts and memberships from a prior
         # snapshot when callers pass a snapshot-shaped paper collection.
@@ -630,6 +891,31 @@ class GraphEngine:
                 raise ValueError("field alias is outside active source epoch")
             if field_id in fields:
                 fields[field_id]["aliases"] = [str(alias) for alias in aliases or []]
+        fields, field_redirects = _canonicalize_entities(fields, "field", server, epoch)
+        if field_redirects:
+            if isinstance(overlay_copy.get("pins"), Mapping):
+                remapped_pins: dict[str, bool] = {}
+                for key, value in overlay_copy["pins"].items():
+                    target = field_redirects.get(key, key)
+                    remapped_pins[target] = remapped_pins.get(target, False) or bool(value)
+                overlay_copy["pins"] = remapped_pins
+            for paper in source_papers:
+                if paper.get("displayFieldId") in field_redirects:
+                    paper["displayFieldId"] = field_redirects[paper["displayFieldId"]]
+                if isinstance(paper.get("fieldIds"), list):
+                    paper["fieldIds"] = [field_redirects.get(item, item) for item in paper["fieldIds"]]
+                if isinstance(paper.get("memberships"), list):
+                    for membership in paper["memberships"]:
+                        if isinstance(membership, Mapping):
+                            membership["fieldId"] = field_redirects.get(membership.get("fieldId"), membership.get("fieldId"))
+            if isinstance(overlay_copy.get("paperFields"), Mapping):
+                overlay_copy["paperFields"] = {key: [field_redirects.get(item, item) for item in values] if isinstance(values, list) else values for key, values in overlay_copy["paperFields"].items()}
+            if isinstance(overlay_copy.get("memberships"), list):
+                for membership in overlay_copy["memberships"]:
+                    if isinstance(membership, Mapping):
+                        membership["fieldId"] = field_redirects.get(membership.get("fieldId"), membership.get("fieldId"))
+        by_old_field = {fid.rsplit(":", 1)[-1]: fid for fid in fields}
+        by_canonical_field = {_canonical_entity_key(row): fid for fid, row in fields.items()}
 
         explicit_memberships = []
         for p in source_papers:
@@ -684,7 +970,7 @@ class GraphEngine:
             if field_id.startswith(f"field:{server}:{epoch}:"):
                 fid = field_id
             else:
-                fid = by_old_field.get(field_id) or _id("field", server, epoch, field_id)
+                fid = by_old_field.get(field_id) or by_canonical_field.get(canonical_entity_key("field", field_id)) or _id("field", server, epoch, field_id)
             fields.setdefault(fid, {"id": fid, "label": _label(label, field_id), "parentIds": [], "aliases": [], "source": "user"})
             return fid
         def add_membership(pid: str, fid: str, raw: Mapping[str, Any] | None = None, *, default_method: str = "user") -> None:
@@ -847,6 +1133,32 @@ class GraphEngine:
                 p["pinned"] = bool(pins[p["id"]])
             p.pop("_inputFieldIds", None)
             p.pop("_inputConceptIds", None)
+
+        concepts, concept_redirects = _canonicalize_entities(concepts, "concept", server, epoch)
+        if concept_redirects:
+            for paper in paper_rows:
+                paper["conceptIds"] = list(dict.fromkeys(concept_redirects.get(cid, cid) for cid in paper.get("conceptIds", [])))
+            if isinstance(overlay_copy.get("paperConcepts"), Mapping):
+                overlay_copy["paperConcepts"] = {key: [concept_redirects.get(item, item) for item in values] if isinstance(values, list) else values for key, values in overlay_copy["paperConcepts"].items()}
+            if isinstance(overlay_copy.get("conceptAliases"), Mapping):
+                overlay_copy["conceptAliases"] = {concept_redirects.get(key, key): value for key, value in overlay_copy["conceptAliases"].items()}
+            if isinstance(overlay_copy.get("pins"), Mapping):
+                remapped_pins = {}
+                for key, value in overlay_copy["pins"].items():
+                    target = concept_redirects.get(key, key)
+                    remapped_pins[target] = remapped_pins.get(target, False) or bool(value)
+                overlay_copy["pins"] = remapped_pins
+        new_redirects = {**field_redirects, **concept_redirects}
+        combined_redirects = {**prior_redirects, **new_redirects}
+        for kind in ("field", "concept"):
+            if sum(key.startswith(kind + ":") for key in combined_redirects) > MAX_TAXONOMY_REDIRECTS_PER_KIND:
+                raise ValueError(f"{kind} taxonomy redirects exceed {MAX_TAXONOMY_REDIRECTS_PER_KIND}")
+        active_targets = set(fields) | set(concepts)
+        taxonomy_redirects = {}
+        for old in sorted(combined_redirects):
+            target = resolve_taxonomy_id(old, combined_redirects)
+            if target and target != old and target in active_targets:
+                taxonomy_redirects[old] = target
 
         configured_vectors = next((settings.get(key) for key in ("fakeVectors", "embeddingVectors", "vectors")
                                    if isinstance(settings.get(key), Mapping)), None)
@@ -1122,5 +1434,6 @@ class GraphEngine:
                            "observedLag": None, "watcherInterval": None},
                 "papers": paper_rows, "fields": list(fields.values()), "concepts": list(concepts.values()),
                 "memberships": memberships, "edges": edges, "attachments": out_attachments, "collections": collections,
-                "overview": overview, "modelStatus": model_status, "allocationMode": "primary-display-field"}
+                "overview": overview, "modelStatus": model_status, "allocationMode": "primary-display-field",
+                "taxonomyRedirects": taxonomy_redirects}
 

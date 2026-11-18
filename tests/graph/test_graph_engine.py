@@ -7,9 +7,170 @@ from pathlib import Path
 from unittest import mock
 from jsonschema import validate
 
-from atlas.graph import GraphEngine
+from atlas.graph import GraphEngine, canonical_entity_key, _canonicalize_entities, _id, resolve_taxonomy_id, _validated_redirects, MAX_TAXONOMY_REDIRECTS_PER_KIND, MAX_REDIRECT_CHAIN
 from atlas.embeddings import EmbeddingProvider, document_text
 
+
+
+class CanonicalResolutionTests(unittest.TestCase):
+    def row(self, name, label, parents=(), aliases=(), source="user"):
+        return {"id": name, "label": {"en": label}, "parentIds": list(parents),
+                "aliases": list(aliases), "source": source}
+
+    def resolve(self, rows):
+        return _canonicalize_entities({row["id"]: row for row in rows}, "field", "s", "e")
+
+    def test_unicode_only_labels_are_distinct_and_normalized(self):
+        values = ("정보기하", "위상수학", "几何", "γεωμετρία")
+        keys = [canonical_entity_key("field", {"ko": value}) for value in values]
+        self.assertEqual(keys, list(values))
+        self.assertEqual(len(set(keys)), len(values))
+        self.assertEqual(canonical_entity_key("field", {"ko": " ＡＢＣ–Ｄ "}), "abc d")
+        rows = [self.row(str(i), value) for i, value in enumerate(values)]
+        result, redirects = self.resolve(rows)
+        self.assertEqual(len(result), 4)
+        self.assertFalse(redirects)
+
+    def test_root_child_and_multicontext_homonyms_stay_separate(self):
+        rows = [self.row("p", "Parent"), self.row("q", "Other"),
+                self.row("root", "Example"), self.row("child", "Example", ["p"]),
+                self.row("multi", "Example", ["p", "q"])]
+        result, redirects = self.resolve(rows)
+        self.assertEqual(len(result), 5)
+        self.assertFalse(redirects)
+
+    def test_alias_chain_and_parent_redirect_fixpoint_are_order_independent(self):
+        rows = [self.row("p1", "Parent"), self.row("p2", "Parent"),
+                self.row("a", "Alpha", ["p1"], ["Beta"]),
+                self.row("b", "Beta", ["p2"], ["Gamma"]),
+                self.row("c", "Gamma", ["p1"])]
+        result, redirects = self.resolve(rows)
+        reverse, _ = self.resolve(list(reversed(rows)))
+        self.assertEqual(result, reverse)
+        self.assertEqual(len(result), 2)
+        self.assertEqual({redirects.get(i, i) for i in ("a", "b", "c")}, {"a"})
+        again, _ = self.resolve(list(result.values()))
+        self.assertEqual(result, again)
+
+    def test_dash_variants_and_curated_model_legacy_migration(self):
+        model = _id("field", "s", "e", "kl-divergence")
+        rows = [self.row("parent", "Information"), self.row(model, "KL Divergence", ["parent"], source="model"),
+                self.row("legacy", "Kullback-Leibler divergence"),
+                self.row("en", "Kullback–Leibler divergence")]
+        result, redirects = self.resolve(rows)
+        self.assertEqual(len(result), 2)
+        self.assertEqual(redirects["legacy"], model)
+        self.assertEqual(redirects["en"], model)
+        self.assertEqual(result[model]["parentIds"], ["parent"])
+        self.assertEqual(canonical_entity_key("field", "Kullback-Leibler divergence"), "kl-divergence")
+
+    def test_real_build_remaps_legacy_field_pins_and_paper_memberships(self):
+        source = {"id": "s", "serverId": "s", "epoch": "e"}
+        legacy = "field:s:e:legacy-kl"
+        previous = {"source": source, "fields": [self.row(legacy, "Kullback-Leibler divergence")],
+                    "concepts": [], "papers": [], "memberships": [], "edges": []}
+        with tempfile.TemporaryDirectory() as directory:
+            snapshot = GraphEngine(Path(directory), provider="fake").build(
+                [{"key": "A", "title": "A", "fieldIds": [legacy]}], source=source,
+                previous=previous, overlays={"pins": {legacy: True}}, settings={"fakeVectors": {}})
+        canonical = _id("field", "s", "e", "kl-divergence")
+        fields = [f for f in snapshot["fields"] if f["id"] == canonical]
+        self.assertEqual(len(fields), 1)
+        self.assertTrue(fields[0]["pinned"])
+        self.assertIn(canonical, snapshot["papers"][0]["fieldIds"])
+        self.assertEqual(snapshot["taxonomyRedirects"][legacy], canonical)
+
+    def test_display_field_redirect_does_not_recreate_orphan(self):
+        source = {"id": "s", "serverId": "s", "epoch": "e"}
+        rows = [self.row("field:s:e:kl-a", "KL Divergence"), self.row("field:s:e:kl-b", "Kullback-Leibler divergence")]
+        with tempfile.TemporaryDirectory() as directory:
+            snapshot = GraphEngine(Path(directory), provider="fake").build(
+                [{"key": "A", "title": "A", "fieldIds": ["field:s:e:kl-b"],
+                  "displayFieldId": "field:s:e:kl-b"}], source=source,
+                taxonomy={"fields": rows}, settings={"fakeVectors": {}})
+        canonical = _id("field", "s", "e", "kl-divergence")
+        self.assertEqual(snapshot["papers"][0]["displayFieldId"], canonical)
+        self.assertNotIn("field:s:e:kl-b", {f["id"] for f in snapshot["fields"]})
+        self.assertNotIn("field:s:e:kl-b", {f["fieldId"] for f in snapshot["overview"]["fields"]})
+
+    def test_classification_hint_does_not_merge_broader_field_with_method(self):
+        rows = [self.row("p", "Math"), self.row("a", "Optimization", ["p"], ["optimal transport"]),
+                self.row("b", "Optimal Transport", ["p"])]
+        result, redirects = self.resolve(rows)
+        self.assertEqual(len(result), 3)
+        self.assertNotEqual(redirects.get("a", "a"), redirects.get("b", "b"))
+        self.assertEqual(canonical_entity_key("field", "Optimization", ["optimal transport"]), "optimization")
+        source = {"id": "s", "serverId": "s", "epoch": "e"}
+        with tempfile.TemporaryDirectory() as directory:
+            snapshot = GraphEngine(Path(directory), provider="fake").build(
+                [{"key": "A", "title": "optimal transport"}], source=source,
+                settings={"fakeVectors": {}})
+        labels = {f["id"]: f["label"]["en"] for f in snapshot["fields"]}
+        assigned = {labels[f] for f in snapshot["papers"][0]["fieldIds"]}
+        self.assertIn("Optimization", assigned)
+        self.assertIn("Optimal Transport", assigned)
+
+    def test_redirects_persist_across_reindex_and_old_references_resolve(self):
+        source = {"id": "s", "serverId": "s", "epoch": "e"}
+        old = "field:s:e:b"
+        rows = [self.row("field:s:e:a", "KL Divergence"), self.row(old, "Kullback-Leibler divergence")]
+        with tempfile.TemporaryDirectory() as directory:
+            engine = GraphEngine(Path(directory), provider="fake")
+            first = engine.build([{"key": "A", "title": "A", "fieldIds": [old]}], source=source,
+                                 taxonomy={"fields": rows}, settings={"fakeVectors": {}})
+            target = first["taxonomyRedirects"][old]
+            second = engine.build([{"key": "A", "title": "A", "fieldIds": [old], "displayFieldId": old}],
+                                  source=source, taxonomy={"fields": first["fields"]}, previous=first,
+                                  overlays={"fieldAliases": {old: ["retained"]}, "pins": {old: True}},
+                                  settings={"fakeVectors": {}})
+            third = engine.build([{"key": "A", "title": "A", "fieldIds": [old]}], source=source,
+                                 taxonomy={"fields": second["fields"]}, previous=second, settings={"fakeVectors": {}})
+        self.assertEqual(second["taxonomyRedirects"][old], target)
+        self.assertEqual(third["taxonomyRedirects"][old], target)
+        self.assertEqual(second["papers"][0]["displayFieldId"], target)
+        self.assertNotIn(old, {f["id"] for f in second["fields"]})
+        field = next(f for f in second["fields"] if f["id"] == target)
+        self.assertTrue(field["pinned"])
+        self.assertIn("retained", field["aliases"])
+
+    def test_redirect_chain_compression_rejects_cycles_foreign_and_deleted_targets(self):
+        source = {"id": "s", "serverId": "s", "epoch": "e"}
+        target = "field:s:e:target"
+        rows = [self.row(target, "Target")]
+        prior = {"source": source, "fields": rows, "concepts": [], "taxonomyRedirects": {
+            "field:s:e:a": "field:s:e:b", "field:s:e:b": target,
+            "field:s:e:c": "field:s:e:d", "field:s:e:d": "field:s:e:c",
+            "field:s:e:foreign": "field:other:e:z", "field:s:e:deleted": "field:s:e:gone",
+            "concept:s:e:wrongtype": target}}
+        result = _validated_redirects(prior, "s", "e")
+        self.assertEqual(result, {"field:s:e:a": target, "field:s:e:b": target})
+        self.assertEqual(resolve_taxonomy_id("field:s:e:a", prior["taxonomyRedirects"]), target)
+        self.assertIsNone(resolve_taxonomy_id("field:s:e:c", prior["taxonomyRedirects"]))
+        self.assertEqual(_validated_redirects(prior, "s", "other"), {})
+        prior["fields"] = []
+        self.assertEqual(_validated_redirects(prior, "s", "e"), {})
+
+    def test_redirect_limits_fail_explicitly_without_truncation(self):
+        source = {"id": "s", "serverId": "s", "epoch": "e"}
+        target = "field:s:e:target"
+        prior = {"source": source, "fields": [self.row(target, "Target")], "concepts": [],
+                 "taxonomyRedirects": {f"field:s:e:{i}": target for i in range(MAX_TAXONOMY_REDIRECTS_PER_KIND)}}
+        self.assertEqual(len(_validated_redirects(prior, "s", "e")), MAX_TAXONOMY_REDIRECTS_PER_KIND)
+        prior["taxonomyRedirects"]["field:s:e:overflow"] = target
+        with self.assertRaisesRegex(ValueError, "redirects exceed"):
+            _validated_redirects(prior, "s", "e")
+        chain = {str(i): str(i + 1) for i in range(MAX_REDIRECT_CHAIN)}
+        self.assertEqual(resolve_taxonomy_id("0", chain), str(MAX_REDIRECT_CHAIN))
+        chain[str(MAX_REDIRECT_CHAIN)] = "overflow"
+        with self.assertRaisesRegex(ValueError, "chain exceeds"):
+            resolve_taxonomy_id("0", chain)
+        self.assertIsNone(resolve_taxonomy_id("a", {"a": "b", "b": "a"}))
+
+    def test_cycle_cleanup_and_no_dangling_parents(self):
+        rows = [self.row("a", "A", ["b", "missing"]), self.row("b", "B", ["a"])]
+        result, _ = self.resolve(rows)
+        self.assertFalse(result["a"]["parentIds"] == ["b"] and result["b"]["parentIds"] == ["a"])
+        self.assertTrue(all(p in result for row in result.values() for p in row["parentIds"]))
 
 def _fixture():
     return {
@@ -48,6 +209,10 @@ class GraphEngineTests(unittest.TestCase):
         self.assertTrue(truncated)
         self.assertTrue(prepared.startswith("query: "))
         self.assertIn("[TRUNCATED]", prepared)
+
+    def test_public_canonical_identity_helper_handles_bilingual_labels(self):
+        self.assertEqual(canonical_entity_key("concept", {"en": "KL Divergence", "ko": "KL 발산"}), "kl-divergence")
+        self.assertEqual(canonical_entity_key("field", "Kullback–Leibler divergence"), "kl-divergence")
 
     def test_source_identity_is_backend_owned_and_required(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -105,6 +270,30 @@ class GraphEngineTests(unittest.TestCase):
         self.assertIn(concept["id"], snapshot["papers"][0]["conceptIds"])
         self.assertIn("overlay", concept["aliases"])
         self.assertTrue(concept["pinned"])
+
+    def test_canonical_registry_merges_kl_ot_life_synonyms_and_remaps_references(self):
+        source = {"id": "dup", "serverId": "dup", "epoch": "e1"}
+        taxonomy = {"fields": [
+            {"id": "field:dup:e1:kl-a", "label": {"en": "KL Divergence"}, "parentIds": []},
+            {"id": "field:dup:e1:kl-b", "label": {"en": "Kullback-Leibler divergence"}, "parentIds": []},
+            {"id": "field:dup:e1:ot-a", "label": {"en": "Optimal Transport"}, "parentIds": []},
+            {"id": "field:dup:e1:ot-b", "label": {"en": "OT"}, "parentIds": []},
+            {"id": "field:dup:e1:bio-a", "label": {"en": "Life Science"}, "parentIds": []},
+            {"id": "field:dup:e1:bio-b", "label": {"en": "생명과학"}, "parentIds": []},
+        ], "concepts": [
+            {"id": "concept:dup:e1:kl-a", "label": {"en": "KL Divergence"}, "aliases": []},
+            {"id": "concept:dup:e1:kl-b", "label": {"en": "Kullback–Leibler divergence"}, "aliases": []},
+        ]}
+        papers = [{"key": "A", "title": "A", "fieldIds": ["field:dup:e1:kl-a", "field:dup:e1:kl-b", "field:dup:e1:ot-a", "field:dup:e1:bio-a"], "conceptIds": ["concept:dup:e1:kl-a", "concept:dup:e1:kl-b"]}]
+        with tempfile.TemporaryDirectory() as directory:
+            snapshot = GraphEngine(Path(directory), provider="fake").build(papers, source=source, taxonomy=taxonomy, settings={"fakeVectors": {}})
+        field_labels = [field["label"]["en"] for field in snapshot["fields"]]
+        self.assertEqual(sum(label == "KL Divergence" for label in field_labels), 1)
+        self.assertEqual(sum(label == "Optimal Transport" for label in field_labels), 1)
+        self.assertEqual(sum(label == "Life Science" for label in field_labels), 1)
+        self.assertEqual(len([concept for concept in snapshot["concepts"] if concept["label"]["en"] == "KL Divergence"]), 1)
+        self.assertEqual(len(snapshot["papers"][0]["conceptIds"]), 1)
+        self.assertTrue(snapshot["taxonomyRedirects"])
 
     def test_graph_engines_reuse_provider_for_same_cache_partition(self):
         with tempfile.TemporaryDirectory() as directory:

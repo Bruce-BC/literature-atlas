@@ -25,6 +25,8 @@ python3 -m atlas serve --data-dir "$ATLAS_DATA_DIR" --web-root dist/web --port 0
 
 The bridge is read-only and this release is scoped to the personal Zotero library (`--library-id 0`) on the local API; group libraries, cloud uploads, and remote Zotero URLs are outside the product scope. OpenAlex DOI metadata enrichment is opt-in. Record only redacted model revision/status and latency from a real smoke. The fake provider never satisfies the real-inference claim.
 
+Contributor and agent handoff: [CLAUDE.md](CLAUDE.md), [docs/claude-handoff.md](docs/claude-handoff.md), [docs/taxonomy-v2-acceptance.md](docs/taxonomy-v2-acceptance.md) and [docs/verification.md](docs/verification.md). npm scripts call `python3` from `PATH` (an environment variable alone does not change it), so activate the intended virtual environment first; Node and Python should share one CPU architecture, and on macOS `npm run lint` forces `arch -arm64 python3`.
+
 The versioned contracts are [snapshot.schema.json](docs/snapshot.schema.json) and [implementation-interfaces.md](docs/implementation-interfaces.md). Palette provenance and notices are in `assets/palette-sources.json`; derived OKLCH tokens and deterministic fallbacks are in `assets/palettes.json`.
 Run `python3 scripts/palette_sources_check.py --online` before publication to re-check all pinned raw URLs and MIT license notices; ordinary CI uses the offline pinned metadata and conversion checks.
 
@@ -36,9 +38,13 @@ After `npm run build`, install only into a selected vault with `python3 scripts/
 
 ## Using the atlas
 
-Start in **Overview**, expand a category to its 24 paper groups, open a paper page, then use previous/next navigation. Multiple categories can stay expanded or be collapsed independently. Paper color encodes connection degree; the eligible-paper panel reports connection density for the currently selected scope. Directed citations and semantic relationships remain separate, and full eligible-paper/edge counts remain unchanged when the detail sample is reduced. The UI reports observed coverage and status rather than implying complete literature coverage.
+Start in **Overview**. Choose the overview mode: the circular ribbon view, the aggregate G6 view, the category explorer, or **전체 논문 지도** (all-papers), which draws exactly one point for every active paper, including unclassified ones. Counters report `N active`, the number in the viewport, and displayed/eligible edges; culling and edge limits never change N. In the category explorer, expand a category to its 24 paper groups, open a paper page, then use previous/next navigation; categories can stay expanded or be collapsed independently.
 
-The G6 view reuses the same filters, selection, and aggregate counts as the other views. Its current synthetic readiness reference is about 3.7 seconds on the test fixture; that is an observed fixture result, not a guarantee for a user's library. Large graphs remain bounded by the configured visible-node and relationship limits.
+Classification is multi-faceted: each paper can have subject, method, tool and application facets, each with at most one primary and its evidence tier (title, abstract, indexed text, keywords). Weak or ambiguous evidence abstains instead of guessing. The legend shows `Category | Direct | Incl. Subfields` counts computed from unique papers. Selecting a field synchronizes the paper and concept networks, and the Selection panel shows a clickable ego graph with the usual Zotero/PDF actions.
+
+In the paper network, the **Paper color** option chooses **Category** (stable palette colors) or **Connection degree** (a separate density ramp) (with outlines, not color alone). Directed citations and semantic relationships remain separate, and full eligible-paper/edge counts remain unchanged when the detail sample is reduced. The UI reports observed coverage and status rather than implying complete literature coverage.
+
+The G6 view reuses the same filters, selection and aggregate counts. Clicking a representative node expands its sub-categories and paper children (24 per page, at most 150 loaded); clicking it again collapses it. Each view is bounded (at most 1000 edges). Measured fixture results for a synthetic 1,000-paper library are in [docs/verification.md](docs/verification.md); they are observed results, not guarantees for your library.
 
 `npm run package` creates `.artifacts/literature-atlas-plugin.zip` and a checksum manifest; `npm run package:check` verifies required members, normalized timestamps, forbidden private/corpus paths, checksum equality and repeat-build determinism. The package contains only built web/plugin/bridge files and public palette assets. Real Zotero smoke evidence is redacted and kept outside Git; it is never a substitute for synthetic lifecycle tests.
 

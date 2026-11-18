@@ -300,7 +300,7 @@ def main() -> int:
                 page.locator("#atlas-relation").select_option("citation")
                 selected = page.evaluate("window.AtlasDebug.getState()")
                 a.check("paper selection updates exact selected paper", selected["detail"]["papers"][0]["id"] == selected["snapshot"]["papers"][0]["id"])
-                paper_point = page.evaluate("""() => { const n=window.AtlasDebug.getPaperGraph().nodes().first(); const p=n.renderedPosition(); const r=window.AtlasDebug.getPaperGraph().container().getBoundingClientRect(); return {x:r.left+p.x,y:r.top+p.y}; }""")
+                paper_point = page.evaluate("""() => { const g=window.AtlasDebug.getPaperGraph(); const n=g.getNodeData()[0]; const p=g.getClientByCanvas(g.getElementPosition(n.id)); return {x:p[0],y:p[1]}; }""")
                 page.mouse.click(paper_point["x"], paper_point["y"])
                 a.check("native Cytoscape paper click updates selection", "Paper" in page.locator("#atlas-detail").inner_text())
                 concept_buttons = page.locator("#atlas-concept-list button")
@@ -312,7 +312,7 @@ def main() -> int:
                     expected_concept_ids = {paper["id"] for paper in fixture["papers"] if concept_id in paper.get("conceptIds", [])}
                     actual_concept_ids = {row["id"] for row in concept_state["detail"]["papers"]}
                     a.check("concept selection filters exact related papers", actual_concept_ids == expected_concept_ids, f"expected={len(expected_concept_ids)} actual={len(actual_concept_ids)}")
-                    concept_point = page.evaluate("""() => { const n=window.AtlasDebug.getConceptGraph().nodes('[kind = "concept"]').first(); const p=n.renderedPosition(); const r=window.AtlasDebug.getConceptGraph().container().getBoundingClientRect(); return {x:r.left+p.x,y:r.top+p.y}; }""")
+                    concept_point = page.evaluate("""() => { const g=window.AtlasDebug.getConceptGraph(); const n=g.getNodeData().find(row => row.kind === 'concept' || row.data?.kind === 'concept') || g.getNodeData()[0]; const p=g.getClientByCanvas(g.getElementPosition(n.id)); return {x:p[0],y:p[1]}; }""")
                     page.mouse.click(concept_point["x"], concept_point["y"])
                     a.check("native Cytoscape concept click updates selection", "Concept" in page.locator("#atlas-detail").inner_text())
                 palette_values = []
@@ -326,16 +326,20 @@ def main() -> int:
                 a.check("light theme applies", page.locator("#atlas-app").get_attribute("data-atlas-theme") == "light")
                 page.locator("#atlas-theme").select_option("system")
                 a.check("system theme option available", page.locator("#atlas-theme option[value=system]").count() == 1)
-                page.locator("#atlas-sidebar details").evaluate("details => details.open = true") if page.locator("#atlas-sidebar details").count() else page.locator("details").first.evaluate("details => details.open = true")
+                page.locator("#atlas-taxonomy-form").locator("xpath=ancestor::details").evaluate("details => details.open = true")
                 page.locator("#atlas-threshold").fill("0.91")
                 page.locator("#atlas-save-settings").click()
-                page.wait_for_timeout(300)
+                try:
+                    page.get_by_text("Settings saved", exact=True).wait_for(timeout=3000)
+                except Exception:
+                    page.wait_for_timeout(300)
                 page.reload(wait_until="domcontentloaded")
                 page.locator("#atlas-token-input").fill(bootstrap["token"])
                 page.locator("#atlas-connect").click()
                 page.locator("path.atlas-sector").first.wait_for(state="visible", timeout=READY_TIMEOUT * 1000)
-                page.locator("details").first.evaluate("details => details.open = true")
-                a.check("settings CAS survives reload", page.locator("#atlas-threshold").input_value() == "0.91")
+                page.locator("#atlas-taxonomy-form").locator("xpath=ancestor::details").evaluate("details => details.open = true")
+                persisted_threshold = page.locator("#atlas-threshold").input_value()
+                a.check("settings CAS survives reload", persisted_threshold == "0.91", f"observed={persisted_threshold}")
                 taxonomy_errors: list[str] = []
                 taxonomy_events: list[str] = []
                 taxonomy_requests: list[str] = []

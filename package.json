@@ -5,19 +5,28 @@
   "type": "module",
   "description": "Local Zotero knowledge atlas with an Obsidian companion, evidence graphs and OKLCH themes",
   "license": "MIT",
-  "engines": {"node": ">=22"},
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "build": "node scripts/build.mjs",
     "lint": "node scripts/check.mjs",
     "test": "node --test tests/frontend/*.test.mjs tests/plugin/*.test.mjs",
     "test:python": "python3 -m pytest -q tests",
     "test:e2e": "python3 scripts/test_browser.py",
+    "test:community": "node tests/plugin/community-smoke.cjs",
     "test:palette": "python3 scripts/palette_validate.py",
     "audit:privacy": "python3 scripts/audit_repository.py",
     "package": "node scripts/package.mjs",
     "package:check": "python3 scripts/package_check.py",
-    "verify": "npm run lint && npm test && npm run test:palette && npm run build && npm run test:python && npm run test:e2e && npm run package && npm run package:check && npm run audit:privacy"
+    "verify": "npm run lint && npm test && npm run test:palette && npm run build && npm run package && npm run package:check && npm run test:community && npm run test:python && npm run test:e2e && npm run audit:privacy"
   },
-  "dependencies": {"cytoscape": "3.35.0", "d3": "7.9.2"},
-  "devDependencies": {"esbuild": "0.28.2"}
+  "dependencies": {
+    "@antv/g6": "5.1.1",
+    "cytoscape": "3.35.0",
+    "d3": "7.9.2"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
 }

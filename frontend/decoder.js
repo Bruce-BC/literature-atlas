@@ -65,11 +65,12 @@ export function safeText(value, fallback = '—') {
 
 export function indexSnapshot(snapshot) {
   const decoded = snapshot.schemaVersion === 1 && snapshot.source && snapshot.papers ? snapshot : decodeSnapshot(snapshot);
+  const membershipByPaper = new Map(decoded.papers.map(paper => [paper.id, []]));
+  for (const row of decoded.memberships) membershipByPaper.get(row.paperId)?.push(row);
   return {
     snapshot: decoded,
     paperById: new Map(decoded.papers.map(row => [row.id, row])), fieldById: new Map(decoded.fields.map(row => [row.id, row])),
-    conceptById: new Map(decoded.concepts.map(row => [row.id, row])), attachmentById: new Map(decoded.attachments.map(row => [row.id, row])),
-    membershipByPaper: new Map(decoded.papers.map(paper => [paper.id, decoded.memberships.filter(row => row.paperId === paper.id)]))
+    conceptById: new Map(decoded.concepts.map(row => [row.id, row])), attachmentById: new Map(decoded.attachments.map(row => [row.id, row])), membershipByPaper
   };
 }
 

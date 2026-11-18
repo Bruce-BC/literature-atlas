@@ -10,7 +10,7 @@ from pathlib import Path
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--vault", required=True, type=Path)
-    parser.add_argument("--source", type=Path, default=Path("dist/obsidian-plugin"))
+    parser.add_argument("--source", type=Path, default=Path("dist/community-plugin"))
     parser.add_argument("--plugin-id", default="literature-atlas")
     args = parser.parse_args()
     vault = args.vault.expanduser().resolve()
@@ -29,7 +29,9 @@ def main() -> int:
     # Replace only files owned by this plugin. Obsidian's data.json and any
     # user-created files in the plugin directory remain untouched.
     target.mkdir(parents=True, exist_ok=True)
-    for name in ("main.js", "manifest.json", "styles.css", "bridge", "web"):
+    # Obsidian community distribution is intentionally exactly three files;
+    # bundled bridge/web resources are embedded in main.js.
+    for name in ("main.js", "manifest.json", "styles.css"):
         owned = target / name
         if owned.is_dir(): shutil.rmtree(owned)
         elif owned.exists(): owned.unlink()

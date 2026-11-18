@@ -1,6 +1,7 @@
 'use strict';
 
 const path = require('node:path');
+const {realpathSync} = require('node:fs');
 const {spawn: nodeSpawn} = require('node:child_process');
 const {
   OBSIDIAN_ORIGIN, LOOPBACK_HOST, parseBootstrap, makeLaunchId, makeLoopbackUrl,
@@ -32,9 +33,17 @@ class BridgeManager {
   constructor(options = {}) {
     this.pythonPath = options.pythonPath || 'python3';
     this.pluginDir = path.resolve(options.pluginDir || __dirname);
-    this.bridgeDir = path.resolve(options.bridgeDir || path.join(this.pluginDir, 'bridge'));
+    let pluginRoot = this.pluginDir;
+    try { pluginRoot = realpathSync(pluginRoot); } catch { /* startup reports unavailable directories */ }
+    this.runtimeDir = path.resolve(options.runtimeDir || pluginRoot);
+    try { this.runtimeDir = realpathSync(this.runtimeDir); } catch { /* startup reports unavailable directories */ }
+    const relativeRuntime = path.relative(pluginRoot, this.runtimeDir);
+    if (relativeRuntime === '..' || relativeRuntime.startsWith(`..${path.sep}`) || path.isAbsolute(relativeRuntime)) throw new Error('runtime directory must be inside the plugin directory');
+    this.bridgeDir = path.resolve(options.bridgeDir || path.join(this.runtimeDir, 'bridge'));
     this.dataDir = path.resolve(options.dataDir || path.join(this.pluginDir, '.local'));
-    this.webRoot = path.resolve(options.webRoot || path.join(this.pluginDir, 'web'));
+    this.webRoot = path.resolve(options.webRoot || path.join(this.runtimeDir, 'web'));
+    this.provider = options.provider;
+    if (this.provider !== undefined && !['tfidf', 'e5'].includes(this.provider)) throw new Error('unsupported embedding provider');
     this.pollInterval = validatePollInterval(options.pollInterval ?? 30);
     this.parentOrigin = options.parentOrigin || OBSIDIAN_ORIGIN;
     if (this.parentOrigin !== OBSIDIAN_ORIGIN) throw new Error('unsupported Obsidian parent origin');
@@ -67,7 +76,7 @@ class BridgeManager {
       ready: this.ready,
       frameReady: false,
       port: this.bootstrap ? this.bootstrap.port : null,
-      provider: 'e5',
+      provider: this.provider ?? null,
       paperCount: Number.isInteger(this.paperCount) ? this.paperCount : null,
       ownedPid: this.bootstrap ? this.bootstrap.pid : null,
       launchId: this.bootstrap ? this.bootstrap.launchId : null
@@ -111,7 +120,9 @@ class BridgeManager {
   }
 
   commandArgs(launchId) {
-    return ['-m', 'atlas', 'serve', '--data-dir', this.dataDir, '--web-root', this.webRoot, '--port', '0', '--poll-interval', String(this.pollInterval), '--launch-id', launchId, '--parent-origin', this.parentOrigin, '--embedding-provider', 'e5', '--watch-parent-stdin'];
+    const args = ['-m', 'atlas', 'serve', '--data-dir', this.dataDir, '--web-root', this.webRoot, '--port', '0', '--poll-interval', String(this.pollInterval), '--launch-id', launchId, '--parent-origin', this.parentOrigin, '--watch-parent-stdin'];
+    if (this.provider !== undefined) args.push('--embedding-provider', this.provider);
+    return args;
   }
 
   _log(value) { this.log(sanitizeDiagnostic(value, [this.bootstrap && this.bootstrap.token].filter(Boolean))); }

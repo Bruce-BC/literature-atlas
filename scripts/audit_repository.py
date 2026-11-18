@@ -33,6 +33,8 @@ KNOWN_PNG_PATHS = {
     ".artifacts/visual-audit/r2-1440-selected.png",
     ".artifacts/visual-audit/r3-320-selected.png",
     ".artifacts/visual-audit/r3-1440-selected.png",
+    ".artifacts/g6-dark.png",
+    ".artifacts/g6-light.png",
 }
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 PNG_TEXT_CHUNKS = {b"tEXt", b"zTXt", b"iTXt"}

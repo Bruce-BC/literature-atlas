@@ -1,4 +1,4 @@
-import {mkdir, readdir, readFile, stat, writeFile} from 'node:fs/promises';
+import {mkdir, readdir, readFile, rm, stat, writeFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {join, resolve} from 'node:path';
 import {execFileSync} from 'node:child_process';
@@ -21,7 +21,6 @@ for (const rel of requiredPackageFiles) if (!await stat(join(root, rel)).catch((
 const zip = join(out, 'literature-atlas-plugin.zip');
 const script = String.raw`import pathlib, sys, zipfile
 root = pathlib.Path(sys.argv[1]); out = pathlib.Path(sys.argv[2])
-paths = []
 mapping = {}
 for p in (root / 'dist/obsidian-plugin').rglob('*'):
   if p.is_file() and p.suffix not in ('.map', '.log'):
@@ -44,5 +43,13 @@ with zipfile.ZipFile(out, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9
 `;
 execFileSync('python3', ['-c', script, root, zip], {stdio: 'inherit'});
 manifest.archive = {path: 'literature-atlas-plugin.zip', sha256: createHash('sha256').update(await readFile(zip)).digest('hex'), bytes: (await stat(zip)).size};
+const communityOut = join(out, 'community-plugin');
+await rm(communityOut, {recursive: true, force: true});
+await mkdir(communityOut, {recursive: true});
+for (const name of ['main.js', 'manifest.json', 'styles.css']) await writeFile(join(communityOut, name), await readFile(join(root, 'dist', 'community-plugin', name)));
+const communityChecksums = [];
+for (const name of ['main.js', 'manifest.json', 'styles.css']) communityChecksums.push(`${createHash('sha256').update(await readFile(join(communityOut, name))).digest('hex')}  ${name}`);
+await writeFile(join(communityOut, 'SHA256SUMS'), communityChecksums.join('\n') + '\n');
+manifest.community = {directory: 'community-plugin', files: ['main.js', 'manifest.json', 'styles.css'], checksums: communityChecksums};
 await writeFile(join(out, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
 console.log(JSON.stringify({artifact: '.artifacts/manifest.json', files: manifest.files.length}));

@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {EventEmitter} from 'node:events';
 import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
-import {mkdtemp, readFile, writeFile, mkdir, rm} from 'node:fs/promises';
+import {mkdtemp, readFile, writeFile, mkdir, rm, symlink, readdir, realpath} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createRequire} from 'node:module';
@@ -13,6 +14,87 @@ const security = require('../../obsidian-plugin/security.cjs');
 const exportsApi = require('../../obsidian-plugin/managed-export.cjs');
 const {parseBootstrap, makeLoopbackUrl, isLoopbackOrigin, isAllowedZoteroUrl, sanitizeDiagnostic} = security;
 const {stableExportId, exportManagedPaper, exportManagedVaultPaper} = exportsApi;
+const {extractBundle, resolveRuntime, resolvePluginDir} = require('../../obsidian-plugin/runtime-resources.cjs');
+
+const digest = value => createHash('sha256').update(value).digest('hex');
+function resourceBundle(extra = []) {
+  const files = [['bridge/atlas/__main__.py', 'print(1)'], ['web/index.html', '<html></html>'], ['web/app.js', 'void 0'], ...extra].map(([path, content]) => ({path, sha256: digest(content), content}));
+  return {version: 1, files, digest: digest(JSON.stringify(files.map(({path, sha256}) => ({path, sha256})) ))};
+}
+
+test('vault alias is accepted while plugin root and ancestors cannot be symlinks', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'atlas-vault-anchor-'));
+  try {
+    const vault = join(root, 'vault'), alias = join(root, 'alias'), outside = join(root, 'outside');
+    await mkdir(join(vault, '.obsidian', 'plugins', 'literature-atlas'), {recursive: true});
+    await mkdir(outside);
+    await symlink(vault, alias);
+    const expected = join(await realpath(vault), '.obsidian', 'plugins', 'literature-atlas');
+    assert.equal(resolvePluginDir(alias, '.obsidian', 'literature-atlas'), expected);
+    assert.throws(() => resolvePluginDir(alias, '../outside', 'literature-atlas'), /invalid/);
+    await rm(join(vault, '.obsidian', 'plugins', 'literature-atlas'), {recursive: true});
+    await symlink(outside, join(vault, '.obsidian', 'plugins', 'literature-atlas'));
+    assert.throws(() => resolvePluginDir(alias, '.obsidian', 'literature-atlas'), /safe directory/);
+    assert.throws(() => extractBundle(join(vault, '.obsidian', 'plugins', 'literature-atlas'), resourceBundle()), /safe directory/);
+    await rm(join(vault, '.obsidian', 'plugins', 'literature-atlas'));
+    await rm(join(vault, '.obsidian', 'plugins'), {recursive: true});
+    await symlink(outside, join(vault, '.obsidian', 'plugins'));
+    assert.throws(() => resolvePluginDir(alias, '.obsidian', 'literature-atlas'), /safe directory/);
+  } finally { await rm(root, {recursive: true, force: true}); }
+});
+
+test('bundled runtime extracts and verifies three-file installation while preserving user data', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'atlas-resource-'));
+  try {
+    await mkdir(join(dir, '.local'));
+    await writeFile(join(dir, '.local', 'keep'), 'cache');
+    await writeFile(join(dir, 'data.json'), 'settings');
+    assert.throws(() => resolveRuntime(dir, undefined));
+    const bundle = resourceBundle();
+    const runtime = resolveRuntime(dir, bundle);
+    assert.equal(runtime, join(await realpath(dir), '.runtime', bundle.digest));
+    assert.equal(await readFile(join(runtime, 'web', 'app.js'), 'utf8'), 'void 0');
+    assert.equal(resolveRuntime(dir, bundle), runtime);
+    const manager = new BridgeManager({pluginDir: dir, runtimeDir: runtime});
+    assert.equal(manager.bridgeDir, join(runtime, 'bridge'));
+    assert.equal(manager.dataDir, join(dir, '.local'));
+    assert.equal(manager.status().provider, null);
+    assert.equal(manager.commandArgs('test').includes('--embedding-provider'), false);
+    const explicit = new BridgeManager({pluginDir: dir, runtimeDir: runtime, provider: 'e5'});
+    assert.equal(explicit.commandArgs('test')[explicit.commandArgs('test').indexOf('--embedding-provider') + 1], 'e5');
+    assert.equal(await readFile(join(dir, '.local', 'keep'), 'utf8'), 'cache');
+    assert.equal(await readFile(join(dir, 'data.json'), 'utf8'), 'settings');
+    await writeFile(join(runtime, 'web', 'app.js'), 'tampered');
+    assert.throws(() => resolveRuntime(dir, bundle), /integrity/);
+    await rm(join(runtime, 'web', 'app.js'));
+    await symlink(join(dir, 'data.json'), join(runtime, 'web', 'app.js'));
+    assert.throws(() => resolveRuntime(dir, bundle), /integrity/);
+  } finally { await rm(dir, {recursive: true, force: true}); }
+});
+
+test('bundled runtime rejects unsafe entries, integrity errors, symlinks and incomplete extraction', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'atlas-resource-'));
+  const outside = await mkdtemp(join(tmpdir(), 'atlas-outside-'));
+  try {
+    await writeFile(join(outside, 'keep'), 'safe');
+    for (const name of ['../escape', '/absolute', 'web/../../escape', 'web/app.js']) {
+      assert.throws(() => extractBundle(dir, resourceBundle([[name, 'bad']])));
+    }
+    const invalid = resourceBundle(); invalid.files[0].content = 'tampered';
+    assert.throws(() => extractBundle(dir, invalid), /integrity/);
+    const badDigest = resourceBundle(); badDigest.digest = '0'.repeat(64);
+    assert.throws(() => extractBundle(dir, badDigest), /digest/);
+    const missing = resourceBundle(); missing.files.pop();
+    assert.throws(() => extractBundle(dir, missing), /incomplete/);
+    assert.throws(() => extractBundle(dir, resourceBundle([['web/conflict', 'file'], ['web/conflict/nested', 'conflict']])));
+    assert.deepEqual(await readdir(join(dir, '.runtime')), []);
+    await rm(join(dir, '.runtime'), {recursive: true});
+    await symlink(outside, join(dir, '.runtime'));
+    assert.throws(() => extractBundle(dir, resourceBundle()), /safe directory/);
+    assert.throws(() => new BridgeManager({pluginDir: dir, runtimeDir: join(dir, '.runtime')}), /inside the plugin/);
+    assert.equal(await readFile(join(outside, 'keep'), 'utf8'), 'safe');
+  } finally { await rm(dir, {recursive: true, force: true}); await rm(outside, {recursive: true, force: true}); }
+});
 
 test('production entry fails explicitly outside a real Obsidian host', () => {
   assert.throws(() => execFileSync(process.execPath, ['-e', "require('./obsidian-plugin/main.cjs')"], {cwd: fileURLToPath(new URL('../..', import.meta.url)), stdio: 'pipe'}));
@@ -198,14 +280,17 @@ test('Python version probe is bounded and terminates a hung owned probe', async 
   probe.pid = 54321;
   probe.killCount = 0;
   probe.kill = () => { probe.killCount += 1; return true; };
-  const timers = new Set();
+  let timeoutCallback, timeoutDelay;
   const manager = new BridgeManager({
     spawn: () => probe,
     fetch: async () => ({ok: true, json: async () => ({})}),
-    setTimer: (callback, delay) => { const timer = setTimeout(callback, delay === 5000 ? 5 : delay); timers.add(timer); return timer; },
-    clearTimer: (timer) => { clearTimeout(timer); timers.delete(timer); }
+    setTimer: (callback, delay) => { timeoutCallback = callback; timeoutDelay = delay; return {unref() {}}; },
+    clearTimer: () => {}
   });
-  await assert.rejects(manager.start(), /probe timeout/);
+  const start = manager.start();
+  assert.equal(timeoutDelay, 5000);
+  timeoutCallback();
+  await assert.rejects(start, /probe timeout/);
   assert.equal(probe.killCount, 1);
   manager.stop();
 });

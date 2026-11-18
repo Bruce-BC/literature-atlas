@@ -1,0 +1,12 @@
+{
+  "id": "literature-atlas",
+  "name": "Literature Atlas",
+  "version": "0.1.0",
+  "minAppVersion": "1.15.1",
+  "description": "Explore a local read-only Zotero literature atlas in Obsidian.",
+  "author": "Bruce-BC",
+  "authorUrl": "https://github.com/Bruce-BC",
+  "isDesktopOnly": true,
+  "js": "main.js",
+  "css": "styles.css"
+}

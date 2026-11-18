@@ -62,7 +62,7 @@ export function sampleDetail(snapshotInput, options = {}) {
   const eligibleEdgeCount = snapshot.edges.filter(edge => relationTypes.has(edge.type) && edgeInScope(edge, eligibleIds, eligibleConceptIds)).length;
   const overflow = Math.max(0, retainedIds.size - requestedCount);
   return {
-    papers, edges, eligiblePapers: eligible.length, visiblePapers: papers.length, hiddenPapers: eligible.length - papers.length,
+    papers, edges, eligiblePaperIds: [...eligibleIds], eligibleConceptIds: [...eligibleConceptIds], filterActive: Boolean(query || fieldId || fieldPair || conceptId), eligiblePapers: eligible.length, visiblePapers: papers.length, hiddenPapers: eligible.length - papers.length,
     eligibleEdges: eligibleEdgeCount,
     visibleEdges: edges.length, hiddenEdges: eligibleEdgeCount - edges.length,
     requestedFraction, requestedCount, retainedCount: retainedIds.size, mandatoryOverflow: overflow,

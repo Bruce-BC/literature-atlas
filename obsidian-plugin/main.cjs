@@ -1,10 +1,10 @@
 'use strict';
 
 const path = require('node:path');
-const {existsSync} = require('node:fs');
 const {BridgeManager} = require('./bridge-manager.cjs');
 const {exportManagedPaper, exportManagedVaultPaper} = require('./managed-export.cjs');
 const {makeLoopbackUrl, isLoopbackOrigin, OBSIDIAN_ORIGIN, isAllowedZoteroUrl} = require('./security.cjs');
+const {resolveRuntime, resolvePluginDir} = require('./runtime-resources.cjs');
 
 const obsidian = require('obsidian');
 const electron = require('electron');
@@ -119,15 +119,10 @@ class LiteratureAtlasPlugin extends obsidian.Plugin {
       if (typeof saved.pythonPath === 'string') this.settings.pythonPath = saved.pythonPath;
       if (saved.pollInterval !== undefined) this.settings.pollInterval = saved.pollInterval;
     }
-    const manifestDir = typeof this.manifest?.dir === 'string' ? this.manifest.dir : '';
-    const manifestCandidate = path.isAbsolute(manifestDir) && existsSync(manifestDir) ? manifestDir : '';
     const vaultBase = this.app?.vault?.adapter?.basePath;
     const vaultConfig = this.app?.vault?.configDir || '.obsidian';
-    const vaultCandidate = vaultBase ? path.join(vaultBase, vaultConfig, 'plugins', PLUGIN_ID) : '';
-    const relativeManifest = vaultBase && manifestDir.startsWith('/') ? path.join(vaultBase, manifestDir.slice(1)) : '';
-    const candidate = [manifestCandidate, relativeManifest, vaultCandidate].find((value) => value && existsSync(value));
-    if (!candidate) throw new Error('Literature Atlas packaged directory is unavailable');
-    this.pluginDir = path.resolve(candidate);
+    this.pluginDir = resolvePluginDir(vaultBase, vaultConfig, PLUGIN_ID);
+    this.runtimeDir = resolveRuntime(this.pluginDir, typeof ATLAS_BUNDLED_RESOURCES === 'undefined' ? undefined : ATLAS_BUNDLED_RESOURCES);
     this.bridge = this.makeBridge();
     this.addSettingTab?.(new AtlasSettingTab(this.app, this));
     this.registerView(VIEW_TYPE, (leaf) => { const view = new AtlasView(leaf, this); this.views.add(view); return view; });
@@ -145,6 +140,7 @@ class LiteratureAtlasPlugin extends obsidian.Plugin {
   makeBridge() {
     return new BridgeManager({
       pluginDir: this.pluginDir,
+      runtimeDir: this.runtimeDir,
       pythonPath: this.settings.pythonPath,
       pollInterval: this.settings.pollInterval,
       parentOrigin: OBSIDIAN_ORIGIN,
@@ -163,7 +159,7 @@ class LiteratureAtlasPlugin extends obsidian.Plugin {
   async updateSettings(patch) {
     const next = {...this.settings, ...patch};
     // Construction validates the bounded interval; validatePython rejects unsupported interpreters.
-    const candidate = new BridgeManager({pluginDir: this.pluginDir, pythonPath: next.pythonPath, pollInterval: next.pollInterval, parentOrigin: OBSIDIAN_ORIGIN});
+    const candidate = new BridgeManager({pluginDir: this.pluginDir, runtimeDir: this.runtimeDir, pythonPath: next.pythonPath, pollInterval: next.pollInterval, parentOrigin: OBSIDIAN_ORIGIN});
     await candidate.validatePython();
     this.settings = next;
     await this.saveData(this.settings);
@@ -243,7 +239,7 @@ class LiteratureAtlasPlugin extends obsidian.Plugin {
   }
 
   getStatus() {
-    const status = this.bridge ? this.bridge.status() : {phase: 'stopped', ready: false, frameReady: false, port: null, provider: 'e5', paperCount: null, ownedPid: null, launchId: null};
+    const status = this.bridge ? this.bridge.status() : {phase: 'stopped', ready: false, frameReady: false, port: null, provider: null, paperCount: null, ownedPid: null, launchId: null};
     const frameReady = [...this.views].some((view) => view.frameReady);
     return {phase: status.phase, ready: Boolean(status.ready), frameReady, port: status.port, provider: status.provider, paperCount: Number.isInteger(status.paperCount) ? status.paperCount : null, ownedPid: status.ownedPid, launchId: status.launchId, hasError: Boolean(this.lastError)};
   }

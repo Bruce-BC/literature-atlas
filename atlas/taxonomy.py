@@ -24,8 +24,8 @@ from typing import Any, Iterable, Mapping
 from .embeddings import normalize_text
 
 FACET_KINDS = ("subject", "method", "tool", "application")
-CATALOG_VERSION = "facet-catalog-v3"
-RULE_VERSION = "taxonomy-v3"
+CATALOG_VERSION = "facet-catalog-v4"
+RULE_VERSION = "taxonomy-v4"
 NORMALIZATION_VERSION = "nfkc-casefold-hyphen-v1"          # text normalization the stored span offsets refer to
 ONTOLOGY_POLICY_VERSION = "ontology-label-policy-v2"      # broad-domain Life Science policy; see docs/implementation-interfaces.md
 QUALITY_VERSION = "concept-quality-v4"
@@ -77,6 +77,14 @@ _BUILTIN: tuple[dict[str, Any], ...] = (
     {"key": "life-science", "kind": "subject", "label": ("Life Science", "생명과학")},
     {"key": "bioinformatics", "kind": "subject", "label": ("Bioinformatics", "생물정보학"), "broader": ("life-science",)},
     {"key": "phage-biology", "kind": "subject", "label": ("Phage Biology", "파지 생물학"), "broader": ("life-science",), "legacy": "phage"},
+    {"key": "genome-biology", "kind": "subject", "label": ("Genome Biology", "유전체 생물학"), "broader": ("life-science",)},
+    {"key": "protein-science", "kind": "subject", "label": ("Protein Science", "단백질 과학"), "broader": ("life-science",)},
+    {"key": "drug-discovery", "kind": "subject", "label": ("Drug Discovery", "신약 개발"), "broader": ("life-science",)},
+    {"key": "statistics", "kind": "subject", "label": ("Statistics", "통계학"), "broader": ("mathematics",)},
+    {"key": "computer-science", "kind": "subject", "label": ("Computer Science", "컴퓨터과학")},
+    {"key": "machine-learning", "kind": "subject", "label": ("Machine Learning", "기계학습"), "broader": ("computer-science",)},
+    {"key": "quantum-computing", "kind": "subject", "label": ("Quantum Computing", "양자컴퓨팅"), "broader": ("computer-science",)},
+    {"key": "medicine", "kind": "subject", "label": ("Medicine & Health", "의학·보건")},
     {"key": "amplicon", "kind": "method", "label": ("Amplicon / Marker Gene", "앰플리콘")},
     {"key": "metagenomics", "kind": "method", "label": ("Metagenomics", "메타게놈")},
     {"key": "qiime2", "kind": "tool", "label": ("QIIME 2", "QIIME 2")},
@@ -84,6 +92,10 @@ _BUILTIN: tuple[dict[str, Any], ...] = (
     {"key": "phage-therapy", "kind": "application", "label": ("Phage Therapy", "파지 치료")},
 )
 LEGACY_BUILTIN_SLUG = {"information": "information-theory", "phage": "phage-biology"}
+# Gap-filling subjects (taxonomy-v4): they never compete with the core subjects above.  A paper takes one of them as its
+# primary only when no core subject could be chosen, so adding them moves papers out of Unclassified and nowhere else.
+FALLBACK_SUBJECTS = frozenset({"subject:mathematics", "subject:genome-biology", "subject:protein-science", "subject:drug-discovery", "subject:statistics",
+                               "subject:computer-science", "subject:machine-learning", "subject:quantum-computing", "subject:medicine"})
 
 
 def taxonomy_input_state(taxonomy: Any) -> tuple[str, str | None]:
@@ -348,6 +360,24 @@ _add("subject:optimal-transport", "ot-term", 1.0, r"\boptimal\s+transport", r"\b
 _add("subject:kl-divergence", "kl-term", 1.0, r"\bkullback[- ]leibler", r"\bkl[- ]divergence", r"\brelative\s+entropy")
 _add("subject:information-theory", "info-theory", 0.95, r"\binformation\s+theor", r"\bmutual\s+information", r"\bshannon\b", r"\bchannel\s+capacity")
 _add("subject:information-theory", "entropy-weak", 0.6, r"\bentropy\b")
+# Broad domains added in taxonomy-v4: papers outside the original mathematics/life-science core (statistics software,
+# machine learning, quantum computing, genomics, protein design, drug discovery, clinical work) used to fall to Unclassified.
+_add("subject:genome-biology", "genome-strong", 0.95, r"\bgenom(?:e|es|ic|ics)\b", r"\bgenome[- ]wide", r"\btranscriptom", r"\bsingle[- ]cell", r"\brna[- ]seq\b", r"\bchip[- ]seq\b", r"\b(?:dna|rna|genome|third[- ]generation|long[- ]read|next[- ]generation|high[- ]throughput|nanopore|illumina)\s+sequencing", r"\bgene\s+(?:expression|annotation|identification|prediction|regulation|families|family)", r"\btransposable\s+elements?", r"\bchromatin\b", r"\bepigenom", r"\bribosome\s+profiling", r"\bsequence\s+variants?", r"\bgwas\b", r"\btranscription\s+factors?", r"\bde\s+novo\s+assembl", r"\bpan[- ]?genom", r"\bencode\b")
+_add("subject:genome-biology", "genome-weak", 0.7, r"\bsequencing\b", r"\bgenes?\b", r"\bdna\b", r"\balleles?\b", r"\bgenetic\b")
+_add("subject:protein-science", "protein-strong", 0.95, r"\bprotein\s+(?:design|structures?|folding|engineering|language\s+models?|complex(?:es)?|binders?|nanomaterials?|sequences?|families|function)", r"\bpeptides?\b", r"\bmolecular\s+dynamics", r"\balphafold", r"\brosetta\b", r"\bcryo[- ]?em\b", r"\benzymes?\s+design", r"\bantibod(?:y|ies)\b", r"\bsmall\s+proteins?\b", r"\bproteom")
+_add("subject:protein-science", "protein-weak", 0.65, r"\bproteins?\b", r"\benzym")
+_add("subject:drug-discovery", "drug-strong", 0.95, r"\bdrug\s+(?:discovery|design|combinations?|repurposing|targets?|synerg\w*|response|development|candidates?)", r"\bdocking\b", r"\bvirtual\s+screening", r"\bsmall[- ]molecules?\b", r"\bligand", r"\bmolecul(?:e|ar)\s+generation", r"\bpharmacolog", r"\badmet\b", r"\bmedicinal\s+chemistry")
+_add("subject:drug-discovery", "drug-weak", 0.65, r"\bdrugs?\b", r"\bcompounds?\b")
+_add("subject:statistics", "statistics-strong", 0.95, r"\bregressions?\b", r"\bmixed[- ]effects?\b", r"\blinear\s+mixed", r"\bgeneralized\s+linear", r"\bsurvival\s+analysis", r"\bhypothesis\s+test", r"\bstatistical\s+(?:inference|models?|tests?|methods?|analysis|power|significance|learning)", r"\bbayesian\s+(?:inference|statistics|models?|hierarchical|analysis)", r"\bmodel\s+selection", r"\bmaximum\s+likelihood", r"\bbootstrap", r"\b(?:an?|the)\s+r\s+package", r"\bpackage\s+for\s+r\b", r"\bin\s+r\b", r"\bcran\b", r"\bcensored\b", r"\btwo[- ]phase\s+designs?", r"\bcount\s+data", r"\bcategorical\s+data", r"\bcontingency\s+tables?", r"\bsimultaneous\s+equations", r"\beconometric", r"\bsparse\s+matri", r"\bresidual[- ]based", r"\bmultiple\s+testing", r"\bfalse\s+discovery\s+rate", r"\banova\b", r"\bestimators?\b", r"<i>r</i>", r"\bpackages?\b", r"\bimputations?\b", r"\bautocorrelation", r"\bsurveys?\b", r"\bconditional\s+inference", r"\btime\s+series", r"\bkernel\s+methods?", r"\bsupport\s+vector", r"\bboost(?:ed|ing)\b", r"\bstatistical\s+computing", r"\balgebraic\s+statistics", r"\bsubpopulations?", r"\brcpp\b", r"\bmultcomp\b", r"\bbinning\b", r"\bmoment\s+results")
+_add("subject:statistics", "statistics-weak", 0.65, r"\bstatistic(?:s|al)\b", r"\bestimation\b", r"\bcorrelation\b", r"\bsampling\b")
+_add("subject:mathematics", "math-general", 0.8, r"\btheorems?\b", r"\bproofs?\b", r"\blemmas?\b", r"\bconjectures?\b", r"\b(?:partial\s+)?differential\s+equations?", r"\bequations?\b", r"\bk(?:a|ä)hler\b", r"\bhyperbolicity", r"\bsurfaces?\b", r"\bgeometr(?:y|ic)\b", r"\balgebra(?:ic)?\b", r"\bmatrix\b", r"\belimination\b")
+_add("subject:computer-science", "cs-strong", 0.9, r"\bprocessing[- ]in[- ]memory", r"\bhigh\s+bandwidth\s+memory", r"\bcomputer\s+architecture", r"\boperating\s+systems?", r"\bdistributed\s+systems?", r"\bcompilers?\b", r"\bprogramming\s+languages?", r"\bsoftware\s+engineering", r"\bdata\s+structures?", r"\bdatabases?\b", r"\bgpus?\b", r"\bparallel\s+computing", r"\bpython\b", r"\bpycon\b", r"\bcomputational\s+complexity", r"\balgorithms?\b")
+_add("subject:computer-science", "cs-weak", 0.65, r"\bcomputing\b", r"\bsoftware\b", r"\bhardware\b", r"\bcomputer\b")
+_add("subject:machine-learning", "ml-strong", 1.0, r"\bmachine\s+learning", r"\bdeep\s+learning", r"\bneural\s+networks?", r"\blanguage\s+models?", r"\bllms?\b", r"\btransformers?\s+(?:models?|architectures?|networks?)", r"\bgraph\s+neural", r"\bconvolutional", r"\breinforcement\s+learning", r"\bgenerative\s+(?:models?|adversarial|ai)", r"\bdiffusion\s+models?", r"\bflow[- ]matching", r"\bautoencoders?", r"\bvaes?\b", r"\battention[- ]based", r"\bself[- ]supervised", r"\brepresentation\s+learning", r"\bcontrastive\s+learning", r"\bfoundation\s+models?", r"\bfew[- ]shot", r"\bgraph\s+pooling", r"\bembeddings?\b", r"\bclassifiers?\b")
+_add("subject:quantum-computing", "quantum-strong", 1.0, r"\bquantum\s+(?:comput\w*|algorithms?|circuits?|optimi[sz]ation|annealing|machine\s+learning|software|hardware|advantage|supremacy|chemistry|simulation|processors?|devices?)", r"\bqubits?\b", r"\bnisq\b", r"\bvariational\s+quantum", r"\bquantum[- ]classical", r"\bqinterpreter\b")
+_add("subject:quantum-computing", "quantum-weak", 0.65, r"\bquantum\b")
+_add("subject:medicine", "medicine-strong", 0.9, r"\bclinical\s+(?:trials?|practice|guidelines?|outcomes?|studies|study)", r"\bepidemiolog", r"\bpublic\s+health", r"\bpatients?\b", r"\bhospital", r"\bcohort\b", r"\bmortality\b", r"\bdiagnos(?:is|tic)", r"\binfections?\b", r"\bcancer\b", r"\btumou?rs?\b", r"\binflammat")
+_add("subject:medicine", "medicine-weak", 0.65, r"\bdiseases?\b", r"\bclinical\b", r"\bmedical\b", r"\bhealth\b")
 
 _BIOMED = re.compile(r"\b(?:clinical|patients?|disease|hospital|epidemi\w*|cancer|biomedical|medical|cohort|mortality|health\w*|therapy|trial)\b")
 _DEV = re.compile(r"\b(?:plugins?|extensible|open[- ]source|software\s+(?:platform|package)|we\s+(?:present|introduce|develop|describe)|toolkit|framework\s+for|pipeline\s+for)\b")
@@ -608,8 +638,9 @@ def collect_evidence(papers: Iterable[Mapping[str, Any]], catalog: Mapping[str, 
                 # other high-confidence subject exists: the broad root must not absorb them.
                 descendants = {key for key, row in entities.items() if row.get("kind") == "subject" and key != "subject:life-science"
                                and "subject:life-science" in _ontology_ancestors(entities, key)}
-                blocked = any(c.score >= DIRECT_THRESHOLD for k, c in found.items() if k in descendants) or \
-                    any(c.score >= PRIMARY_THRESHOLD for k, c in found.items() if k.startswith("subject:") and k != "subject:life-science")
+                # Gap-filling subjects (FALLBACK_SUBJECTS) never block it: they only act where the core abstained.
+                blocked = any(c.score >= DIRECT_THRESHOLD for k, c in found.items() if k in descendants and k not in FALLBACK_SUBJECTS) or \
+                    any(c.score >= PRIMARY_THRESHOLD for k, c in found.items() if k.startswith("subject:") and k != "subject:life-science" and k not in FALLBACK_SUBJECTS)
                 if not blocked and score >= DIRECT_THRESHOLD:
                     cand = Candidate("subject:life-science", score, top[1], top[2], top[3], 1, "rule")
                     cand.families = top[4] or tuple(sorted(family_spans))
@@ -681,6 +712,28 @@ def _ref(server: str, epoch: str, pid: str, eid: str, cand: Candidate | None, *,
     return ref
 
 
+def _subject_primary(pool: list[dict[str, Any]], depth: Mapping[str, int], anc: Mapping[str, set[str]], related: Any,
+                     *, pick_top: bool = False) -> tuple[str | None, bool]:
+    """Primary subject of one pool: the clear winner; on a near tie between unrelated subjects, their deepest common
+    ancestor (both claims are true of it); with no common ancestor, the top-ranked one only when ``pick_top``."""
+    if not pool:
+        return None, False
+    rank = lambda r: r["score"] + 0.03 * depth[r["facetId"]]
+    ranked = sorted(pool, key=lambda r: (-rank(r), r["facetId"]))
+    top = ranked[0]
+    if top["score"] < PRIMARY_THRESHOLD:
+        return None, False
+    rivals = [r for r in ranked[1:] if not related(top["facetId"], r["facetId"]) and rank(top) - rank(r) < AMBIGUITY_MARGIN]
+    if not rivals:
+        return top["facetId"], False
+    common = set(anc[top["facetId"]]) | {top["facetId"]}
+    for rival in rivals:
+        common &= set(anc[rival["facetId"]]) | {rival["facetId"]}
+    if common:
+        return sorted(common, key=lambda e: (-depth[e], e))[0], True
+    return (top["facetId"], True) if pick_top else (None, True)
+
+
 def resolve_facets(papers: Iterable[Mapping[str, Any]], catalog: Mapping[str, Any], evidence: Mapping[str, Mapping[str, Candidate]], *,
                    user_subjects: Mapping[str, Iterable[str]] | None = None, display_fields: Mapping[str, str] | None = None,
                    overlay_entities: Mapping[str, Any] | None = None) -> list[dict[str, Any]]:
@@ -700,7 +753,7 @@ def resolve_facets(papers: Iterable[Mapping[str, Any]], catalog: Mapping[str, An
         cands = evidence.get(pid, {})
         for key, cand in cands.items():
             eid = by_key.get(key)
-            if not eid or cand.score < DIRECT_THRESHOLD: continue
+            if not eid or cand.score < DIRECT_THRESHOLD or key in FALLBACK_SUBJECTS: continue   # gap-filling evidence: see gap_fill_subjects
             origin = "custom-rule" if cand.origin == "custom" else "rule"
             accepted[eid] = {"facetId": eid, "ontologyKey": key, "kind": by_id[eid]["kind"], "scoreKind": "evidence", "score": round(min(1.0, cand.score), 6),
                              "origin": origin, "evidenceRef": _ref(server, epoch, pid, eid, cand, origin=origin)}
@@ -760,6 +813,32 @@ def resolve_facets(papers: Iterable[Mapping[str, Any]], catalog: Mapping[str, An
         directs = sorted(accepted.values(), key=lambda r: (r["kind"], r["facetId"]))
         rows.append({"paperId": pid, "directMemberships": directs, "primaryByFacet": {k: v for k, v in primary.items()}, "status": status})
     return rows
+
+
+def gap_fill_subjects(papers: Iterable[Mapping[str, Any]], catalog: Mapping[str, Any], evidence: Mapping[str, Mapping[str, Candidate]],
+                      resolved: Iterable[Mapping[str, Any]]) -> dict[str, tuple[str, float, str | None]]:
+    """Display subject for papers the core classifier left without a primary (taxonomy-v4).
+
+    Only FALLBACK_SUBJECTS evidence at or above PRIMARY_THRESHOLD counts.  A near tie between unrelated gap subjects
+    resolves to their deepest common ancestor, else to the top-ranked one (deterministic).  The facet record itself is
+    untouched (its subject primary stays None); the caller turns the result into a ``gap-fill`` display membership.
+    Returns {paperId: (entityId, score, ruleId)}."""
+    by_id, by_key, _ = _subject_projection(catalog)
+    depth = {eid: len(_ancestors(by_id, eid)) for eid in by_id}
+    anc = {eid: _ancestors(by_id, eid) for eid in by_id}
+    def related(a: str, b: str) -> bool: return a == b or a in anc[b] or b in anc[a]
+    out: dict[str, tuple[str, float, str | None]] = {}
+    for paper, row in zip(papers, resolved):
+        pid = str(paper.get("id", ""))
+        if (row.get("primaryByFacet") or {}).get("subject"):
+            continue
+        pool = [{"facetId": by_key[key], "score": min(1.0, cand.score), "rule": cand.rule}
+                for key, cand in (evidence.get(pid) or {}).items() if key in FALLBACK_SUBJECTS and key in by_key and cand.score >= PRIMARY_THRESHOLD]
+        chosen, _ = _subject_primary(pool, depth, anc, related, pick_top=True)
+        if chosen:
+            best = max((r for r in pool if r["facetId"] == chosen or chosen in anc[r["facetId"]]), key=lambda r: (r["score"], r["facetId"]))
+            out[pid] = (chosen, round(best["score"], 6), best["rule"])
+    return out
 
 
 def classify_papers(papers: Iterable[Mapping[str, Any]], catalog: Mapping[str, Any], **kwargs: Any) -> tuple[list[dict[str, Any]], dict[str, Any]]:

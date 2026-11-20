@@ -157,7 +157,7 @@ test('all-paper projection: exactly one deterministic point per active paper inc
   assert.equal(new Set(a.points.map(p => p.id)).size, snapshot.papers.length);
   const byId = new Map(a.points.map(p => [p.id, p]));
   assert.equal(byId.get('p:unknown').categoryKey, 'unknown'); assert.equal(byId.get('p:unknown').dimmed, true); assert.equal(byId.get('p:ot').dimmed, false); assert.equal(byId.get('p:other').dimmed, true);
-  assert.equal(a.counters.active, 5); assert.equal(a.counters.represented, 5); assert.equal(a.counters.eligibleEdges, 2); assert.equal(a.counters.displayedEdges, 2);
+  assert.equal(a.counters.active, 5); assert.equal(a.counters.represented, 5); assert.equal(a.counters.eligibleEdges, 2); assert.equal(a.counters.displayedEdges, 0); // no paper-to-paper lines: aggregated bridges only
   const unfocused = allPaperOverviewProjection(snapshot, {relation: 'semantic'});
   assert.deepEqual(unfocused.points.map(p => [p.id, p.deterministicX, p.deterministicY]), a.points.map(p => [p.id, p.deterministicX, p.deterministicY])); // focus never moves points
   assert.equal(unfocused.points.every(p => p.dimmed === false), true);

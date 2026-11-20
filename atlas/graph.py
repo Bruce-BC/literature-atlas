@@ -17,7 +17,7 @@ from typing import Any, Iterable, Mapping
 
 from .embeddings import EmbeddingProvider, normalize_text
 from .taxonomy import (build_facet_catalog, check_facet_invariants, collect_evidence, concept_quality, field_stats,
-                       msc_codes_from_extra, resolve_facets, source_keyword_items, taxonomy_input_state, PROTECTED_PHRASES, RULE_VERSION, ONTOLOGY_POLICY_VERSION)
+                       msc_codes_from_extra, resolve_facets, gap_fill_subjects, source_keyword_items, taxonomy_input_state, PROTECTED_PHRASES, RULE_VERSION, ONTOLOGY_POLICY_VERSION)
 
 
 _STOPWORDS = {
@@ -639,6 +639,14 @@ def _builtin_taxonomy(server: str, epoch: str) -> list[dict[str, Any]]:
         {"id": "life-science", "label": {"en": "Life Science", "ko": "생명과학"}, "parentIds": [], "aliases": ["biology", "biological"]},
         {"id": "bioinformatics", "label": {"en": "Bioinformatics", "ko": "생물정보학"}, "parentIds": ["life-science"], "aliases": ["genomics", "genome"]},
         {"id": "phage", "label": {"en": "Phage Biology", "ko": "파지 생물학"}, "parentIds": ["life-science"], "aliases": ["bacteriophage"]},
+        {"id": "genome-biology", "label": {"en": "Genome Biology", "ko": "유전체 생물학"}, "parentIds": ["life-science"], "aliases": []},
+        {"id": "protein-science", "label": {"en": "Protein Science", "ko": "단백질 과학"}, "parentIds": ["life-science"], "aliases": []},
+        {"id": "drug-discovery", "label": {"en": "Drug Discovery", "ko": "신약 개발"}, "parentIds": ["life-science"], "aliases": []},
+        {"id": "statistics", "label": {"en": "Statistics", "ko": "통계학"}, "parentIds": ["mathematics"], "aliases": []},
+        {"id": "computer-science", "label": {"en": "Computer Science", "ko": "컴퓨터과학"}, "parentIds": [], "aliases": []},
+        {"id": "machine-learning", "label": {"en": "Machine Learning", "ko": "기계학습"}, "parentIds": ["computer-science"], "aliases": []},
+        {"id": "quantum-computing", "label": {"en": "Quantum Computing", "ko": "양자컴퓨팅"}, "parentIds": ["computer-science"], "aliases": []},
+        {"id": "medicine", "label": {"en": "Medicine & Health", "ko": "의학·보건"}, "parentIds": [], "aliases": []},
         {"id": "unknown", "label": {"en": "Unclassified", "ko": "미분류"}, "parentIds": [], "aliases": []},
     ]
 
@@ -1010,13 +1018,16 @@ class GraphEngine:
         evidence = collect_evidence(paper_rows, catalog0, evidence_cache)
         if builtin_fields:
             by_id0 = {row["id"]: row for row in catalog0["entities"]}
-            for p in paper_rows:
-                resolved = resolve_facets([p], catalog0, evidence)[0]
+            resolved_rows = resolve_facets(paper_rows, catalog0, evidence)
+            gaps = gap_fill_subjects(paper_rows, catalog0, evidence, resolved_rows)   # display subject where the core abstained
+            for p, resolved in zip(paper_rows, resolved_rows):
                 p["_facetSubjects"] = [(by_id0[m["facetId"]]["legacyFieldId"], m["score"], m["evidenceRef"].get("ruleId"))
                                        for m in resolved["directMemberships"]
                                        if m["kind"] == "subject" and by_id0[m["facetId"]].get("legacyFieldId")]
                 primary0 = resolved["primaryByFacet"].get("subject")
                 p["_facetPrimary"] = by_id0[primary0]["legacyFieldId"] if primary0 else None
+                gap = gaps.get(p["id"]) if not primary0 else None
+                p["_facetGap"] = (by_id0[gap[0]]["legacyFieldId"], gap[1], gap[2]) if gap and by_id0[gap[0]].get("legacyFieldId") else None
 
         memberships: list[dict[str, Any]] = []
         membership_by_key: dict[tuple[str, str], dict] = {}
@@ -1064,7 +1075,14 @@ class GraphEngine:
                         "scoreKind": "heuristic",
                         "provenance": {"provider": "term-rules", "method": "facet-evidence", "label": "rule-based", "ruleId": rule},
                     }, default_method="model")
-                if not p.get("_facetPrimary"):
+                if not p.get("_facetPrimary") and p.get("_facetGap"):
+                    fid_gap, score_gap, rule_gap = p["_facetGap"]
+                    add_membership(p["id"], ensure_field(str(fid_gap)), {
+                        "method": "model", "score": score_gap, "weight": 1, "evidenceSpan": None, "modelVersion": RULE_VERSION,
+                        "scoreKind": "heuristic",
+                        "provenance": {"provider": "term-rules", "method": "gap-fill", "label": "rule-based", "ruleId": rule_gap},
+                    }, default_method="model")
+                elif not p.get("_facetPrimary"):
                     add_membership(p["id"], ensure_field("unknown"), {
                         "method": "model", "score": 0.1, "weight": 1, "evidenceSpan": None, "modelVersion": RULE_VERSION,
                         "scoreKind": "heuristic",
@@ -1101,7 +1119,7 @@ class GraphEngine:
             p["_userFieldIds"] = [m["fieldId"] for m in related if m.get("method") == "user"]
             requested = p.get("displayFieldId")
             if not requested and builtin_fields and not p.get("_inputFieldIds"):
-                requested = p.get("_facetPrimary") or "unknown"
+                requested = p.get("_facetPrimary") or (p["_facetGap"][0] if p.get("_facetGap") else "unknown")
             requested = ensure_field(str(requested)) if requested else None
             if requested and requested not in p["fieldIds"]:
                 requested = None

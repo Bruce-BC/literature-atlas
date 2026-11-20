@@ -78,7 +78,7 @@ The following blocks are optional and remain in the schemaVersion 1 envelope so 
 ```json
 {
   "facetCatalog": {
-    "version": "facet-catalog-v3",
+    "version": "facet-catalog-v4",
     "namespace": "atlas:<serverId>:<epoch>",
     "inputState": "valid-custom",
     "entities": [{
@@ -132,6 +132,10 @@ App-owned records live under `<dataDir>/migrations/atlas-graph-v3/<epoch>/`:
 * Ledger `mergedInto` is present only for a **global-safe** merge (every paper holding the concept was remapped, single target, `mergeScope: "global"`). A shared acronym merged only where its context matched (OT, KL) is reported as `contextMergedInto` with `mergeScope: "per-paper"` and `contextMergedPaperCount`; clients and `/taxonomy/resolve` must never follow it as a redirect.
 * Parent cycles are detected iteratively (O(V+E), no recursion): writes reject a cycle (`400`) and more than 2000 entities (`400`, never truncated); a stored config that already contains a cycle is built with the cycle-closing edges dropped and surfaced in `facetCatalog.validationErrors` and `taxonomyState.reason`.
 * Evidence collection prefilters rules with a literal-substring test (a necessary condition of each pattern) and caches per (catalog fingerprint, text part, text hash) within one build, so the graph's two passes scan an unchanged large text part once. Results are identical with the prefilter/cache disabled (tested).
+
+### Gap-fill display subjects (taxonomy-v4)
+
+`FALLBACK_SUBJECTS` (`subject:mathematics` general evidence, `genome-biology`, `protein-science`, `drug-discovery`, `statistics`, `computer-science`, `machine-learning`, `quantum-computing`, `medicine`) never enter `resolve_facets`: `directMemberships`, `primaryByFacet` and the gold contracts are those of the core rules. `gap_fill_subjects(papers, catalog, evidence, resolved)` runs only for papers whose subject primary is `null` and returns `{paperId: (entityId, score, ruleId)}` from gap evidence with score ≥ `PRIMARY_THRESHOLD`; a near tie resolves to the deepest common ancestor, else the top-ranked subject. The graph turns it into the display field and a membership with `method: "model"`, `scoreKind: "heuristic"`, `provenance: {provider: "term-rules", method: "gap-fill", label: "rule-based", ruleId}`. The gap subjects never block the broad Life Science fallback. A cached snapshot whose `facetCatalog.classifier.ruleVersion` differs from `RULE_VERSION` is re-derived. Field id of the genome subject is `genome-biology` because `genomics` is an alias of Bioinformatics.
 
 ### Broad-domain Life Science (ontology-label-policy-v2)
 

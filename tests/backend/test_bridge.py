@@ -174,7 +174,7 @@ class BackendTests(unittest.TestCase):
         server = AtlasHTTPServer(("127.0.0.1", 0), manager, web_root=root, parent_origin="app://obsidian.md")
         thread = threading.Thread(target=server.serve_forever, daemon=True); thread.start(); base = f"http://127.0.0.1:{server.server_port}"
         static = urllib.request.urlopen(base + "/")
-        self.assertEqual(static.read(), b"ok"); self.assertIn("frame-ancestors 'self' app://obsidian.md", static.headers["Content-Security-Policy"])
+        self.assertEqual(static.read(), b"ok"); self.assertIn("frame-ancestors 'self' app://obsidian.md", static.headers["Content-Security-Policy"]); self.assertIn("img-src 'self' data:;", static.headers["Content-Security-Policy"])  # node icons are inline SVG data URIs (node-icons.js), nothing remote
         with self.assertRaises(urllib.error.HTTPError) as traversal:
             urllib.request.urlopen(base + "/%2e%2e/atlas-secret.txt")
         self.assertIn(traversal.exception.code, {404, 400})

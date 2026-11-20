@@ -646,7 +646,7 @@ def test_full_pipeline_occupational_therapist_ot_paper_is_not_optimal_transport(
     by_key = {p["key"]: p for p in snapshot["papers"]}
     facets = {r["paperId"]: r for r in snapshot["paperFacets"]}
     labels = {f["id"]: f["label"]["en"] for f in snapshot["fields"]}
-    assert labels[by_key["T"]["displayFieldId"]] == "Unclassified" and labels[by_key["M"]["displayFieldId"]] == "Optimal Transport"
+    assert labels[by_key["T"]["displayFieldId"]] == "Medicine & Health" and labels[by_key["M"]["displayFieldId"]] == "Optimal Transport"  # v4 gap-fill: clinical, never OT
     assert facets[by_key["T"]["id"]]["primaryByFacet"]["subject"] is None and facets[by_key["M"]["id"]]["primaryByFacet"]["subject"].endswith("subject:optimal-transport")
 
 
@@ -738,11 +738,11 @@ def test_full_pipeline_broad_domain_counts_invariants_schema_and_decoder():
     jsonschema.validate(snapshot, schema)
     labels = {f["id"]: f["label"]["en"] for f in snapshot["fields"]}
     display = {p["key"]: labels[p["displayFieldId"]] for p in snapshot["papers"]}
-    assert display == {"L1": "Life Science", "L2": "Life Science", "B1": "Bioinformatics", "P1": "Phage Biology", "N1": "Unclassified", "N2": "Unclassified"}
+    assert display == {"L1": "Life Science", "L2": "Life Science", "B1": "Bioinformatics", "P1": "Phage Biology", "N1": "Computer Science", "N2": "Medicine & Health"}  # taxonomy-v4 gap-fill: the core still abstains (facet primary None), the display field is the broad domain
     stats = {labels[r["fieldId"]]: r for r in snapshot["fieldStats"]["rows"]}
     assert (stats["Life Science"]["direct"], stats["Life Science"]["primary"], stats["Life Science"]["inclusive"]) == (2, 2, 4)        # + Bioinformatics + Phage descendants, unique papers
     assert stats["Bioinformatics"]["direct"] == stats["Bioinformatics"]["primary"] == 1
-    assert snapshot["fieldStats"]["knownPrimary"] == 4 and snapshot["fieldStats"]["unknown"] == 2 and snapshot["fieldStats"]["paperCount"] == 6
+    assert snapshot["fieldStats"]["knownPrimary"] == 6 and snapshot["fieldStats"]["unknown"] == 0 and snapshot["fieldStats"]["paperCount"] == 6
     assert all(r["primary"] <= r["direct"] <= r["inclusive"] for r in snapshot["fieldStats"]["rows"])
     assert check_facet_invariants(snapshot["paperFacets"], snapshot["facetCatalog"]) == []
     by_key = {p["key"]: p["id"] for p in snapshot["papers"]}
@@ -954,3 +954,25 @@ def test_public_policy_record_pins_the_four_static_corrections_and_unchanged_inp
     for cid, case in {c["id"]: c for c in _gold(GOLD_V2_PATH)}.items():                                                                    # splits follow the frozen id-hash rule
         assert case["split"] == ("heldout" if int(hashlib.sha256(cid.encode()).hexdigest()[:8], 16) % 4 == 0 else "calibration")
     assert "not unchanged v1 accuracy" in record["honesty"] and "not blind held-out accuracy" in record["honesty"]
+
+
+def test_gap_fill_only_moves_papers_out_of_unclassified_and_records_its_provenance():
+    papers = [
+        {"key": "S", "title": "Linear mixed model implementation in lme4", "abstract": "Fitting mixed-effects models in R."},
+        {"key": "Q", "title": "Hybrid quantum-classical algorithms in the noisy intermediate-scale quantum era"},
+        {"key": "G", "title": "De novo assembly of a bird genome using nanopore sequencing"},
+        {"key": "P", "title": "Deep learning predicts bacteriophage host range"},   # core subject wins over the gap subject
+        {"key": "X", "title": "Supplementary Information for"},                       # no evidence: stays Unclassified
+    ]
+    snapshot = _build(papers)
+    labels = {f["id"]: f["label"]["en"] for f in snapshot["fields"]}
+    display = {p["key"]: labels[p["displayFieldId"]] for p in snapshot["papers"]}
+    assert display == {"S": "Statistics", "Q": "Quantum Computing", "G": "Genome Biology", "P": "Phage Biology", "X": "Unclassified"}
+    by_key = {p["key"]: p["id"] for p in snapshot["papers"]}
+    facets = {r["paperId"]: r for r in snapshot["paperFacets"]}
+    for key in ("S", "Q", "G"):
+        assert facets[by_key[key]]["primaryByFacet"]["subject"] is None          # the core classifier's verdict is unchanged
+        gap = [m for m in snapshot["memberships"] if m["paperId"] == by_key[key] and m["provenance"].get("method") == "gap-fill"]
+        assert len(gap) == 1 and gap[0]["method"] == "model" and gap[0]["score"] >= 0.75 and gap[0]["provenance"]["ruleId"]
+    assert not any(m["provenance"].get("method") == "gap-fill" for m in snapshot["memberships"] if m["paperId"] in {by_key["P"], by_key["X"]})
+    assert check_facet_invariants(snapshot["paperFacets"], snapshot["facetCatalog"]) == []

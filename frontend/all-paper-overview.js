@@ -90,15 +90,18 @@ export function allPaperOverviewProjection(snapshot, {grouping = 'category', foc
   const points = papers.map(paper => { const c = placed.get(String(paper.id)); return {id: paper.id, cloudId: c.cloudId, deterministicX: c.x, deterministicY: c.y, categoryKey: keyOf(paper.id), dimmed: Boolean(focus && !focus.has(paper.id))}; });
   const activeIds = new Set(papers.map(paper => paper.id));
   const eligible = (snapshot?.edges || []).filter(edge => edge.type === relationName && activeIds.has(edge.source) && activeIds.has(edge.target));
-  const rank = edge => (focus && (focus.has(edge.source) || focus.has(edge.target)) ? 0 : 1);
-  const displayed = [...eligible].sort((a, b) => rank(a) - rank(b) || String(a.id).localeCompare(String(b.id))).slice(0, Math.max(0, edgeBudget));
   const paperById = new Map(papers.map(paper => [paper.id, paper]));
   const nodes = points.map(point => { const paper = paperById.get(point.id) || {}; const category = categories.get(point.id) || UNKNOWN; return {data: {id: `overview-paper:${point.id}`, paperId: point.id, label: paper.title || point.id, kind: 'paper', x: point.deterministicX, y: point.deterministicY, categoryId: point.categoryKey, categoryLabel: category.label, categoryPath: (category.path || []).join(' / '), categoryColor: category.color, dimmed: point.dimmed}}; });
-  const edges = displayed.map(edge => ({data: {id: `overview-edge:${edge.id}`, source: `overview-paper:${edge.source}`, target: `overview-paper:${edge.target}`, relation: edge.type, directed: Boolean(edge.directed)}}));
+  // Paper-to-paper lines are NOT drawn on the field map: hundreds of crossing lines hid the clouds.  Each pair of fields is
+  // joined by one aggregated bridge whose width carries the number/strength of the semantic links (edge-strength.js).
+  const edges = [];
+  const focusCloudId = focusScope?.fieldId ? groups.find(group => group.fieldId === focusScope.fieldId)?.id || null : null;
+  const baseView = edgesForState(snapshot, layout, {});
+  const edgeView = {...baseView, bridges: baseView.bridges.map(bridge => (!focusCloudId ? bridge : bridge.source === focusCloudId || bridge.target === focusCloudId ? {...bridge, emphasis: true} : {...bridge, dimmed: true})), edges: []};
   const theme = categoryPalette.theme === 'dark' ? 'dark' : 'light'; const shaped = shapesFor(layout); const shapeById = new Map(shaped.shapes.map(shape => [shape.cloudId, shape])); const groupById = new Map(groups.map(group => [group.id, group]));
   const clouds = layout.clouds.map(cloud => { const shape = shapeById.get(cloud.id); const group = groupById.get(cloud.id); const tone = cloudTones({hue: cloud.unfiled ? null : hueOfHex(group.color), theme, panelHex: categoryPalette.panel || (theme === 'dark' ? '#1e293b' : '#ffffff'), unfiled: cloud.unfiled}); return {id: cloud.id, label: cloud.label, fieldId: group.fieldId, cx: cloud.cx, cy: cloud.cy, r: cloud.r, size: cloud.size, unfiled: cloud.unfiled, kind: shape.kind, method: shape.method, d: shape.d, bbox: shape.bbox, colors: {fill: tone.fill.hex, stroke: tone.stroke.hex, selectedFill: tone.selectedFill.hex}}; });
   const nodeIdsByPaper = new Map(papers.map(paper => [String(paper.id), [`overview-paper:${paper.id}`]]));
-  const projection = {id: ALL_PAPERS_ID, label: ALL_PAPERS_LABEL, points, edges, nodes, clouds, cloudLayout: layout, nodeIdsByPaper, representedIds: points.map(point => point.id), activePaperIds: papers.map(paper => paper.id), focusedIds: focus ? [...focus] : [], counters: {active: papers.length, represented: points.length, viewport: points.length, eligibleEdges: eligible.length, displayedEdges: edges.length}};
+  const projection = {id: ALL_PAPERS_ID, label: ALL_PAPERS_LABEL, points, edges, edgeView, nodes, clouds, cloudLayout: layout, nodeIdsByPaper, representedIds: points.map(point => point.id), activePaperIds: papers.map(paper => paper.id), focusedIds: focus ? [...focus] : [], counters: {active: papers.length, represented: points.length, viewport: points.length, eligibleEdges: eligible.length, displayedEdges: edges.length, displayedBridges: edgeView.bridges.length}};
   if (viewport) projection.counters.viewport = countInViewport(points, viewport);
   // Legacy aliases used by older callers/tests.
   projection.totalPapers = papers.length; projection.visiblePapers = points.length; projection.eligibleEdges = eligible.length; projection.visibleEdges = edges.length;

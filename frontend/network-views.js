@@ -5,14 +5,15 @@ import {networkLegendForNodes, networkZoomOptions, clampNetworkZoom} from './net
 import {graphProjection} from './projection.js';
 import {TIER_STYLE, withEdgeTiers} from './edge-strength.js';
 import {clampPan, completePositions, planCamera, saveCamera, topologySignature} from './camera-policy.js';
-import {HUB_MIN_DEGREE, markHubs, namedWhenShown} from './node-emphasis.js';
+import {HUB_MIN_DEGREE, TIER_LINKS, markHubs, namedWhenShown} from './node-emphasis.js';
+import {iconUri} from './node-icons.js';
 
 export const CY_EDGE_CURVE = 12; // px: every Cytoscape edge is a slightly bent curve
 const CY_SIZE_SCALE = 1.5; // Cytoscape nodes are drawn larger than the shared base size
 const CY_SHAPES = {circle: 'ellipse', diamond: 'diamond', hexagon: 'hexagon', star: 'star'};
 /** Renderer-neutral emphasis -> the Cytoscape data fields the stylesheet reads. */
-const cyNode = (node, named) => ({...node, data: {...node.data, cyShape: CY_SHAPES[node.data.shape] || 'ellipse', cySize: node.data.size * CY_SIZE_SCALE, named: Boolean(named)}});
-const CY_LIVE_FIELDS = ['categoryColor', 'dimmed', 'outline', 'cyShape', 'cySize', 'named', 'hub', 'links'];
+const cyNode = (node, named, iconColor) => { const iconUriValue = node.data.icon ? iconUri(node.data.icon, iconColor) : ''; return {...node, data: {...node.data, cyShape: CY_SHAPES[node.data.shape] || 'ellipse', cySize: node.data.size * CY_SIZE_SCALE, named: Boolean(named), ...(iconUriValue ? {iconUri: iconUriValue} : {}), ...(node.data.tierLineWidth ? {cyBorder: node.data.tierLineWidth + 1} : {})}}; }; // tier 2-3 nodes carry a Lucide icon (node-icons.js)
+const CY_LIVE_FIELDS = ['categoryColor', 'dimmed', 'outline', 'cyShape', 'cySize', 'named', 'hub', 'links', 'iconUri', 'cyBorder'];
 const liveData = data => Object.fromEntries(CY_LIVE_FIELDS.map(key => [key, data[key] ?? null]));
 
 const cssColor = (computed, name) => computed.getPropertyValue(name).trim() || '#64748b';
@@ -24,6 +25,8 @@ export function cytoscapeStyle(c, {reduced = reducedMotion()} = {}) {
   return [
     {selector: 'node', style: {'background-color': 'data(categoryColor)', label: '', color: c.text, 'font-size': 12, 'text-wrap': 'wrap', 'text-max-width': 140, 'border-width': 2, 'border-color': c.panel, 'transition-property': 'opacity, border-width, border-color, background-color', 'transition-duration': reduced ? 0 : CY_TRANSITION_S}},
     {selector: 'node[cySize]', style: {shape: 'data(cyShape)', width: 'data(cySize)', height: 'data(cySize)'}}, // hubs (3+ displayed links) change shape and grow; concepts are diamonds
+    {selector: 'node[iconUri]', style: {'background-image': 'data(iconUri)', 'background-fit': 'none', 'background-width': '52%', 'background-height': '52%', 'background-clip': 'none', 'background-image-containment': 'over'}},
+    {selector: 'node[cyBorder]', style: {'border-width': 'data(cyBorder)'}},
     {selector: 'node[?named]', style: {label: 'data(label)', 'text-valign': 'bottom', 'text-margin-y': 4, 'font-size': 10, 'text-max-width': 110, 'text-background-color': c.panel, 'text-background-opacity': 0.8, 'text-background-padding': 2}},
     {selector: 'node[?dimmed]', style: {opacity: 0.25}},
     {selector: 'node[outline]', style: {'border-color': 'data(outline)', 'border-width': 2}}, // density mode: a text-colour outline is a non-colour cue that keeps pale ramp steps visible
@@ -109,7 +112,7 @@ export function g6View({view, container, nodes, edges, style, selectedId, onSele
 function shapeKey(container, nodes) {
   let key = container.parentElement.querySelector('.atlas-shape-key'); if (!key) { key = document.createElement('div'); key.className = 'atlas-shape-key atlas-note'; container.parentElement.append(key); }
   const has = shape => nodes.some(node => node.data.shape === shape); const hubs = nodes.filter(node => node.data.hub).length;
-  key.dataset.hubs = String(hubs); key.textContent = [has('circle') ? '● 논문' : null, has('diamond') ? '◆ 개념' : null, has('hexagon') ? `육각형 = 연결 ${HUB_MIN_DEGREE}개 이상 논문` : null, has('star') ? `★ 연결 ${HUB_MIN_DEGREE}개 이상 개념` : null, hubs ? '크기 = 연결 수' : null].filter(Boolean).join(' · ');
+  key.dataset.hubs = String(hubs); key.textContent = [has('circle') ? '● 논문' : null, has('diamond') ? '◆ 개념' : null, has('hexagon') ? `육각형 = 연결 ${HUB_MIN_DEGREE}개 이상 논문` : null, has('star') ? `★ 연결 ${HUB_MIN_DEGREE}개 이상 개념` : null, nodes.some(node => node.data.tier >= 2) ? `아이콘 = 연결 ${TIER_LINKS[1]}개 이상(문서·전구), ${TIER_LINKS[2]}개 이상(메달·반짝임)` : null, hubs ? '크기 = 연결 수' : null].filter(Boolean).join(' · ');
 }
 
 /** Lower paper/concept networks.  Colours come from the ACTUAL palette/theme context in `state.paletteContext`. */
@@ -144,8 +147,8 @@ export function renderNetworks(containers, snapshot, detail, state, callbacks, {
     result.g6Paper = result.paper.g6; result.g6Concept = result.concept.g6; return result;
   }
   for (const wrapper of [state.g6PaperView, state.g6ConceptView]) wrapper?.g6.destroy();
-  result.paper = cytoscapeView({view: 'cy-paper', container: containers.paper, nodes: paperNodes.map(node => cyNode(node, showNames && namedWhenShown(node.data, paperNodes.length))), edges: paperEdges, colors, selectedId: state.selectedPaperId, onTap: paperSelect, store, epochKey, scopeKey, existing: state.cyPaperView});
-  result.concept = cytoscapeView({view: 'cy-concept', container: containers.concept, nodes: conceptNodes.map(node => cyNode(node, showNames && namedWhenShown(node.data, conceptNodes.length))), edges: conceptEdges, colors, selectedId: state.selectedConceptId, onTap: conceptSelect, store, epochKey, scopeKey, existing: state.cyConceptView});
+  result.paper = cytoscapeView({view: 'cy-paper', container: containers.paper, nodes: paperNodes.map(node => cyNode(node, showNames && namedWhenShown(node.data, paperNodes.length), colors.panel)), edges: paperEdges, colors, selectedId: state.selectedPaperId, onTap: paperSelect, store, epochKey, scopeKey, existing: state.cyPaperView});
+  result.concept = cytoscapeView({view: 'cy-concept', container: containers.concept, nodes: conceptNodes.map(node => cyNode(node, showNames && namedWhenShown(node.data, conceptNodes.length), colors.panel)), edges: conceptEdges, colors, selectedId: state.selectedConceptId, onTap: conceptSelect, store, epochKey, scopeKey, existing: state.cyConceptView});
   result.cyPaper = result.paper.cy; result.cyConcept = result.concept.cy; return result;
 }
 

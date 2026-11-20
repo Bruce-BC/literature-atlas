@@ -276,7 +276,7 @@ class AtlasRequestHandler(BaseHTTPRequestHandler):
             return False
         body = candidate.read_bytes()
         ancestors = "'self'" if not self.server.parent_origin else f"'self' {self.server.parent_origin}"
-        self._send(200, body, content_type=mimetypes.guess_type(str(candidate))[0] or "application/octet-stream", headers={"Content-Security-Policy": f"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' http://127.0.0.1:* http://localhost:*; object-src 'none'; base-uri 'none'; frame-ancestors {ancestors}"})
+        self._send(200, body, content_type=mimetypes.guess_type(str(candidate))[0] or "application/octet-stream", headers={"Content-Security-Policy": f"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' http://127.0.0.1:* http://localhost:*; object-src 'none'; base-uri 'none'; frame-ancestors {ancestors}"})
         return True
 
     def do_POST(self) -> None:  # noqa: N802

@@ -377,7 +377,7 @@ class GraphEngineTests(unittest.TestCase):
         self.assertEqual(fields["Topology"]["parentIds"], [next(field["id"] for field in snapshot["fields"] if field["label"]["en"] == "Mathematics")])
         classified = next(p for p in snapshot["papers"] if p["key"] == "A")
         self.assertGreaterEqual(len(classified["fieldIds"]), 2)
-        self.assertTrue(any(m["method"] == "model" and m["modelVersion"] == "taxonomy-v3" and m["provenance"]["label"] == "rule-based" for m in snapshot["memberships"]))
+        self.assertTrue(any(m["method"] == "model" and m["modelVersion"] == "taxonomy-v4" and m["provenance"]["label"] == "rule-based" for m in snapshot["memberships"]))
 
     def test_indexed_attachment_does_not_upgrade_abstract_keyword_evidence(self):
         papers = [

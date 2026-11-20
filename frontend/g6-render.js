@@ -1,9 +1,10 @@
 import {Graph, GraphEvent, NodeEvent} from '@antv/g6';
-import {forceCollide, forceLink, forceManyBody, forceSimulation} from 'd3';
+import {forceCollide, forceLink, forceManyBody, forceSimulation, forceX, forceY} from 'd3';
 import {NETWORK_ZOOM_RANGE, clampNetworkZoom} from './network-style.js';
 import {clampPan, completePositions, topologySignature} from './camera-policy.js';
 import {TIER_STYLE} from './edge-strength.js';
 import {namedWhenShown} from './node-emphasis.js';
+import {iconUri} from './node-icons.js';
 import {capturedCamera, createCameraMemory, easeInOutCubic, interpolateCamera, rememberAutoMove, returnTarget} from './motion.js';
 
 const safeColor = value => typeof value === 'string' && value ? value : '#64748b';
@@ -26,35 +27,143 @@ export const RELAYOUT = Object.freeze({alpha: 0.5, alphaDecay: 0.1, duration: 56
 const SPRING_OMEGA = 9; const SPRING_END = 1 - (1 + SPRING_OMEGA) * Math.exp(-SPRING_OMEGA);
 export const easeSpring = t => { const x = Math.min(1, Math.max(0, t)); return x >= 1 ? 1 : (1 - (1 + SPRING_OMEGA * x) * Math.exp(-SPRING_OMEGA * x)) / SPRING_END; };
 /**
- * Target positions of a seeded force relayout (pure, synchronous): same forces as the live layout; the centroid of the
- * nodes that already existed is kept, so the part of the graph the user was looking at does not drift.
+ * Target positions of a relayout (pure, synchronous).  Expansion (new nodes next to existing ones): the expanded node moves
+ * out of the cluster (away from the centroid of the others, past their extent), the other existing nodes stay pinned and
+ * the new ones fan out on the far side of the expanded node (`fanSlots`).  Any other change: the same forces as the
+ * live layout, with the centroid of the nodes that already existed kept so the view does not drift.
  */
+export const NODE_GAP = 14; // clear space kept around every node (its halo/label ring included in the radius below)
+/** Collision radius of a node of drawn `size`: half the size plus the selection halo (~25 %) plus a fixed gap. */
+export const collideRadius = size => (Number(size) > 0 ? Number(size) : 16) * 0.62 + NODE_GAP;
+/**
+ * Minimal camera walk that brings `box` (world) into view: keep the current zoom unless the box does not fit (then zoom out
+ * just enough, about the viewport centre), and pan only by what is needed to bring the box's out-of-view side inside the
+ * margins.  The camera therefore always moves TOWARDS the content that left the screen, never re-centres the whole graph
+ * (re-centring jumped the opposite way when another branch collapsed).  Camera = {zoom, x, y}, screen = world * zoom + (x, y).
+ */
+export function cameraToInclude(box, camera, viewport, {margin = 36, pad = 24, maxZoom = Infinity, clamp = z => z} = {}) {
+  const inner = {w: Math.max(1, viewport.width - 2 * (margin + pad)), h: Math.max(1, viewport.height - 2 * (margin + pad))}; const edge = margin + pad;
+  const fitZoom = Math.min(inner.w / Math.max(1, box.x2 - box.x1), inner.h / Math.max(1, box.y2 - box.y1));
+  const zoom = clamp(Math.min(camera.zoom, fitZoom, maxZoom)); const scale = zoom / camera.zoom;
+  const cx = viewport.width / 2; const cy = viewport.height / 2; let x = cx - (cx - camera.x) * scale; let y = cy - (cy - camera.y) * scale; // zoom about the viewport centre
+  const axis = (t, lo, hi, size) => { const low = edge - lo * zoom; const high = size - edge - hi * zoom; return low <= high ? Math.min(high, Math.max(low, t)) : (low + high) / 2; };
+  x = axis(x, box.x1, box.x2, viewport.width); y = axis(y, box.y1, box.y2, viewport.height);
+  return {zoom, x, y};
+}
+export const FAN = Object.freeze({prefSpan: Math.PI / 2, maxSpan: Math.PI * 2 / 3, minSpan: Math.PI / 4, maxRings: 3, margin: Math.PI / 18, ringGap: 12, slotGap: 6, slotPull: 0.35, clearance: 18, pushRounds: 8});
+const TAU = Math.PI * 2;
+/**
+ * Largest free direction range around `center` (radians, [start, width]), given obstacle discs: each disc blocks the
+ * directions it covers as seen from `center`, widened by `pad`.  No obstacles: the whole circle centred on `prefer`.
+ */
+export function freeArc(center, obstacles, pad, prefer) {
+  const blocked = obstacles.map(o => { const d = Math.hypot(o.x - center.x, o.y - center.y); const half = d <= o.r + pad ? Math.PI / 2 : Math.asin(Math.min(1, (o.r + pad) / d)); const mid = Math.atan2(o.y - center.y, o.x - center.x); return [mid - half, mid + half]; });
+  if (!blocked.length) return [prefer - Math.PI, TAU];
+  const norm = a => ((a % TAU) + TAU) % TAU; const intervals = []; for (const [lo, hi] of blocked) { const width = Math.min(TAU, hi - lo); const start = norm(lo); if (start + width > TAU) intervals.push([start, TAU], [0, start + width - TAU]); else intervals.push([start, start + width]); }
+  intervals.sort((x, y) => x[0] - y[0]); const merged = []; for (const [lo, hi] of intervals) { const last = merged[merged.length - 1]; if (last && lo <= last[1]) last[1] = Math.max(last[1], hi); else merged.push([lo, hi]); }
+  let best = [0, 0]; for (let i = 0; i < merged.length; i += 1) { const end = merged[i][1]; const next = i + 1 < merged.length ? merged[i + 1][0] : merged[0][0] + TAU; if (next - end > best[1]) best = [end, next - end]; }
+  return best;
+}
+/**
+ * Fan slots of the children `ids` growing out of `parent` (pure, deterministic; ids sorted by the caller).  The fan opens
+ * into the largest free direction range around the parent (`freeArc` against `obstacles`), its width follows that range
+ * (between FAN.minSpan and FAN.maxSpan) instead of a fixed angle, and the children are spread over as few concentric rings
+ * as fit, each ring holding a share proportional to its length, so the outer ring is as even as the inner one.
+ */
+export function fanSlots(parent, away, ids, childR, obstacles = []) {
+  const slots = {}; const n = ids.length; if (!n) return slots;
+  const [start, width] = freeArc(parent, obstacles, childR + FAN.slotGap, Math.atan2(away.y, away.x));
+  // the fan opens toward the middle of the free range, but only as wide as needed: a quarter turn by default, up to a third
+  // of a turn when the children would otherwise need more than FAN.maxRings rings (never wider than the free range)
+  const free = width - 2 * FAN.margin; const awayAngle = Math.atan2(away.y, away.x); const center = width >= TAU ? awayAngle : start + width / 2;
+  const step = 2 * childR + FAN.slotGap; const radiusOf = k => parent.r + childR + FAN.ringGap + k * (2 * childR + FAN.ringGap);
+  const ringsFor = spanValue => { let count = 1; while ([...Array(count).keys()].reduce((sum, k) => sum + Math.floor((spanValue * radiusOf(k)) / step) + 1, 0) < n) count += 1; return count; };
+  let span = Math.max(FAN.minSpan, Math.min(FAN.prefSpan, free)); if (ringsFor(span) > FAN.maxRings) span = Math.max(span, Math.min(FAN.maxSpan, free));
+  const capacity = k => Math.floor((span * radiusOf(k)) / step) + 1; const rings = ringsFor(span);
+  const total = [...Array(rings).keys()].reduce((sum, k) => sum + radiusOf(k), 0); const counts = [...Array(rings).keys()].map(k => Math.min(capacity(k), Math.floor((n * radiusOf(k)) / total)));
+  let left = n - counts.reduce((sum, c) => sum + c, 0); for (let k = rings - 1; left > 0; k = (k - 1 + rings) % rings) if (counts[k] < capacity(k)) { counts[k] += 1; left -= 1; }
+  let index = 0;
+  for (let k = 0; k < rings; k += 1) {
+    const count = counts[k]; const radius = radiusOf(k); const used = count === 1 ? 0 : Math.min(span, ((count - 1) * step * 1.25) / radius);
+    for (let j = 0; j < count; j += 1) { const angle = center + (count === 1 ? 0 : -used / 2 + (used * j) / (count - 1)); slots[ids[index + j]] = {x: parent.x + Math.cos(angle) * radius, y: parent.y + Math.sin(angle) * radius}; }
+    index += count;
+  }
+  return slots;
+}
 export function relayoutTargets(positions, edges, existingIds = null) {
-  const nodes = Object.entries(positions).map(([id, p]) => ({id, x: p.x, y: p.y})); if (!nodes.length) return {};
+  const nodes = Object.entries(positions).map(([id, p]) => ({id, x: p.x, y: p.y, r: collideRadius(p.size)})); if (!nodes.length) return {};
   const known = new Set(nodes.map(node => node.id)); const links = edges.filter(([a, b]) => known.has(a) && known.has(b) && a !== b).map(([source, target]) => ({source, target}));
-  const simulation = forceSimulation(nodes).force('charge', forceManyBody().strength(-80)).force('link', forceLink(links).id(node => node.id).distance(80)).force('collide', forceCollide(18)).alpha(RELAYOUT.alpha).alphaDecay(RELAYOUT.alphaDecay).stop();
-  const ticks = Math.ceil(Math.log(simulation.alphaMin() / RELAYOUT.alpha) / Math.log(1 - RELAYOUT.alphaDecay)); simulation.tick(ticks);
+  const byId = new Map(nodes.map(node => [node.id, node])); const ticksFor = simulation => Math.ceil(Math.log(simulation.alphaMin() / RELAYOUT.alpha) / Math.log(1 - RELAYOUT.alphaDecay));
+  const fresh = existingIds ? nodes.filter(node => !existingIds.has(node.id)) : [];
+  if (existingIds && fresh.length && fresh.length < nodes.length) {
+    // Expansion: the nodes already on screen stay exactly where they are; each new node takes a slot in a fan on the far
+    // side of the node it grew from (away from the centroid of everything else), then collision alone settles overlaps.
+    // parent = the existing neighbour joined to the MOST new nodes (the node that was expanded), not merely the biggest one:
+    // a new sub-field also links to sibling fields and must still fan out of the node it came from
+    const freshIds = new Set(fresh.map(node => node.id)); const freshDegree = new Map(); for (const {source, target} of links) { if (freshIds.has(source) && existingIds.has(target)) freshDegree.set(target, (freshDegree.get(target) || 0) + 1); if (freshIds.has(target) && existingIds.has(source)) freshDegree.set(source, (freshDegree.get(source) || 0) + 1); }
+    const parentOf = new Map(); for (const node of [...fresh].sort((a, b) => a.id.localeCompare(b.id))) { const parent = links.map(link => (link.source === node.id ? link.target : link.target === node.id ? link.source : null)).filter(id => id && existingIds.has(id)).sort((a, b) => ((freshDegree.get(b) || 0) - (freshDegree.get(a) || 0)) || (byId.get(b).r - byId.get(a).r) || a.localeCompare(b))[0]; if (parent) parentOf.set(node.id, parent); }
+    const groups = new Map(); for (const [child, parent] of parentOf) (groups.get(parent) || groups.set(parent, []).get(parent)).push(child);
+    const slots = {};
+    const moved = new Map(); // expanded parent -> its new place OUTSIDE the cluster of the other existing nodes
+    for (const [parentId, children] of groups) {
+      const parent = byId.get(parentId); const others = nodes.filter(node => existingIds.has(node.id) && node.id !== parentId && !groups.has(node.id));
+      const cx = others.length ? others.reduce((sum, node) => sum + node.x, 0) / others.length : parent.x; const cy = others.length ? others.reduce((sum, node) => sum + node.y, 0) / others.length : parent.y;
+      let ax = parent.x - cx; let ay = parent.y - cy; let length = Math.hypot(ax, ay);
+      if (length < 1e-6 && others.length) { const near = [...others].sort((a, b) => Math.hypot(a.x - parent.x, a.y - parent.y) - Math.hypot(b.x - parent.x, b.y - parent.y) || a.id.localeCompare(b.id))[0]; ax = parent.x - near.x; ay = parent.y - near.y; length = Math.hypot(ax, ay); } // parent sits on the centroid: leave away from its nearest neighbour
+      if (length < 1e-6) { ax = 0; ay = 1; } else { ax /= length; ay /= length; }
+      // the expanded node moves outwards (away from the centroid of the others) only by what its fan needs: lay the fan where
+      // the node is, and while a slot is closer to another node than both radii + FAN.clearance, step out by that shortfall.
+      // The total move is capped at the fan's own depth, so a click never throws the node across the map.
+      const childR = Math.max(...children.map(id => byId.get(id).r)); const ordered = [...children].sort(); const start = Math.hypot(parent.x - cx, parent.y - cy); let reach = start; let place; let fan;
+      const depth = Math.max(...Object.values(fanSlots(parent, {x: ax, y: ay}, ordered, childR, others)).map(slot => Math.hypot(slot.x - parent.x, slot.y - parent.y)), parent.r);
+      for (let round = 0; round <= FAN.pushRounds; round += 1) {
+        place = others.length ? {x: cx + ax * reach, y: cy + ay * reach, r: parent.r} : {x: parent.x, y: parent.y, r: parent.r}; fan = fanSlots(place, {x: ax, y: ay}, ordered, childR, others);
+        const shortfall = Math.max(0, ...Object.values(fan).flatMap(slot => others.map(o => o.r + childR + FAN.clearance - Math.hypot(slot.x - o.x, slot.y - o.y))));
+        if (!(shortfall > 0) || !others.length || reach - start >= depth) break; reach = Math.min(start + depth, reach + shortfall + 1);
+      }
+      moved.set(parentId, place); Object.assign(slots, fan);
+    }
+    for (const node of nodes) { const place = moved.get(node.id); if (place) { node.x = place.x; node.y = place.y; node.fx = place.x; node.fy = place.y; } else if (existingIds.has(node.id)) { node.fx = node.x; node.fy = node.y; } else if (slots[node.id]) { node.x = slots[node.id].x; node.y = slots[node.id].y; } }
+    const slotX = forceX(node => slots[node.id]?.x ?? node.x).strength(node => (slots[node.id] ? FAN.slotPull : 0)); const slotY = forceY(node => slots[node.id]?.y ?? node.y).strength(node => (slots[node.id] ? FAN.slotPull : 0));
+    const simulation = forceSimulation(nodes).force('slotX', slotX).force('slotY', slotY).force('collide', forceCollide(node => node.r).iterations(3)).alpha(RELAYOUT.alpha).alphaDecay(RELAYOUT.alphaDecay).stop();
+    simulation.tick(ticksFor(simulation));
+    return Object.fromEntries(nodes.map(node => [node.id, {x: node.x, y: node.y}]));
+  }
+  // a child spawned on a large parent must end clear of it: link length grows with both radii, collision uses the drawn size
+  const simulation = forceSimulation(nodes).force('charge', forceManyBody().strength(-80)).force('link', forceLink(links).id(node => node.id).distance(link => 56 + link.source.r + link.target.r)).force('collide', forceCollide(node => node.r).iterations(2)).alpha(RELAYOUT.alpha).alphaDecay(RELAYOUT.alphaDecay).stop();
+  simulation.tick(ticksFor(simulation));
   const anchors = nodes.filter(node => !existingIds || existingIds.has(node.id)); const pool = anchors.length ? anchors : nodes;
   const dx = pool.reduce((sum, node) => sum + (positions[node.id].x - node.x), 0) / pool.length; const dy = pool.reduce((sum, node) => sum + (positions[node.id].y - node.y), 0) / pool.length;
   return Object.fromEntries(nodes.map(node => [node.id, {x: node.x + dx, y: node.y + dy}]));
 }
-const FORCE_LAYOUT = Object.freeze({type: 'd3-force', animation: true, enableWorker: false, alpha: 1, alphaDecay: 0.14, manyBody: {strength: -80}, link: {distance: 80}, collide: {radius: 18}});
+const FORCE_LAYOUT = Object.freeze({type: 'd3-force', animation: true, enableWorker: false, alpha: 1, alphaDecay: 0.14, manyBody: {strength: -80}, link: {distance: 80}, collide: {radius: node => collideRadius(node?.data?.size ?? node?.size)}});
 const reduceMotion = () => typeof window !== 'undefined' && Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
 const nodeType = datum => datum.data?.shape || (datum.data?.kind === 'concept' ? 'diamond' : 'circle');
 const yieldToBrowser = () => new Promise(resolve => setTimeout(resolve, 0));
 
 function nodeOptionsFull(style, count = 0) {
   const size = Number(style.nodeSize) > 0 ? Number(style.nodeSize) : 18; const showLabel = style.labels !== false; const showAll = Boolean(style.showAllLabels);
-  return {type: nodeType, style: {size: datum => datum.data?.size ?? (datum.data?.representative ? Math.max(size, 22) : size), fill: datum => safeColor(datum.data?.categoryColor || style.seriesColor || style.focusColor), fillOpacity: datum => datum.data?.dimmed ? 0.22 : 1, strokeOpacity: datum => datum.data?.dimmed ? 0.3 : 1, stroke: datum => datum.data?.outline || (datum.data?.representative ? safeColor(style.textColor) : safeColor(style.panelColor)), lineWidth: datum => datum.data?.levelLineWidth ?? (datum.data?.representative ? 3 : datum.data?.ring ? 2 : (size < 12 ? 1 : 2)), lineDash: datum => datum.data?.levelDash || 0, iconText: datum => datum.data?.glyph || '', iconFill: safeColor(style.panelColor), iconFontSize: 11, iconFontWeight: 700, label: showAll ? datum => namedWhenShown(datum.data || {}, count) : false, labelText: datum => { const label = String(datum.data?.label || datum.id); return label.length > 26 ? `${label.slice(0, 24)}…` : label; }, labelFill: safeColor(style.textColor), labelFontSize: 11, labelPlacement: 'bottom', labelOffsetY: 5, labelBackground: true, labelBackgroundFill: safeColor(style.panelColor), labelBackgroundRadius: 4, labelBackgroundPadding: [3, 5]}, state: {active: {label: showLabel, lineWidth: 4, stroke: safeColor(style.focusColor)}, selected: {label: showLabel, lineWidth: 5, stroke: safeColor(style.focusColor)}}};
+  return {type: nodeType, style: {size: datum => datum.data?.size ?? (datum.data?.representative ? Math.max(size, 22) : size), fill: datum => safeColor(datum.data?.categoryColor || style.seriesColor || style.focusColor), fillOpacity: datum => datum.data?.dimmed ? 0.22 : 1, strokeOpacity: datum => datum.data?.dimmed ? 0.3 : 1, stroke: datum => datum.data?.outline || (datum.data?.representative ? safeColor(style.textColor) : safeColor(style.panelColor)), lineWidth: datum => datum.data?.levelLineWidth ?? datum.data?.tierLineWidth ?? (datum.data?.representative ? 3 : datum.data?.ring ? 2 : (size < 12 ? 1 : 2)), lineDash: datum => datum.data?.levelDash || 0, ...iconStyle(style, size), label: showAll ? datum => namedWhenShown(datum.data || {}, count) : false, labelText: datum => { const label = String(datum.data?.label || datum.id); return label.length > 26 ? `${label.slice(0, 24)}…` : label; }, labelFill: safeColor(style.textColor), labelFontSize: 11, labelPlacement: 'bottom', labelOffsetY: 5, labelBackground: true, labelBackgroundFill: safeColor(style.panelColor), labelBackgroundRadius: 4, labelBackgroundPadding: [3, 5]}, state: {active: {label: showLabel, lineWidth: 4, stroke: safeColor(style.focusColor)}, selected: {label: showLabel, lineWidth: 5, stroke: safeColor(style.focusColor)}}};
 }
-/** Edge width / dash / opacity: the plan §2.2 strength tier when the edge has one (semantic, keyword), else the typed defaults (hierarchy dashed, citation arrow). */
+/**
+ * Icon inside a node (Lucide outline via a data URI, see node-icons.js) and the field level numeral as a corner badge.
+ * A node without `icon` keeps the numeral (if any) as centred text, as before.
+ */
+const iconSize = (data, size) => Math.round((data?.size ?? size) * (data?.shape === 'triangle' ? 0.4 : 0.5));
+const badgesOf = (data, style) => (data?.glyph && data?.icon ? [{text: data.glyph, placement: 'right-top', fill: safeColor(style.panelColor), backgroundFill: safeColor(style.textColor), fontSize: 9, fontWeight: 700, padding: [1, 4]}] : []);
+function iconStyle(style, size) {
+  const color = safeColor(style.panelColor);
+  return {iconText: datum => (datum.data?.icon ? '' : datum.data?.glyph || ''), iconSrc: datum => (datum.data?.icon ? iconUri(datum.data.icon, color) : ''), iconWidth: datum => iconSize(datum.data, size), iconHeight: datum => iconSize(datum.data, size), iconFill: color, iconFontSize: 11, iconFontWeight: 700, iconOpacity: datum => (datum.data?.dimmed ? 0.3 : 1), badges: datum => badgesOf(datum.data, style)};
+}
+const staticIconStyle = (data, style, size) => (data.icon ? {iconSrc: iconUri(data.icon, safeColor(style.panelColor)), iconWidth: iconSize(data, size), iconHeight: iconSize(data, size), iconOpacity: data.dimmed ? 0.3 : 1, badges: badgesOf(data, style)} : {iconSrc: '', iconText: data.glyph || '', badges: []});
+/** Edge width / dash / opacity:/** Edge width / dash / opacity: the plan §2.2 strength tier when the edge has one (semantic, keyword), else the typed defaults (hierarchy dashed, citation arrow). */
 const edgeTierStyle = data => { const tier = TIER_STYLE[data?.tier]; return {lineWidth: tier ? tier.width : data?.relation === 'hierarchy' ? 2 : 1.5, lineDash: tier?.dash ? [...tier.dash] : data?.relation === 'hierarchy' ? [6, 3] : [0, 0], strokeOpacity: data?.dimmed ? 0.15 : tier ? tier.opacity : 0.9}; };
 const edgeOptionsFull = style => ({type: 'quadratic', style: {curveOffset: EDGE_CURVE_OFFSET, stroke: datum => datum.data?.relation === 'membership' || datum.data?.relation === 'hierarchy' ? safeColor(style.seriesColor || style.borderColor) : safeColor(style.borderColor), lineWidth: datum => edgeTierStyle(datum.data).lineWidth, lineDash: datum => edgeTierStyle(datum.data).lineDash, strokeOpacity: datum => edgeTierStyle(datum.data).strokeOpacity, endArrow: datum => Boolean(datum.data?.directed)}});
 
 // Dense graphs: static per-datum styles and constant element types (no per-element JS callbacks).
 function nodeOptions(style, dense = false, count = 0) {
   const full = nodeOptionsFull(style, count); if (!dense) return full;
-  const {size, fill, fillOpacity, strokeOpacity, stroke, lineWidth, lineDash, iconText, label, ...rest} = full.style; return {type: nodeType, style: rest, state: full.state}; // dense: `label` is a static per-datum value (hubs only)
+  const {size, fill, fillOpacity, strokeOpacity, stroke, lineWidth, lineDash, iconText, iconSrc, iconWidth, iconHeight, iconOpacity, badges, label, ...rest} = full.style; return {type: nodeType, style: rest, state: full.state}; // dense: `label` is a static per-datum value (hubs only)
 }
 function edgeOptions(style, dense = false) {
   const full = edgeOptionsFull(style); if (!dense) return full;
@@ -97,7 +206,7 @@ export function createFrameGate({isBusy = () => false, stats = {}, now = nowMs, 
   return {request, cancel, wake, close, get pending() { return {native: native.size, slow: slow.size}; }};
 }
 /** Static per-datum node style (same visual result as the style functions in nodeOptions). */
-const staticNodeStyle = (data, style) => { const size = Number(style.nodeSize) > 0 ? Number(style.nodeSize) : 18; return {label: Boolean(style.showAllLabels && (data.hub || data.representative)), size: data.size ?? (data.representative ? Math.max(size, 22) : size), fill: safeColor(data.categoryColor || style.seriesColor || style.focusColor), fillOpacity: data.dimmed ? 0.22 : 1, strokeOpacity: data.dimmed ? 0.3 : 1, stroke: data.outline || (data.representative ? safeColor(style.textColor) : safeColor(style.panelColor)), lineWidth: data.representative ? 3 : data.ring ? 2 : (size < 12 ? 1 : 2)}; };
+const staticNodeStyle = (data, style) => { const size = Number(style.nodeSize) > 0 ? Number(style.nodeSize) : 18; return {label: Boolean(style.showAllLabels && (data.hub || data.representative)), size: data.size ?? (data.representative ? Math.max(size, 22) : size), fill: safeColor(data.categoryColor || style.seriesColor || style.focusColor), fillOpacity: data.dimmed ? 0.22 : 1, strokeOpacity: data.dimmed ? 0.3 : 1, stroke: data.outline || (data.representative ? safeColor(style.textColor) : safeColor(style.panelColor)), lineWidth: data.levelLineWidth ?? data.tierLineWidth ?? (data.representative ? 3 : data.ring ? 2 : (size < 12 ? 1 : 2)), ...staticIconStyle(data, style, size)}; };
 /** Nodes carry coordinates in `style` (G6 5.x); a top-level x/y is not honoured. */
 export function graphData(nodes, edges, positions = {}, staticStyle = null) {
   return {
@@ -108,7 +217,7 @@ export function graphData(nodes, edges, positions = {}, staticStyle = null) {
 const signatureOf = (nodes, edges) => topologySignature(nodes.map(node => node.data.id), edges.map(edge => [edge.data.source, edge.data.target, edge.data.id]));
 const styleKey = style => JSON.stringify([style.textColor, style.panelColor, style.borderColor, style.focusColor, style.seriesColor, style.nodeSize, style.labels, Boolean(style.showAllLabels)]);
 // Preset views also key on data coordinates so a re-laid-out preset (same IDs) really moves its points.
-const dataKey = (nodes, edges, withXY = false) => JSON.stringify([nodes.map(row => [row.data.id, row.data.categoryColor, row.data.dimmed, row.data.label, row.data.outline, row.data.shape ?? null, row.data.size ?? null, ...(withXY ? [row.data.x, row.data.y] : [])]), edges.map(row => [row.data.id, row.data.dimmed, row.data.tier ?? null])]); // tier: a tier-only change must redraw
+const dataKey = (nodes, edges, withXY = false) => JSON.stringify([nodes.map(row => [row.data.id, row.data.categoryColor, row.data.dimmed, row.data.label, row.data.outline, row.data.shape ?? null, row.data.size ?? null, row.data.icon ?? null, ...(withXY ? [row.data.x, row.data.y] : [])]), edges.map(row => [row.data.id, row.data.dimmed, row.data.tier ?? null])]); // tier: a tier-only change must redraw
 /** Selection is an ID list: one paper may own several replica points (collection clouds). */
 const selectionOf = value => Array.isArray(value) ? [...new Set(value.filter(id => id !== null && id !== undefined))] : value === null || value === undefined ? [] : [value];
 const selectionKey = ids => ids.join('\u0000');
@@ -259,9 +368,8 @@ export function renderG6Network(container, nodes, edges, {textColor, panelColor,
   let fitOnRelayout = false;
   const easedFit = positions => {
     const box = boxOf(Object.values(positions).map(point => [point.x, point.y])); if (!box || disposed) return Promise.resolve();
-    const {width, height} = viewportNow(); const margin = 36; const pad = 24; const bw = Math.max(1, box.x2 - box.x1 + 2 * margin); const bh = Math.max(1, box.y2 - box.y1 + 2 * margin);
-    const zoom = clampNetworkZoom(Math.min((width - 2 * pad) / bw, (height - 2 * pad) / bh, fitMaxZoom > 0 ? fitMaxZoom : Infinity));
-    return startTween({zoom, x: width / 2 - (box.x1 + box.x2) / 2 * zoom, y: height / 2 - (box.y1 + box.y2) / 2 * zoom}, {duration: reduceMotion() ? 0 : RELAYOUT.duration, easing: easeSpring, kind: 'fit'});
+    const target = cameraToInclude(box, cameraNow(), viewportNow(), {maxZoom: fitMaxZoom > 0 ? fitMaxZoom : Infinity, clamp: clampNetworkZoom});
+    return startTween(target, {duration: reduceMotion() ? 0 : RELAYOUT.duration, easing: easeSpring, kind: 'fit'});
   };
   const stopRelayout = () => { const current = relayout; if (!current) return; relayout = null; cancelFrame(current.frame); clearTimeout(current.guard); current.resolve(); };
   const startRelayout = (from, edgePairs, existingIds) => {
@@ -332,7 +440,7 @@ export function renderG6Network(container, nodes, edges, {textColor, panelColor,
         if (topologyChanged || typeof graph.updateNodeData !== 'function') graph.setData(data); else { const plain = graphData(nextNodes, nextEdges, {}, dense ? currentStyle : null); const presetXY = presetLayout ? new Map(data.nodes.map(row => [row.id, row.style])) : null; graph.updateNodeData(plain.nodes.map(({style, ...row}) => { const kept = dense ? Object.fromEntries(Object.entries(style || {}).filter(([key]) => key !== 'x' && key !== 'y')) : null; const xy = presetXY?.get(row.id); return {...row, ...(kept || xy ? {style: {...(kept || {}), ...(xy ? {x: xy.x, y: xy.y} : {})}} : {})}; })); graph.updateEdgeData(plain.edges); }
         graph.setNode(nodeOptions(currentStyle, dense, nextNodes.length)); graph.setEdge(edgeOptions(currentStyle, dense));
         const moving = topologyChanged && !presetLayout && typeof graph.translateElementTo === 'function';
-        if (moving) { const drawn = graph.draw(); const moved = startRelayout(Object.fromEntries(data.nodes.map(row => [row.id, {x: row.style.x, y: row.style.y}])), nextEdges.map(edge => [edge.data.source, edge.data.target]), new Set(Object.keys(before || {}))); await drawn; await moved; } // the fade-in and the move run TOGETHER
+        if (moving) { const drawn = graph.draw(); const moved = startRelayout(Object.fromEntries(data.nodes.map(row => [row.id, {x: row.style.x, y: row.style.y, size: row.data?.size ?? row.style?.size}])), nextEdges.map(edge => [edge.data.source, edge.data.target]), new Set(Object.keys(before || {}))); await drawn; await moved; } // the fade-in and the move run TOGETHER
         else await graph.draw();
         await applySelected(); if (fitOnRelayout) { fitOnRelayout = false; easedFit(positionsNow()); } // a requested fit whose update moved nothing
         appliedSignature = signature; appliedDataKey = nextDataKey; appliedStyleKey = nextKey; appliedStyle = {...nextStyle}; // commit only after success

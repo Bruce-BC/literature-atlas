@@ -221,7 +221,9 @@ class SyncManager:
                     return refreshed
                 model_status = current[2].get("modelStatus", {})
                 derivation_ready = model_status.get("state") == "ready" or model_status.get("status") == "ready"
-                if model_status.get("recipeVersion") != GRAPH_RECIPE_VERSION or not derivation_ready or model_status.get("failed"):
+                # A snapshot classified by older facet rules is re-derived too (rules change without a Zotero change).
+                stale_rules = ((current[2].get("facetCatalog") or {}).get("classifier") or {}).get("ruleVersion") not in (None, RULE_VERSION)
+                if model_status.get("recipeVersion") != GRAPH_RECIPE_VERSION or not derivation_ready or model_status.get("failed") or stale_rules:
                     self.store.bump_generation()
                     current_state = self.store.state() or state
                     self._schedule_enrichment(int(current_state["generation"]), current_state)

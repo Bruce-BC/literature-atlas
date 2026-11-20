@@ -108,14 +108,14 @@ def test_real_sync_emits_build_and_publish_trace_with_counts_and_reason_enums_on
     assert complete["reasons"]["suppress.context-free-boilerplate"] >= 1                 # suppression reason enum counted ("burden")
     assert complete["reasons"]["status.classified"] == 1 and complete["reasons"]["abstain.no_subject_evidence"] == 1     # abstention reason enum counted
     ok = records[-1]
-    assert ok["revisions"]["snapshot"] == manager.store.get_snapshot()[0] and ok["recipe"] == {"recipe": "atlas-graph-v3", "ruleVersion": "taxonomy-v3", "ontologyPolicy": "ontology-label-policy-v2"}
+    assert ok["revisions"]["snapshot"] == manager.store.get_snapshot()[0] and ok["recipe"] == {"recipe": "atlas-graph-v3", "ruleVersion": "taxonomy-v4", "ontologyPolicy": "ontology-label-policy-v2"}
     manager.stop_watcher()
     # PRIVACY: nothing identifying survives anywhere in the file
     state = manager.store.state(); text = manager.trace.path.read_text(encoding="utf-8")
     forbidden = list(SENTINELS) + ["A1", "B1", "zotero:", "persist-db", state["epoch"], str(tmp_path), "Bearer", "http", "/", "\\\\", "11M20", "marker gene", "QIIME", "concept:", "paper"]
     for needle in forbidden:
         assert needle not in text.replace('"papers"', "").replace('"paper_facet_rows"', ""), needle
-    allowed_recipe = {"atlas-graph-v3", "taxonomy-v3", "ontology-label-policy-v2"}
+    allowed_recipe = {"atlas-graph-v3", "taxonomy-v4", "ontology-label-policy-v2"}
     for record in manager.trace.read():
         assert set(record) <= {"v", "t", "event", "source", "epoch", "recipe", "revisions", "counts", "reasons", "dropped"}
         assert set(record.get("revisions", {})) <= REVISION_KEYS and set(record.get("counts", {})) <= COUNT_KEYS and set(record.get("reasons", {})) <= REASON_KEYS
@@ -169,7 +169,7 @@ def test_trace_has_no_outbound_sink_and_no_endpoint(tmp_path):
 
 @pytest.mark.parametrize("key", ["recipe", "ruleVersion", "ontologyPolicy"])
 def test_version_labels_follow_a_strict_per_key_grammar_so_private_strings_are_dropped(key):
-    good = {"recipe": "atlas-graph-v3", "ruleVersion": "taxonomy-v3", "ontologyPolicy": "ontology-label-policy-v2"}
+    good = {"recipe": "atlas-graph-v3", "ruleVersion": "taxonomy-v4", "ontologyPolicy": "ontology-label-policy-v2"}
     assert sanitize("build.start", recipe={key: good[key]})["recipe"] == {key: good[key]}
     adversarial = ["zotero:persist-db:0:A1", "A1", "secret-token-abc123", "SECRET-TITLE-QQ77", "Bearer abc", HOME_LIKE_PATH, "atlas-graph-v3-extra", "taxonomy-v", "v3",
                    "atlas-graph-v3\nINJECT", "ontology-label-policy-v2 ", "atlas-graph-vX", "taxonomy-v1234", "", None, 3, ["atlas-graph-v3"]]

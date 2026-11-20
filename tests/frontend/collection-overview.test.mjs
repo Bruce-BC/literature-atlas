@@ -19,7 +19,8 @@ test('category grouping stays the default: one point per active paper', () => {
   const projection = allPaperOverviewProjection(snapshot(), {relation: 'semantic'});
   assert.equal(projection.grouping, undefined); assert.equal(projection.nodes.length, 6);
   assert.ok(projection.nodes.every(node => node.data.id.startsWith('overview-paper:')));
-  assert.deepEqual(projection.counters, {active: 6, represented: 6, viewport: 6, eligibleEdges: 2, displayedEdges: 2});
+  assert.deepEqual(projection.counters, {active: 6, represented: 6, viewport: 6, eligibleEdges: 2, displayedEdges: 0, displayedBridges: projection.edgeView.bridges.length}); // paper lines are aggregated into field bridges
+  assert.equal(projection.edges.length, 0); assert.ok(projection.edgeView.bridges.every(bridge => bridge.level >= 1 && bridge.weight > 0));
 });
 
 test('collection grouping: replica points per collection, one unfiled cloud, Map resolution and truthful unique counters', () => {

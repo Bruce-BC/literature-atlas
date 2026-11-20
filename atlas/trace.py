@@ -36,7 +36,7 @@ REASON_KEYS = frozenset({
     # abstention (per paper, derived from paperFacets status/directs)
     "abstain.no_subject_evidence", "abstain.below_primary_threshold", "abstain.ambiguous", "status.classified", "status.user",
     # suppression (concept ledger reason enum)
-    "suppress.context-free-boilerplate", "suppress.generated-metadata-tag", "suppress.low-termhood", "suppress.no-current-membership",
+    "suppress.context-free-boilerplate", "suppress.function-word", "suppress.generated-metadata-tag", "suppress.low-termhood", "suppress.no-current-membership",
     "suppress.merged-into-canonical", "suppress.user-excluded", "suppress.other",
     # publication / fence reasons
     "fence.taxonomy_changed", "fence.overlays_changed", "fence.config_changed", "fence.source_or_generation_changed", "fence.unspecified",
@@ -46,7 +46,7 @@ REVISION_KEYS = frozenset({"taxonomy", "overlays", "config", "snapshot", "genera
 RECIPE_GRAMMAR = {"recipe": re.compile(r"atlas-graph-v[0-9]{1,3}"), "ruleVersion": re.compile(r"taxonomy-v[0-9]{1,3}"),
                   "ontologyPolicy": re.compile(r"ontology-label-policy-v[0-9]{1,3}")}
 RECIPE_KEYS = frozenset(RECIPE_GRAMMAR)
-_SUPPRESS_KNOWN = {"context-free-boilerplate", "generated-metadata-tag", "low-termhood", "no-current-membership", "merged-into-canonical", "user-excluded"}
+_SUPPRESS_KNOWN = {"context-free-boilerplate", "function-word", "generated-metadata-tag", "low-termhood", "no-current-membership", "merged-into-canonical", "user-excluded"}
 
 
 def _hash(value: Any) -> str:

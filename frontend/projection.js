@@ -52,6 +52,29 @@ export function circularLayout(projection, width, height) {
   return {radius, arcs, links};
 }
 
+/**
+ * Concept–concept keyword co-occurrence edges of the FULL snapshot (memoised per snapshot object; the one source the
+ * concept network and `edge-strength.js` keyword tiers share): explicit `keyword` edges between concepts, plus a
+ * `keyword-aggregate:<a>:<b>` edge for every `overview.keywordAggregate` pair not already explicit.
+ * `aggregateCount(a, b)` is the aggregate count of a pair (either order) or undefined.
+ */
+export function keywordCooccurrence(snapshot) {
+  const aggregate = snapshot.overview?.keywordAggregate; const edges = snapshot.edges || []; const concepts = snapshot.concepts || [];
+  let cached = keywordCache.get(snapshot);
+  if (!cached || cached.aggregate !== aggregate || cached.edges !== edges || cached.concepts !== concepts) {
+    const conceptIds = new Set(concepts.map(concept => concept.id)); const pairKey = (a, b) => a < b ? JSON.stringify([a, b]) : JSON.stringify([b, a]);
+    const explicitEdges = edges.filter(edge => edge.type === 'keyword' && conceptIds.has(edge.source) && conceptIds.has(edge.target));
+    const existingPairs = new Set(explicitEdges.map(edge => pairKey(edge.source, edge.target))); const counts = new Map(); const aggregateEdges = [];
+    if (aggregate && Array.isArray(aggregate.conceptIds) && Array.isArray(aggregate.pairs)) for (const pair of aggregate.pairs) {
+      const ai = Array.isArray(pair) ? pair[0] : pair?.sourceIndex; const bi = Array.isArray(pair) ? pair[1] : pair?.targetIndex; const count = Number(Array.isArray(pair) ? pair[2] : pair?.count || 0); const source = aggregate.conceptIds[ai]; const target = aggregate.conceptIds[bi];
+      if (!conceptIds.has(source) || !conceptIds.has(target)) continue; counts.set(pairKey(source, target), count);
+      if (!existingPairs.has(pairKey(source, target))) aggregateEdges.push({id: `keyword-aggregate:${source}:${target}`, source, target, type: 'keyword', cooccurrenceCount: count, aggregate: true});
+    }
+    cached = {aggregate, edges, concepts, conceptEdgesAll: [...explicitEdges, ...aggregateEdges], aggregateCount: (a, b) => counts.get(pairKey(a, b))}; keywordCache.set(snapshot, cached);
+  }
+  return cached;
+}
+
 export function graphProjection(snapshotInput, detail, options = {}) {
   const {snapshot, conceptById, fieldById, paperById} = indexSnapshot(snapshotInput);
   const papers = detail?.papers || snapshot.papers;
@@ -64,20 +87,10 @@ export function graphProjection(snapshotInput, detail, options = {}) {
   const edgeRank = edge => (edge.id === options.selectedEdgeId ? 0 : (forcedPapers.has(edge.source) || forcedPapers.has(edge.target)) ? 1 : 2);
   const paperEdges = candidateEdges.length <= PAPER_EDGE_CAP ? candidateEdges : [...candidateEdges].sort((a, b) => edgeRank(a) - edgeRank(b) || Number(b.score ?? 0) - Number(a.score ?? 0) || String(a.id).localeCompare(String(b.id))).slice(0, PAPER_EDGE_CAP);
   const paperStats = {cap: PAPER_EDGE_CAP, candidateEdges: candidateEdges.length, displayedEdges: paperEdges.length, hiddenEdges: candidateEdges.length - paperEdges.length, eligibleEdges: Number(detail?.eligibleEdges ?? candidateEdges.length), displayedNodes: papers.length, eligibleNodes: Number(detail?.eligiblePapers ?? papers.length), selectedEdgeRetained: options.selectedEdgeId ? paperEdges.some(edge => edge.id === options.selectedEdgeId) : null};
-  const allConcepts = snapshot.concepts; const conceptIds = new Set(allConcepts.map(concept => concept.id)); const aggregate = snapshot.overview.keywordAggregate;
-  let cached = keywordCache.get(snapshot);
-  if (!cached || cached.aggregate !== aggregate || cached.edges !== snapshot.edges || cached.concepts !== snapshot.concepts) {
-    const explicitEdges = snapshot.edges.filter(edge => edge.type === 'keyword' && conceptIds.has(edge.source) && conceptIds.has(edge.target));
-    const pairKey = (a, b) => a < b ? JSON.stringify([a, b]) : JSON.stringify([b, a]);
-    const existingPairs = new Set(explicitEdges.map(edge => pairKey(edge.source, edge.target)));
-    const aggregateEdges = [];
-    if (aggregate && Array.isArray(aggregate.conceptIds) && Array.isArray(aggregate.pairs)) for (const pair of aggregate.pairs) {
-      const ai = Array.isArray(pair) ? pair[0] : pair?.sourceIndex; const bi = Array.isArray(pair) ? pair[1] : pair?.targetIndex; const count = Number(Array.isArray(pair) ? pair[2] : pair?.count || 0); const source = aggregate.conceptIds[ai]; const target = aggregate.conceptIds[bi];
-      if (conceptIds.has(source) && conceptIds.has(target) && !existingPairs.has(pairKey(source, target))) aggregateEdges.push({id: `keyword-aggregate:${source}:${target}`, source, target, type: 'keyword', cooccurrenceCount: count, aggregate: true});
-    }
-    cached = {aggregate, edges: snapshot.edges, concepts: snapshot.concepts, conceptEdgesAll: [...explicitEdges, ...aggregateEdges], orderedConcepts: [...allConcepts].sort((a, b) => stableHash(`${snapshot.source.epoch}|concept|${a.id}`) - stableHash(`${snapshot.source.epoch}|concept|${b.id}`) || a.id.localeCompare(b.id))}; keywordCache.set(snapshot, cached);
-  }
-  const {conceptEdgesAll, orderedConcepts} = cached;
+  const allConcepts = snapshot.concepts; const conceptIds = new Set(allConcepts.map(concept => concept.id));
+  const {conceptEdgesAll} = keywordCooccurrence(snapshot); const cached = keywordCache.get(snapshot);
+  cached.orderedConcepts ||= [...allConcepts].sort((a, b) => stableHash(`${snapshot.source.epoch}|concept|${a.id}`) - stableHash(`${snapshot.source.epoch}|concept|${b.id}`) || a.id.localeCompare(b.id));
+  const {orderedConcepts} = cached;
   const maxConceptNodes = Math.max(1, Number(options.maxConceptNodes || 300)); const origins = new Set(options.selectedConceptIds || []);
   const mandatory = new Set([...(options.mandatoryConceptIds || []), ...origins]);
   const eligibleConcepts = detail?.filterActive ? new Set(detail.eligibleConceptIds || []) : new Set(conceptIds);
@@ -116,5 +129,5 @@ export function graphProjection(snapshotInput, detail, options = {}) {
   };
 }
 
-export const AtlasProjection = {fieldFamily, overviewProjection, circularLayout, graphProjection};
+export const AtlasProjection = {fieldFamily, overviewProjection, circularLayout, keywordCooccurrence, graphProjection};
 if (typeof window !== 'undefined') window.AtlasProjection = AtlasProjection;

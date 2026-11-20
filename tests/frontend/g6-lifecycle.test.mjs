@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {renderG6Network} from '../../frontend/g6-render.js';
+import {createFrameGate, renderG6Network, IDLE_THROTTLE_MS, SLOW_TICK_MS} from '../../frontend/g6-render.js';
 
 const container = () => ({dataset: {}, attributes: {}, addEventListener() {}, removeEventListener() {}, setAttribute(key, value) { this.attributes[key] = value; }});
 const nodes = [{data: {id: 'one', label: 'One'}}, {data: {id: 'two', label: 'Two'}}];
@@ -158,4 +158,55 @@ test('a failed queued update clears pending desired state: identical retry appli
   assert.deepEqual(wrapper.graph.getNodeData().map(node => node.id).sort(), ['one', 'two', 'x']);
   assert.equal(wrapper.signature, wrapper.desiredSignature); assert.equal(element.dataset.rendererState, 'ready'); assert.equal(errors.length, 1);
   wrapper.destroy();
+});
+
+// ---- idle frame gate (F1): G layer canvases tick at ~4/s when idle, any input/update wakes them onto a real frame at once ----
+const fakeFrames = () => {
+  const clock = {t: 0}; const frames = new Map(); const timers = new Map(); let next = 0;
+  return {clock, frames, timers, now: () => clock.t, raf: cb => { next += 1; frames.set(next, cb); return next; }, caf: id => frames.delete(id), setTimer: (cb, ms) => { next += 1; timers.set(next, {cb, ms}); return next; }, clearTimer: id => timers.delete(id),
+    runFrame() { const due = [...frames.values()]; frames.clear(); for (const cb of due) cb(clock.t); }, runTimers() { const due = [...timers.values()]; timers.clear(); for (const {cb} of due) cb(); }};
+};
+
+test('F1 frame gate: full rate until idle, then all layer requests share ONE slow timer; wake cancels it and schedules a real frame at once', () => {
+  const env = fakeFrames(); let busy = false; const stats = {}; const gate = createFrameGate({...env, isBusy: () => busy, stats});
+  assert.equal(SLOW_TICK_MS, 250, 'about 4 ticks per second'); assert.ok(IDLE_THROTTLE_MS > 0 && IDLE_THROTTLE_MS <= 2000, 'a short idle delay');
+  const ticks = []; const layer = name => { const tick = () => { ticks.push(name); gate.request(tick); }; return tick; };
+  for (const name of ['background', 'main', 'label', 'transient']) gate.request(layer(name));
+  assert.equal(env.frames.size, 4, 'not idle yet: native frames'); assert.equal(env.timers.size, 0); assert.equal(stats.idleThrottled, false);
+  env.clock.t = IDLE_THROTTLE_MS + 1; env.runFrame();
+  assert.equal(env.frames.size, 0); assert.equal(env.timers.size, 1, 'four layers -> one slow timer'); assert.equal([...env.timers.values()][0].ms, SLOW_TICK_MS); assert.equal(stats.idleThrottled, true); assert.deepEqual(gate.pending, {native: 0, slow: 4});
+  env.runTimers(); assert.equal(stats.slowTicks, 1); assert.equal(ticks.length, 8); assert.equal(env.timers.size, 1, 'still idle: next slow tick');
+  gate.wake(); assert.equal(env.timers.size, 0, 'pending slow tick cancelled'); assert.equal(env.frames.size, 4, 'every waiting layer is on a real frame'); assert.equal(stats.wakes, 1); assert.equal(stats.idleThrottled, false); assert.equal(stats.lastWakeMs, null);
+  env.clock.t += 16; env.runFrame(); assert.equal(stats.lastWakeMs, 16, 'wake -> first real frame'); assert.equal(env.frames.size, 4, 'just woken: full rate again'); assert.equal(env.timers.size, 0);
+  gate.wake(); assert.equal(stats.wakes, 1, 'a wake at full rate is not counted');
+  busy = true; env.clock.t += 10 * IDLE_THROTTLE_MS; env.runFrame(); assert.equal(env.timers.size, 0, 'busy (camera/motion/layout/update/animation): never throttled');
+  busy = false; env.clock.t += IDLE_THROTTLE_MS - 1; env.runFrame(); assert.equal(env.timers.size, 0, 'idle delay counts from the end of the busy period');
+  env.clock.t += 2; env.runFrame(); assert.equal(env.timers.size, 1);
+  const id = gate.request(() => {}); gate.cancel(id); assert.equal(gate.pending.slow, 4, 'cancel removes only that request');
+  gate.close(); assert.deepEqual(gate.pending, {native: 0, slow: 0}); assert.equal(env.timers.size, 0); assert.equal(env.frames.size, 0, 'closed: nothing left scheduled'); assert.equal(stats.wakes, 1, 'close is not a user wake');
+});
+
+test('F1 the wrapper hands its gate to every G layer canvas of its own graph, wakes on input and updates, and closes it on destroy', async () => {
+  const listeners = []; const element = {dataset: {}, attributes: {}, addEventListener(type, handler, options) { listeners.push({type, handler, capture: options === true || Boolean(options?.capture)}); }, removeEventListener(type, handler) { const i = listeners.findIndex(row => row.type === type && row.handler === handler); if (i >= 0) listeners.splice(i, 1); }, setAttribute() {}};
+  class LayerGraph extends FakeGraph {
+    constructor(options) { super(options); this.options = options; this.layers = Object.fromEntries(['background', 'main', 'label', 'transient'].map(name => [name, {requestAnimationFrame: options.canvas.requestAnimationFrame, cancelAnimationFrame: options.canvas.cancelAnimationFrame, document: {timeline: {animations: []}}}])); }
+    getCanvas() { return {getLayers: () => this.layers}; }
+  }
+  const wrapper = renderG6Network(element, nodes, [], {GraphClass: LayerGraph, layoutType: 'preset'}); await wrapper.ready;
+  assert.equal(typeof wrapper.graph.options.canvas.requestAnimationFrame, 'function', 'per-instance scheduler passed through the G6 canvas config');
+  assert.equal(wrapper.stats.throttleLayers, 4, 'every layer canvas of this graph uses the gate'); assert.equal(wrapper.stats.idleThrottled, false); assert.equal(wrapper.stats.wakes, 0);
+  for (const type of ['pointerdown', 'pointermove', 'pointerup', 'wheel', 'keydown']) assert.ok(listeners.some(row => row.type === type && row.capture), `${type} wakes the canvases`);
+  const other = renderG6Network({...element, dataset: {}, addEventListener() {}}, nodes, [], {GraphClass: LayerGraph, layoutType: 'preset'}); await other.ready;
+  assert.notEqual(other.graph.options.canvas.requestAnimationFrame, wrapper.graph.options.canvas.requestAnimationFrame, 'one gate per graph (overview, paper, concept)');
+  other.destroy(); wrapper.destroy();
+  assert.equal(listeners.filter(row => ['pointermove', 'pointerup'].includes(row.type)).length, 0, 'wake listeners removed on destroy');
+});
+
+test('F2 fitMaxZoom: an initial fit never zooms past the cap; a stored camera is restored as is', async () => {
+  const capped = renderG6Network(container(), nodes, [], {GraphClass: FakeGraph, fitMaxZoom: 1.5}); await capped.ready;
+  assert.ok(capped.graph.calls.some(call => Array.isArray(call) && call[0] === 'zoom' && call[1] === 1.5), 'fit zoom 1.6 capped to 1.5'); capped.destroy();
+  const free = renderG6Network(container(), nodes, [], {GraphClass: FakeGraph}); await free.ready;
+  assert.ok(!free.graph.calls.some(call => Array.isArray(call) && call[0] === 'zoom'), 'no cap: G6 fit untouched'); free.destroy();
+  const restored = renderG6Network(container(), nodes, [], {GraphClass: FakeGraph, fitMaxZoom: 1.5, viewState: {zoom: 2, position: [0, 0], positions: {}}}); await restored.ready;
+  assert.ok(!restored.graph.calls.some(call => Array.isArray(call) && call[0] === 'zoom' && call[1] === 1.5), 'a restored camera is not a fit'); restored.destroy();
 });

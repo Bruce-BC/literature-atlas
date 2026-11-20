@@ -205,6 +205,16 @@ export function decodeSnapshot(value) {
   for (const edge of entities.edges) { const endpointIds = edge.type === 'keyword' ? new Set([...paperIds, ...ids.concepts]) : paperIds; if (!endpointIds.has(edge.source) || !endpointIds.has(edge.target)) throw new TypeError(`edge ${edge.id} references an unknown ${edge.type === 'keyword' ? 'concept or paper' : 'paper'}`); }
   for (const attachment of entities.attachments) if (attachment.parentId && !paperIds.has(attachment.parentId)) throw new TypeError(`attachment ${attachment.id} references an unknown paper`);
   for (const collection of entities.collections) { const seen = new Set(); for (const paperId of assertArray(collection.paperIds, `collection ${collection.id}.paperIds`)) { if (!paperIds.has(paperId)) fail(`collection ${collection.id} references unknown paper ${paperId}`); if (seen.has(paperId)) fail(`collection ${collection.id} duplicates paper ${paperId}`); seen.add(paperId); } }
+  const collectionParents = new Map();
+  for (const collection of entities.collections) {
+    if (collection.parentId === undefined) collection.parentId = null;
+    if (collection.parentId === null) continue;
+    assertId(collection.parentId, `collection ${collection.id}.parentId`);
+    if (collection.parentId === collection.id) fail(`collection ${collection.id} is its own parent`);
+    if (!ids.collections.has(collection.parentId)) fail(`collection ${collection.id} references unknown parent ${collection.parentId}`);
+    collectionParents.set(collection.id, [collection.parentId]);
+  }
+  assertNoCycle(ids.collections, collectionParents, 'collection hierarchy');
   const knownIds = new Set([...ids.papers, ...ids.fields, ...ids.concepts, ...ids.memberships, ...ids.edges, ...ids.attachments, ...ids.collections]);
   const facetCatalog = validateFacetCatalog(value.facetCatalog, source, knownIds);
   const facetIds = new Set((facetCatalog?.entities || []).flatMap(entity => [entity.id, entity.facetId, entity.ontologyKey].filter(Boolean)));

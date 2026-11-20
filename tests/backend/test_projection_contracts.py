@@ -68,3 +68,37 @@ def test_deleted_paper_archives_compatibility_and_entity_overlays(tmp_path):
     m.store.replace_source_rows(state, [restored], [], [])
     assert a not in m.store.read_json("overlays")[1]["paperFields"]
     assert any(entry["entityId"] == a for entry in m.store.read_json("overlays")[1]["archived"])
+
+
+def test_collection_parent_mapping_and_detail_ancestor_rule(tmp_path):
+    from tests.backend.test_bridge import FakeGraph, LifecycleReplay
+
+    replay = LifecycleReplay()
+    replay.items = {"A1": {"key": "A1", "version": 1, "data": {"itemType": "journalArticle", "title": "One", "collections": ["KID"]}}}
+    coll = lambda key, name, parent: {"key": key, "version": 1, "data": {"name": name, "parentCollection": parent}}
+    replay.collections = {"TOP": coll("TOP", "Top", False), "KID": coll("KID", "Kid", "TOP"), "ORPH": coll("ORPH", "Orphan", "GONE"), "SELF": coll("SELF", "Self", "SELF")}
+    m = SyncManager(SQLiteStore(tmp_path), ZoteroClient(transport=replay), graph_engine=FakeGraph(), poll_interval=5)
+    m.sync(trigger="automatic")
+    m.wait_for_idle()
+    full = m.snapshot("full")
+    by_key = {c["key"]: c for c in full["collections"]}
+    prefix = "collection:lifecycle-db:0:"
+    assert by_key["TOP"]["parentId"] is None
+    assert by_key["KID"]["parentId"] == prefix + "TOP"
+    assert by_key["ORPH"]["parentId"] is None
+    assert by_key["SELF"]["parentId"] is None
+    jsonschema.validate(full, json.loads((ROOT / "docs/snapshot.schema.json").read_text()))
+    detail = m.snapshot("detail", 1)
+    detail_by_key = {c["key"]: c for c in detail["collections"]}
+    assert set(detail_by_key) == {"TOP", "KID"}
+    assert detail_by_key["KID"]["paperIds"]
+    assert detail_by_key["TOP"]["paperIds"] == []
+    ids = {c["id"] for c in detail["collections"]}
+    assert all(c["parentId"] is None or c["parentId"] in ids for c in detail["collections"])
+    # Parent removed from Zotero (trashed in the store) -> child becomes top-level.
+    del replay.collections["TOP"]
+    m.sync()
+    m.wait_for_idle()
+    after = {c["key"]: c for c in m.snapshot("full")["collections"]}
+    assert "TOP" not in after and after["KID"]["parentId"] is None
+    m.stop_watcher()

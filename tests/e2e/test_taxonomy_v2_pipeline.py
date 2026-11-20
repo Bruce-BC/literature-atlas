@@ -487,7 +487,7 @@ def test_local_trace_records_real_transitions_stays_bounded_and_leaks_nothing_pr
         assert g6["created"] == 1 and g6["failedUpdates"] == 0 and g6["layoutRuns"] == 0, "preset all-papers graph runs no force layout"
         assert [e["seq"] for e in trace["entries"]] == sorted(e["seq"] for e in trace["entries"]) and len({e["seq"] for e in trace["entries"]}) == len(trace["entries"])
         # field switching through native legend clicks: scope/camera transitions are traced truthfully
-        fields = h.page.evaluate("() => [...document.querySelectorAll('#atlas-field-legend button[data-field-id]')].map(b => b.dataset.fieldId)")
+        fields = h.page.evaluate("() => [...document.querySelectorAll('#atlas-field-legend button[data-field-id]:not([hidden])')].map(b => b.dataset.fieldId)")  # A-11: empty (0/0) rows are hidden, so they have no native legend click
         for index in range(60):
             h.page.locator(f'#atlas-field-legend button[data-field-id="{fields[index % len(fields)]}"]').click()
         h.wait("() => window.AtlasDebug.getLowerProjection().revision === window.AtlasDebug.getViewState().revision", 10)

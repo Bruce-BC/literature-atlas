@@ -16,9 +16,9 @@ const oneOf = (...values) => value => typeof value === 'string' && values.includ
 // Exactly the backend recipe version form (atlas-graph-v<1-3 ASCII digits>), whole value only: no suffix, token, whitespace or newline.
 const recipe = value => typeof value === 'string' && /^atlas-graph-v[0-9]{1,3}$/.test(value);
 
-const EVENTS = ['FIELD_SELECT', 'PAPER_SELECT', 'OVERVIEW_PAPER_SELECT', 'CONCEPT_SELECT', 'EDGE_SELECT', 'REPRESENTATIVE_TOGGLE', 'RESET', 'SNAPSHOT_REPLACE', 'FIELD_PAIR_SELECT'];
+const EVENTS = ['FIELD_SELECT', 'PAPER_SELECT', 'OVERVIEW_PAPER_SELECT', 'CONCEPT_SELECT', 'EDGE_SELECT', 'REPRESENTATIVE_TOGGLE', 'RESET', 'SNAPSHOT_REPLACE', 'FIELD_PAIR_SELECT', 'CLOUD_SELECT', 'CLOUD_SUBITEM_SELECT'];
 const KINDS = ['none', 'field', 'paper', 'concept', 'edge'];
-const SCOPES = ['library', 'field'];
+const SCOPES = ['library', 'field', 'cloud'];
 const CAMERA = ['preserve', 'fit-new-scope', 'global', 'fit', 'reset'];
 const VIEWS = ['overview', 'paper', 'concept'];
 

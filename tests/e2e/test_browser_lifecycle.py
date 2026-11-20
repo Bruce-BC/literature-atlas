@@ -6,6 +6,7 @@ normal urllib transport, while the browser uses the authenticated Atlas API.
 from __future__ import annotations
 
 import json
+import sys
 import threading
 import time
 import urllib.parse
@@ -18,6 +19,9 @@ from atlas.server import AtlasHTTPServer
 from atlas.storage import SQLiteStore
 from atlas.sync import SyncManager
 from atlas.zotero import ZoteroClient
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from v2_support import open_advanced  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -136,6 +140,7 @@ def test_browser_real_source_lifecycle(tmp_path: Path):
             page.locator("#atlas-token-input").fill(bootstrap["token"])
             page.locator("#atlas-connect").click()
             wait_state(page, lambda s: {p["key"] for p in s["snapshot"]["papers"]} == {"A1", "B2", "C3"})
+            open_advanced(page)  # the Detail slider lives in Advanced (AC-11)
             initial = page.evaluate("window.AtlasDebug.getState()")
             initial_overview = initial["snapshot"]["overview"]
             page.locator("#atlas-sample").fill("10"); page.locator("#atlas-sample").dispatch_event("input")

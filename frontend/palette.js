@@ -34,7 +34,7 @@ export function applyPalette(root, asset, paletteId, theme) {
 /** Actual palette/theme context for category colours (never the default-light fallback). */
 export function readPaletteContext(root) {
   const computed = getComputedStyle(root); const hexOf = name => computed.getPropertyValue(name).trim();
-  return {id: root.dataset.atlasPalette || 'atlas', theme: root.dataset.atlasTheme === 'dark' ? 'dark' : 'light', panel: hexOf('--atlas-panel-hex') || '#ffffff', series: Array.from({length: 6}, (_, index) => hexOf(`--atlas-series-${index + 1}-hex`) || '#64748b')};
+  return {id: root.dataset.atlasPalette || 'atlas', theme: root.dataset.atlasTheme === 'dark' ? 'dark' : 'light', panel: hexOf('--atlas-panel-hex') || '#ffffff', text: hexOf('--atlas-text-hex') || '#1e293b', series: Array.from({length: 6}, (_, index) => hexOf(`--atlas-series-${index + 1}-hex`) || '#64748b')};
 }
 
 export const AtlasPalette = {findPalette, resolveTheme, applyPalette, readPaletteContext};

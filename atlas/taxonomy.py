@@ -15,6 +15,7 @@ Design notes
 from __future__ import annotations
 
 import hashlib
+import math
 import re
 import unicodedata
 from collections import defaultdict
@@ -27,7 +28,7 @@ CATALOG_VERSION = "facet-catalog-v3"
 RULE_VERSION = "taxonomy-v3"
 NORMALIZATION_VERSION = "nfkc-casefold-hyphen-v1"          # text normalization the stored span offsets refer to
 ONTOLOGY_POLICY_VERSION = "ontology-label-policy-v2"      # broad-domain Life Science policy; see docs/implementation-interfaces.md
-QUALITY_VERSION = "concept-quality-v3"
+QUALITY_VERSION = "concept-quality-v4"
 STATS_VERSION = "field-stats-v3"
 INPUT_STATES = ("absent", "uninitialized", "intentional-empty-valid", "valid-custom", "invalid", "disabled")
 
@@ -868,6 +869,87 @@ _CANONICAL = {  # label -> (canonical label, context regex over paper text)
 }
 
 
+# --------------------------------------------------------------------------
+# Library-derived lexical model (automatic function-word / weak-phrase filter)
+# --------------------------------------------------------------------------
+# No word list: every decision comes from the statistics of the library's own
+# titles and abstracts (duplicate titles counted once).
+#   * residual IDF (Church & Gale): a content word is bursty, so it sits in
+#     fewer documents than a Poisson spread of its total count predicts;
+#     function words follow the Poisson prediction (residual near 0).
+#   * title affinity: content words head titles, function words rarely do.
+#   * phrase cohesion: normalised PMI of an adjacent pair.
+LEXICAL_MIN_DOCS = 50            # below this the statistics are too thin; the model is not built
+LEXICAL_UBIQUITY = 0.4           # a token in >= 40% of documents discriminates nothing
+LEXICAL_FLAT_RIDF = 0.3          # residual IDF below this = evenly spread
+LEXICAL_BURSTY_RIDF = 0.5        # residual IDF from this = bursty (term evidence)
+LEXICAL_TITLE_ALPHA = 0.05       # one-sided binomial level for "appears in titles less than chance"
+LEXICAL_COMMON_SHARE = 0.025     # enough documents for "no term evidence" to count against a token
+LEXICAL_COHESION = 0.5           # NPMI from which an adjacent pair is a cohesive phrase
+LEXICAL_PHRASE_SCORE = 2
+_LEX_TOKEN = re.compile(r"[\w\u0080-\uffff][\w\u0080-\uffff'’-]{1,}", re.UNICODE)
+_HAS_LETTER = re.compile(r"[^\W\d_]")
+
+
+def _lex_tokens(value: Any) -> list[str]:
+    return [_norm(t) for t in _LEX_TOKEN.findall(normalize_text(value))[:400]]
+
+
+def lexical_model(papers: Iterable[Mapping[str, Any]]) -> dict[str, Any] | None:
+    """Token / adjacent-pair statistics of the library, or ``None`` when it has fewer than ``LEXICAL_MIN_DOCS`` distinct texts."""
+    cf: dict[Any, int] = defaultdict(int); df: dict[Any, int] = defaultdict(int); tdf: dict[Any, int] = defaultdict(int)
+    seen: set[str] = set(); docs = 0; total = 0
+    for paper in papers:
+        title = _lex_tokens(paper.get("title")); body = _lex_tokens(paper.get("abstract"))
+        key = " ".join(title)
+        if not (title or body) or (key and key in seen): continue
+        seen.add(key); docs += 1; total += len(title) + len(body)
+        title_units = title + list(zip(title, title[1:])); units = title_units + body + list(zip(body, body[1:]))
+        for unit in units: cf[unit] += 1
+        for unit in set(units): df[unit] += 1
+        for unit in set(title_units): tdf[unit] += 1
+    if docs < LEXICAL_MIN_DOCS: return None
+    token_df = sum(n for unit, n in df.items() if isinstance(unit, str))
+    baseline = sum(n for unit, n in tdf.items() if isinstance(unit, str)) / token_df if token_df else 0.0
+    return {"cf": cf, "df": df, "tdf": tdf, "docs": docs, "tokens": total, "titleBaseline": baseline, "memo": {}}
+
+
+def _lex_token_class(model: Mapping[str, Any], token: str) -> str:
+    """``function`` | ``term`` | ``common`` (well observed, no term evidence) | ``unknown``."""
+    memo = model["memo"]
+    if token in memo: return memo[token]
+    d = model["df"].get(token, 0); n = model["docs"]
+    if not d: result = "unknown"
+    else:
+        share = d / n; tdf = model["tdf"].get(token, 0); base = model["titleBaseline"]
+        ridf = math.log2(n * (1 - math.exp(-model["cf"][token] / n)) / d)
+        title_tail = sum(math.comb(d, i) * base ** i * (1 - base) ** (d - i) for i in range(tdf + 1))   # P(X <= tdf)
+        if share >= LEXICAL_UBIQUITY or (ridf < LEXICAL_FLAT_RIDF and title_tail < LEXICAL_TITLE_ALPHA): result = "function"
+        elif ridf >= LEXICAL_BURSTY_RIDF or tdf / d >= base: result = "term"
+        else: result = "common" if share >= LEXICAL_COMMON_SHARE else "unknown"
+    memo[token] = result
+    return result
+
+
+def lexical_verdict(model: Mapping[str, Any] | None, label: str) -> str | None:
+    """Verdict for a text-derived concept label of one or two tokens: ``function-word``, ``low-termhood`` or ``None`` (keep)."""
+    if model is None: return None
+    tokens = label.split()
+    if not tokens or len(tokens) > 2: return None
+    if not all(_HAS_LETTER.search(t) for t in tokens): return "low-termhood"        # number fragments ("000 bacterial")
+    classes = [_lex_token_class(model, t) for t in tokens]
+    if len(tokens) == 1:
+        return "function-word" if classes[0] == "function" else None if classes[0] == "term" else "low-termhood"
+    if "function" in classes: return "function-word"
+    pair = (tokens[0], tokens[1]); count = model["cf"].get(pair, 0); total = model["tokens"]
+    cohesive = False
+    if 0 < count < total:
+        pmi = math.log2(count * total / (model["cf"][tokens[0]] * model["cf"][tokens[1]]))
+        cohesive = pmi / -math.log2(count / total) >= LEXICAL_COHESION
+    score = classes.count("term") - classes.count("common") + (model["tdf"].get(pair, 0) >= 1) + cohesive
+    return None if score >= LEXICAL_PHRASE_SCORE else "low-termhood"
+
+
 def _concept_text(paper: Mapping[str, Any]) -> str:
     return _norm(" ".join(str(paper.get(k) or "") for k in ("title", "abstract")) + " " + " ".join(str(x) for x in paper.get("keywords", []) or [] if not is_control_tag(x)))
 
@@ -878,7 +960,8 @@ def concept_quality(concepts: Mapping[str, Mapping[str, Any]], papers: list[dict
 
     Precedence: user pin/alias/exclusion/redirect protection -> curated phrase
     and technical-code protection -> generated-metadata/stopword deny -> DF and
-    termhood score.  Suppressed IDs remain resolvable through the ledger but
+    termhood score -> library-derived lexical verdict (text-derived labels only;
+    explicit keywords and tags are never judged).  Suppressed IDs remain resolvable through the ledger but
     are not active graph nodes.
     """
     overlays = overlays if isinstance(overlays, Mapping) else {}
@@ -906,6 +989,7 @@ def concept_quality(concepts: Mapping[str, Mapping[str, Any]], papers: list[dict
             cid = by_label.get(_norm(meta.get("label")).strip())
             if cid: origins[cid].add(str(meta.get("origin")))
     texts = {p["id"]: _concept_text(p) for p in papers}
+    lexicon = lexical_model(papers)
     # canonical targets (per paper, context-dependent)
     def canonical_for(cid: str, text: str) -> str | None:
         label = label_of.get(cid, "")
@@ -970,6 +1054,10 @@ def concept_quality(concepts: Mapping[str, Mapping[str, Any]], papers: list[dict
                 status, reason = "suppressed", ("merged-into-canonical" if merged_into.get(cid) and remapped[cid] == holders[cid] else "no-current-membership")
             elif needs_df and (d < 2 or score < TERMHOOD_THRESHOLD):
                 status, reason = "suppressed", "low-termhood"
+            elif text_only:
+                # Automatic filter: the library's own statistics decide (no curated word list).
+                verdict = lexical_verdict(lexicon, label)
+                if verdict: status, reason = "suppressed", verdict
         entry = {"id": cid, "conceptId": cid, "label": row.get("label"), "status": status, "reason": reason, "ruleVersion": QUALITY_VERSION,
                  "protectedBy": protected_by or "rule", "evidenceRefs": []}
         if score is not None: entry["termhood"] = score

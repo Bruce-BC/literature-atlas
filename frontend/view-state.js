@@ -18,7 +18,11 @@ export const VIEW_EVENTS = Object.freeze({
   SNAPSHOT_REPLACE: 'SNAPSHOT_REPLACE',
   // Ninth, additive event: a circular-ribbon click filters by an (unordered)
   // field pair, which is not a snapshot edge.  It follows the same contract.
-  FIELD_PAIR_SELECT: 'FIELD_PAIR_SELECT'
+  FIELD_PAIR_SELECT: 'FIELD_PAIR_SELECT',
+  // Collection cloud map (opt-in `collections` overview): a cloud scope only dims the map; it never
+  // filters the lower networks (aliases keep fieldId/conceptId null) and keeps the library camera.
+  CLOUD_SELECT: 'CLOUD_SELECT',
+  CLOUD_SUBITEM_SELECT: 'CLOUD_SUBITEM_SELECT'
 });
 
 export const CAMERA_REASONS = Object.freeze({PRESERVE: 'preserve', FIT_NEW_SCOPE: 'fit-new-scope', GLOBAL: 'global', FIT: 'fit', RESET: 'reset'});
@@ -75,7 +79,7 @@ export function buildScope(snapshot, {fieldId = null, conceptId = null, fieldPai
 
 function paperInScope(scope, snapshot, paperId) {
   const paper = indexOf(snapshot).papers.get(paperId); if (!paper) return false;
-  if (scope.kind === 'field') return Boolean(scope.paperIds?.has(paperId));
+  if (scope.kind === 'field' || scope.kind === 'cloud') return Boolean(scope.paperIds?.has(paperId));
   if (scope.conceptId && !(paper.conceptIds || []).includes(scope.conceptId)) return false;
   if (scope.fieldPair && !(paper.fieldIds || []).some(id => scope.fieldPair.includes(id))) return false;
   return true;
@@ -92,6 +96,9 @@ function commit(state, patch, type, cameraReason) {
 }
 
 const sel = (kind, id) => ({kind, id});
+/** Cloud scope: `paperIds` = the cloud's unique papers, `subPaperIds` = the selected sub-item's papers (dim filter) or null. */
+const cloudScope = (cloudId, paperIds, subItemId = null, subPaperIds = null) => ({...LIBRARY, kind: 'cloud', cloudId, paperIds, subItemId, subPaperIds});
+const knownPapers = (index, rows) => new Set((Array.isArray(rows) ? rows : []).map(String).filter(id => index.papers.has(id)));
 
 function resolveRedirect(snapshot, id) {
   const redirects = snapshot?.taxonomyRedirects; if (!redirects || !id) return id;
@@ -145,11 +152,29 @@ export function reduceViewState(state, event, snapshot) {
     const expanded = new Set(); for (const id of current.expanded) { const target = existsOf(snapshot, 'field', id) ? id : resolveRedirect(snapshot, id); if (existsOf(snapshot, 'field', target)) expanded.add(target); }
     const redirectedField = current.scope.fieldId ? (existsOf(snapshot, 'field', current.scope.fieldId) ? current.scope.fieldId : resolveRedirect(snapshot, current.scope.fieldId)) : null;
     const conceptConstraint = current.scope.conceptId ? (existsOf(snapshot, 'concept', current.scope.conceptId) ? current.scope.conceptId : ledgerMergeTarget(snapshot, current.scope.conceptId)) : null;
-    const scope = redirectedField && existsOf(snapshot, 'field', redirectedField) ? buildScope(snapshot, {fieldId: redirectedField, conceptId: conceptConstraint}) : buildScope(snapshot, {conceptId: conceptConstraint, fieldPair: current.scope.fieldPair});
+    const cloudPapers = current.scope.kind === 'cloud' ? knownPapers(index, [...current.scope.paperIds]) : null; // the app re-derives membership from the new collections
+    const scope = cloudPapers?.size ? cloudScope(current.scope.cloudId, cloudPapers) : redirectedField && existsOf(snapshot, 'field', redirectedField) ? buildScope(snapshot, {fieldId: redirectedField, conceptId: conceptConstraint}) : buildScope(snapshot, {conceptId: conceptConstraint, fieldPair: current.scope.fieldPair});
     return commit(current, {selected, focused, detail, expanded, scope}, type, scopeKey(scope) === scopeKey(current.scope) ? CAMERA_REASONS.PRESERVE : CAMERA_REASONS.FIT_NEW_SCOPE);
   }
 
   if (type === VIEW_EVENTS.RESET) return commit(current, {selected: null, focused: null, detail: null, scope: {...LIBRARY}, expanded: new Set()}, type, CAMERA_REASONS.FIT);
+
+  if (type === VIEW_EVENTS.CLOUD_SELECT) {
+    // cloudId null clears the cloud scope (the paper selection survives unless `clearSelection`); a paper outside the new cloud is deselected.
+    if (!event.cloudId) { if (current.scope.kind !== 'cloud' && !(event.clearSelection && current.selected)) return current; const keep = event.clearSelection ? null : current.selected; return commit(current, {selected: keep, focused: keep, detail: keep ? current.detail : null, scope: {...LIBRARY}}, type, CAMERA_REASONS.PRESERVE); }
+    const paperIds = knownPapers(index, event.paperIds); if (!paperIds.size) return current;
+    const keep = current.selected?.kind === 'paper' && paperIds.has(current.selected.id) ? current.selected : null;
+    return commit(current, {selected: keep, focused: keep, detail: keep ? current.detail : null, scope: cloudScope(String(event.cloudId), paperIds)}, type, CAMERA_REASONS.PRESERVE);
+  }
+
+  if (type === VIEW_EVENTS.CLOUD_SUBITEM_SELECT) {
+    // Toggle: the same item (or null) clears the sub-item filter.  Dimming only; selection is kept.
+    if (current.scope.kind !== 'cloud') return current;
+    const same = !event.subItemId || String(event.subItemId) === current.scope.subItemId;
+    const subPaperIds = same ? null : new Set([...knownPapers(index, event.paperIds)].filter(id => current.scope.paperIds.has(id)));
+    if (subPaperIds && !subPaperIds.size) return current;
+    return commit(current, {scope: cloudScope(current.scope.cloudId, current.scope.paperIds, same ? null : String(event.subItemId), subPaperIds)}, type, CAMERA_REASONS.PRESERVE);
+  }
 
   const id = event?.id ?? event?.value?.id ?? null;
 
@@ -212,6 +237,7 @@ export function legacyAliases(next) {
     selectedConceptId: selected?.kind === 'concept' ? selected.id : null,
     selectedEdgeId: selected?.kind === 'edge' ? selected.id : null,
     conceptId: scope.conceptId || null,
+    selectedCloudId: scope.kind === 'cloud' ? scope.cloudId : null,
     fieldPair: scope.fieldPair ? [...scope.fieldPair] : null,
     expandedFields: new Set(next?.expanded || [])
   };
@@ -219,7 +245,7 @@ export function legacyAliases(next) {
 
 export function viewStateSnapshot(state) {
   if (!state) return null;
-  return {...state, expanded: [...state.expanded], scope: {...state.scope, paperIds: state.scope?.paperIds ? [...state.scope.paperIds] : null, fieldPair: state.scope?.fieldPair ? [...state.scope.fieldPair] : null}};
+  return {...state, expanded: [...state.expanded], scope: {...state.scope, paperIds: state.scope?.paperIds ? [...state.scope.paperIds] : null, ...(state.scope?.kind === 'cloud' ? {subPaperIds: state.scope.subPaperIds ? [...state.scope.subPaperIds] : null} : {}), fieldPair: state.scope?.fieldPair ? [...state.scope.fieldPair] : null}};
 }
 
 export const AtlasViewState = {VIEW_EVENTS, CAMERA_REASONS, createViewState, reduceViewState, legacyAliases, viewStateSnapshot, scopeKey, buildScope, fieldDescendants, edgeEndpoints, sourceKey};

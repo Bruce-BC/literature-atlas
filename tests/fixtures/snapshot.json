@@ -21,7 +21,7 @@
     {"id": "edge:fixture-server:epoch-001:A1:B2:keyword", "source": "zotero:fixture-server:0:A1", "target": "zotero:fixture-server:0:B2", "type": "keyword", "directed": false, "score": 1, "provenance": {"provider": "cooccurrence", "method": "shared-keyword", "modelRevision": null}, "evidenceTier": "metadata", "verified": true}
   ],
   "attachments": [{"id": "attachment:fixture-server:0:ATT1", "parentId": "zotero:fixture-server:0:A1", "name": "fixture.pdf", "status": "indexed", "contentHash": "sha256:fixture"}],
-  "collections": [{"id": "collection:fixture-server:0:C1", "label": "Synthetic", "paperIds": ["zotero:fixture-server:0:A1", "zotero:fixture-server:0:B2"]}],
+  "collections": [{"id": "collection:fixture-server:0:C1", "parentId": null, "label": "Synthetic", "paperIds": ["zotero:fixture-server:0:A1", "zotero:fixture-server:0:B2"]}, {"id": "collection:fixture-server:0:C2", "parentId": "collection:fixture-server:0:C1", "label": "Synthetic child", "paperIds": ["zotero:fixture-server:0:A1"]}],
   "overview": {"fields": [{"fieldId": "field:fixture-server:epoch-001:analysis", "paperWeight": 1}, {"fieldId": "field:fixture-server:epoch-001:topology", "paperWeight": 1}], "ribbons": [{"sourceFieldId": "field:fixture-server:epoch-001:analysis", "targetFieldId": "field:fixture-server:epoch-001:topology", "weight": 1}], "keywordAggregate": {"conceptIds": ["concept:fixture-server:epoch-001:kl"], "pairs": [], "encoding": "concept-index-pairs", "totalPairs": 0, "totalWeight": 0}, "totalPapers": 2, "totalEdges": 2},
   "modelStatus": {"provider": "fake", "label": "synthetic-test-only", "revision": "fixture-model"},
   "allocationMode": "primary-display-field",

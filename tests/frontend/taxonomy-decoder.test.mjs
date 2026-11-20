@@ -106,3 +106,19 @@ test('fieldStatsMeta is preserved when a classifier emits it separately', () => 
   const value = {...fixture, ...extension(), fieldStatsMeta: {version: 'field-stats-v3', unknown: 0}};
   assert.deepEqual(decodeSnapshot(value).fieldStatsMeta, {version: 'field-stats-v3', unknown: 0});
 });
+
+test('collection parentId: absent decodes as null, valid child accepted, bad references rejected', () => {
+  const [parent, child] = fixture.collections;
+  assert.equal(child.parentId, parent.id);
+  const decoded = decodeSnapshot(fixture);
+  assert.equal(decoded.collections.find(c => c.id === child.id).parentId, parent.id);
+  const legacy = structuredClone(fixture);
+  legacy.collections.forEach(c => { delete c.parentId; });
+  assert.ok(decodeSnapshot(legacy).collections.every(c => c.parentId === null));
+  const missing = structuredClone(fixture); missing.collections[1].parentId = 'collection:fixture-server:0:NOPE';
+  assert.throws(() => decodeSnapshot(missing), /unknown parent/);
+  const self = structuredClone(fixture); self.collections[0].parentId = self.collections[0].id;
+  assert.throws(() => decodeSnapshot(self), /its own parent/);
+  const cycle = structuredClone(fixture); cycle.collections[0].parentId = cycle.collections[1].id;
+  assert.throws(() => decodeSnapshot(cycle), /cycle/);
+});

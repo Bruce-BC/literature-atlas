@@ -9,6 +9,9 @@ import time
 from pathlib import Path
 import pytest
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from v2_support import legacy_screen  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -62,6 +65,7 @@ def test_large_synthetic_g6_reuses_graphs_on_selection_and_theme():
                 page.goto(f"http://127.0.0.1:{bootstrap['port']}/", wait_until='domcontentloaded')
                 page.locator('#atlas-token-input').fill(bootstrap['token']); page.locator('#atlas-connect').click()
                 wait_js(page, '() => Boolean(window.AtlasDebug?.getState()?.snapshot?.papers?.length)')
+                legacy_screen(page)  # legacy controls live in Advanced (AC-11); Circular ribbons was the default this test was written against
                 start=time.monotonic(); page.locator('#atlas-renderer').select_option('g6')
                 try:
                     wait_js(page, "() => ['#atlas-paper-network','#atlas-concept-network'].every(id => document.querySelector(id)?.dataset.rendererState === 'ready')")

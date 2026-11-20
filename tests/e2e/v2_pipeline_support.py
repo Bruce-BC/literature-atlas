@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any, Iterator
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from v2_support import DIST_APP, ROOT, Harness  # noqa: E402
+from v2_support import DIST_APP, ROOT, Harness, legacy_screen  # noqa: E402
 
 sys.path.insert(0, str(ROOT))
 from atlas.graph import GraphEngine  # noqa: E402
@@ -154,6 +154,7 @@ def running_pipeline(populate: Any, viewport: tuple[int, int] = (1440, 1000)) ->
                     page.locator("#atlas-connect").click()
                     harness = Harness(page, browser, {}, base, errors)
                     harness.wait("() => Boolean(window.AtlasDebug?.getState()?.snapshot?.papers?.length)", 30)
+                    legacy_screen(page)  # pipeline tests drive legacy controls: Advanced open + Circular ribbons, the pre-AC-11 default
                     yield Pipeline(harness, manager, source, engine, server)
                 finally:
                     engine.release()

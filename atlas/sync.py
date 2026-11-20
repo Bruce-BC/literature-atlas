@@ -678,7 +678,9 @@ class SyncManager:
             values = data.get("collections", []) if isinstance(data, dict) else []
             item_collection_keys[paper["key"]] = {str(value) for value in values if value}
         paper_id_by_key = {p["key"]: p["id"] for p in papers}
-        for row in self.store.current_collections():
+        collection_rows = self.store.current_collections()
+        live_collection_keys = {(str(r["library_id"]), str(r["collection_key"])) for r in collection_rows}
+        for row in collection_rows:
             payload = json.loads(row["payload"])
             data = payload.get("data", payload) if isinstance(payload, dict) else {}
             keys = data.get("relations", []) if isinstance(data, dict) else []
@@ -687,7 +689,9 @@ class SyncManager:
                 item_keys = list(item_keys)
             derived_items = [paper_id_by_key[key] for key, collection_keys in item_collection_keys.items() if str(row["collection_key"]) in collection_keys]
             payload_items = [f"zotero:{state['server_id']}:{row['library_id']}:{k}" for k in item_keys if str(k) in paper_id_by_key]
-            collections.append({"id": f"collection:{state['server_id']}:{row['library_id']}:{row['collection_key']}", "label": str(data.get("name") or row["collection_key"]), "paperIds": sorted(set(derived_items or payload_items)), "key": row["collection_key"], "relations": keys})
+            parent_key = data.get("parentCollection") if isinstance(data, dict) else None
+            parent_id = f"collection:{state['server_id']}:{row['library_id']}:{parent_key}" if isinstance(parent_key, str) and parent_key != str(row["collection_key"]) and (str(row["library_id"]), parent_key) in live_collection_keys else None
+            collections.append({"id": f"collection:{state['server_id']}:{row['library_id']}:{row['collection_key']}", "parentId": parent_id, "label": str(data.get("name") or row["collection_key"]), "paperIds": sorted(set(derived_items or payload_items)), "key": row["collection_key"], "relations": keys})
         return papers, attachments, collections
 
     def _empty_snapshot(self, message: str | None = None) -> dict[str, Any]:
@@ -809,14 +813,24 @@ class SyncManager:
                 snapshot["concepts"] = [c for c in snapshot.get("concepts", []) if c.get("id") in concept_ids]
                 snapshot["attachments"] = [a for a in snapshot.get("attachments", []) if a.get("parentId") in ids]
                 collections = []
-                for collection in snapshot.get("collections", []):
+                all_collections = snapshot.get("collections", [])
+                collection_by_id = {c.get("id"): c for c in all_collections}
+                kept_collection_ids = {c.get("id") for c in all_collections if any(paper_id in ids for paper_id in c.get("paperIds", []))}
+                # Ancestors of kept collections stay (possibly with no visible papers) so parentId references remain closed.
+                pending_collections = list(kept_collection_ids)
+                while pending_collections:
+                    parent_id = collection_by_id.get(pending_collections.pop(), {}).get("parentId")
+                    if parent_id in collection_by_id and parent_id not in kept_collection_ids:
+                        kept_collection_ids.add(parent_id); pending_collections.append(parent_id)
+                for collection in all_collections:
+                    if collection.get("id") not in kept_collection_ids:
+                        continue
                     all_ids = collection.get("paperIds", [])
                     visible_ids = [paper_id for paper_id in all_ids if paper_id in ids]
-                    if visible_ids:
-                        collection["paperIds"] = visible_ids
-                        collection["visiblePaperCount"] = len(visible_ids)
-                        collection["hiddenPaperCount"] = len(all_ids) - len(visible_ids)
-                        collections.append(collection)
+                    collection["paperIds"] = visible_ids
+                    collection["visiblePaperCount"] = len(visible_ids)
+                    collection["hiddenPaperCount"] = len(all_ids) - len(visible_ids)
+                    collections.append(collection)
                 snapshot["collections"] = collections
                 self._project_v3_extensions(snapshot, ids, {c.get("id") for c in snapshot["concepts"]}, field_ids)
                 full_edges = snapshot["overview"].get("totalEdges", len(stored[2].get("edges", [])) if stored else 0)

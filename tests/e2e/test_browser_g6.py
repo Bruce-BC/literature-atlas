@@ -10,6 +10,9 @@ from pathlib import Path
 
 import pytest
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from v2_support import legacy_screen  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = ROOT / "tests" / "fixtures" / "demo-snapshot.json"
 
@@ -78,6 +81,7 @@ def test_g6_renderer_switches_interacts_and_preserves_projection():
             page.goto(base + "/", wait_until="domcontentloaded")
             page.locator("#atlas-token-input").fill(bootstrap["token"]); page.locator("#atlas-connect").click()
             wait_for(page, "() => Boolean(window.AtlasDebug?.getState()?.snapshot?.papers?.length)")
+            legacy_screen(page)  # legacy controls live in Advanced (AC-11); Circular ribbons was the default this test was written against
             overview = page.evaluate("window.AtlasDebug.getState().snapshot.overview")
             page.locator("#atlas-sample").fill("100"); page.locator("#atlas-sample").dispatch_event("input")
             page.locator("#atlas-overview-renderer").select_option("g6")

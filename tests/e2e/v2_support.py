@@ -144,8 +144,74 @@ def acceptance_fixture(extra_papers: int = 0) -> dict[str, Any]:
     return fixture
 
 
+def collections_fixture() -> dict[str, Any]:
+    """Acceptance fixture plus synthetic Zotero collections: multi-membership replicas, tiny clouds, a long (truncated) label and uncollected papers."""
+    fixture = acceptance_fixture()
+    ids = {paper["key"]: paper["id"] for paper in fixture["papers"]}
+
+    def collection(key: str, label: str, keys: list[str]) -> None:
+        fixture["collections"].append({"id": f"collection:{SERVER}:0:{key}", "label": label, "paperIds": [ids[k] for k in keys]})
+
+    collection("C03", "Synthetic optimization methods", [f"OPT{i:02d}" for i in range(18)])
+    collection("C04", "Synthetic optimization applications and benchmark studies for a deliberately long label", [f"OPT{i:02d}" for i in range(12, 30)])  # OPT12..17 are in both
+    collection("C05", "Synthetic transport", [f"OT{i:02d}" for i in range(6)] + ["MULTI00"])
+    collection("C06", "Synthetic reading list", ["MULTI00", "D01", "D02", "D03", "D30", "D31"])
+    collection("C07", "합성 컬렉션 일곱", ["D10", "D11", "D12", "D40"])
+    collection("C08", "Synthetic pair", ["D05", "D06"])
+    collection("C09", "Synthetic single", ["D41"])
+    return fixture  # UNKNOWN and D48 stay uncollected -> one cloud:unfiled
+
+
+HUB = f"zotero:{SERVER}:0:OPT05"  # edges_fixture: one paper whose semantic lines span every strength tier
+
+
+def edges_fixture() -> dict[str, Any]:
+    """collections_fixture plus synthetic semantic edges with graded scores (motion-and-edges M2a/M2b): a hub paper with
+    intra- and inter-cloud lines in all three tiers, a dense C03 <-> C04 corridor (aggregate bridge), and lines of the
+    two-collection paper MULTI00 into C05, C06 and other clouds (replica rule).  Synthetic ids and scores only."""
+    fixture = collections_fixture()
+    pid = lambda key: f"zotero:{SERVER}:0:{key}"  # noqa: E731
+    rows: list[tuple[str, str, float]] = []
+    partners = [f"OPT{i:02d}" for i in (0, 1, 2, 3, 4)] + [f"OPT{i:02d}" for i in (20, 21, 22, 23, 24)] + ["OT00", "OT01", "OT02", "D20", "D21"]
+    for index, key in enumerate(partners):
+        rows.append(("OPT05", key, round(0.97 - index * 0.012, 3)))
+    for index, key in enumerate(partners[:-1]):
+        rows.append((key, partners[index + 1], round(0.72 - index * 0.004, 3)))  # every partner has a weaker second line, so its own rank of the hub line is high
+    for a in range(6, 12):
+        for b in range(24, 30):
+            if (a + b) % 2 == 0:
+                rows.append((f"OPT{a:02d}", f"OPT{b:02d}", round(0.9 - ((a * 7 + b) % 11) * 0.01, 3)))  # C03 <-> C04 corridor
+    for a in range(6, 11):
+        rows.append((f"OPT{a:02d}", f"OPT{a + 1:02d}", round(0.95 - a * 0.002, 3)))  # strong lines inside C03
+    for key, score in (("OT03", 0.93), ("D01", 0.91), ("OPT10", 0.85), ("D10", 0.8), ("D40", 0.76)):
+        rows.append(("MULTI00", key, score))
+    concepts = [concept["id"] for concept in fixture["concepts"]]; papers = {paper["key"]: paper for paper in fixture["papers"] if "key" in paper}
+    papers["OPT05"]["conceptIds"] = concepts[5:7]  # shared-concept Jaccard grades the hub's lines: 1.0 for the first partners, 0.5, then 0
+    for index, key in enumerate(partners):
+        papers[key]["conceptIds"] = concepts[5:7] if index < 3 else concepts[5:6] if index < 7 else papers[key]["conceptIds"]
+    for a in range(6, 12):
+        papers[f"OPT{a:02d}"]["conceptIds"] = concepts[8:10]  # the C03 chain shares its concepts -> strong intra-cloud lines
+    for index, (a, b, score) in enumerate(rows):
+        fixture["edges"].append({"id": f"edge:{SERVER}:{EPOCH}:tier:{index:03d}", "source": pid(a), "target": pid(b), "type": "semantic", "directed": False, "score": score, "provenance": {"provider": "synthetic", "method": "synthetic", "modelRevision": None}, "evidenceTier": "metadata", "verified": False})
+    recompute_overview(fixture)
+    return fixture
+
+
+def add_synthetic_collections(fixture: dict[str, Any], count: int = 12) -> None:
+    """``count`` synthetic collections with heavy-tail sizes (largest ~30 %), 5 % multi-membership, uncollected unknowns."""
+    members: list[list[str]] = [[] for _ in range(count)]
+    for index, paper in enumerate(fixture["papers"]):
+        if index % 50 == 49:
+            continue  # uncollected -> cloud:unfiled
+        rank = min(count - 1, int(count * (((index * 7919) % 1000) / 1000) ** 2))
+        members[rank].append(paper["id"])
+        if index % 20 == 0:
+            members[(rank + 1) % count].append(paper["id"])
+    fixture["collections"] = [{"id": f"collection:{SERVER}:0:SC{k:02d}", "label": f"Synthetic collection {k + 1:02d}" + (" · extended synthetic topic group" if k % 4 == 3 else ""), "paperIds": sorted(set(ids))} for k, ids in enumerate(members) if ids]
+
+
 def large_fixture(papers: int = 1000, concepts: int = 1410) -> dict[str, Any]:
-    """1,000 papers / 1,410 concepts over a valid Optimization→OT multi-parent forest with direct papers and unknowns."""
+    """1,000 papers / 1,410 concepts over a valid Optimization→OT multi-parent forest with direct papers and unknowns, in 12 synthetic collections."""
     fixture = acceptance_fixture()
     template = copy.deepcopy(fixture["papers"][0])
     fixture["papers"], fixture["memberships"], fixture["edges"], fixture["collections"] = [], [], [], []
@@ -179,7 +245,38 @@ def large_fixture(papers: int = 1000, concepts: int = 1410) -> dict[str, Any]:
     add_backend_style_extensions(fixture)
     fixture["paperFacets"] = []  # MULTI00 does not exist in the large fixture
     fixture.pop("facetCatalog", None)
+    add_synthetic_collections(fixture)
     return fixture
+
+
+# Map camera + queue + transition idle (plan motion-and-edges §5.1): data-camera-state idle (no G6 animation, no clamp frame pending), the
+# update queue idle, and data-motion-state idle (no camera tween, no decoration animation, the queue idle).  Shared by every browser test.
+CAMERA_IDLE = "() => { const c = document.querySelector('#atlas-field-network'); return c?.dataset.cameraState === 'idle' && c.dataset.updateState === 'idle' && (c.dataset.motionState || 'idle') === 'idle'; }"
+# Tolerant variant for paths where the map may not be a G6 view (ribbon/category modes): only a RUNNING transition or camera move blocks.
+MOTION_IDLE = "() => { const c = document.querySelector('#atlas-field-network'); return !c || ((c.dataset.motionState || 'idle') === 'idle' && (!c.dataset.cameraState || c.dataset.cameraState === 'idle')); }"
+
+
+ADVANCED_RENDERED = "() => { const d = document.getElementById('atlas-advanced'); return Boolean(d?.open) && d.dataset.lowerNetworks === 'rendered'; }"
+
+
+def open_advanced(page: Any, timeout: float = 20.0) -> None:
+    """Open the 'Advanced' disclosure (closed on the default screen, AC-11) with a native click on its summary.
+
+    Every legacy control (view selects, palette/theme, detail slider, category table, lower networks, lists,
+    Selection card, settings) lives inside it.  Waits until the deferred lower networks are really rendered.
+    Call it right after connect (snapshot loaded) in every path that drives those controls.
+    """
+    page.wait_for_function("() => Boolean(window.AtlasDebug?.getState()?.snapshot)", timeout=timeout * 1000)
+    if not page.evaluate("() => document.getElementById('atlas-advanced').open"):
+        page.locator("#atlas-advanced > summary").click()
+    page.wait_for_function(ADVANCED_RENDERED, timeout=timeout * 1000)
+
+
+def legacy_screen(page: Any, timeout: float = 20.0) -> None:
+    """Pre-Phase-4 starting point for tests written against it: Advanced open + the Circular ribbons overview selected explicitly."""
+    open_advanced(page, timeout)
+    page.locator("#atlas-overview-renderer").select_option("ribbon")
+    page.locator("#atlas-circular").wait_for(state="visible", timeout=timeout * 1000)
 
 
 class Harness:
@@ -213,6 +310,7 @@ class Harness:
         selector = self.SELECTORS["overview" if which == "overview" else "concept" if which == "concept" else "paper"]
         # G6 force views publish data-layout-state: wait for 'no pending layout' before sampling frames
         self.wait("sel => { const c = document.querySelector(sel); return !c || ((!c.dataset.layoutState || c.dataset.layoutState === 'settled') && (!c.dataset.updateState || c.dataset.updateState === 'idle')); }", timeout, selector)
+        self.wait(MOTION_IDLE, timeout)  # collection-map transition (camera tween, decorations) finished: positions are final
         script = "w => { const g = w === 'overview' ? window.AtlasDebug.getOverviewGraph() : w === 'concept' ? window.AtlasDebug.getConceptGraph() : window.AtlasDebug.getPaperGraph(); if (!g) return null; return g.getNodeData().map(n => g.getClientByCanvas(g.getElementPosition(n.id)).slice(0, 2).map(v => Math.round(v * 10) / 10).join(',')).join('|'); }"
         deadline, last, same = time.monotonic() + timeout, None, 0
         while time.monotonic() < deadline:
@@ -251,6 +349,7 @@ class Harness:
         raise AssertionError("canvas never settled after scrolling into view")
 
     def click_node(self, which: str, node_id: str) -> dict[str, float]:
+        self.wait(MOTION_IDLE)  # a running camera tween would move the node under the click: read coordinates only once it is done
         self.reveal(which)
         point = self.client_point(which, node_id)
         box = self.page.locator(self.SELECTORS[which]).bounding_box()
@@ -275,7 +374,7 @@ class Harness:
 
 
 @contextlib.contextmanager
-def running_app(fixture: dict[str, Any], viewport: tuple[int, int] = (1440, 1000), color_scheme: str = "light") -> Iterator[Harness]:
+def running_app(fixture: dict[str, Any], viewport: tuple[int, int] = (1440, 1000), color_scheme: str = "light", device_scale_factor: float | None = None) -> Iterator[Harness]:
     """Start the bridge and a browser; ALWAYS terminate the owned process in ``finally``."""
     try:
         from playwright.sync_api import sync_playwright
@@ -302,12 +401,12 @@ def running_app(fixture: dict[str, Any], viewport: tuple[int, int] = (1440, 1000
             with sync_playwright() as playwright:
                 browser = playwright.chromium.launch(headless=True)
                 try:
-                    page = browser.new_page(viewport={"width": viewport[0], "height": viewport[1]}, color_scheme=color_scheme)
+                    page = browser.new_page(viewport={"width": viewport[0], "height": viewport[1]}, color_scheme=color_scheme, **({"device_scale_factor": device_scale_factor} if device_scale_factor else {}))
                     errors: list[str] = []
                     page.on("pageerror", lambda error: errors.append(str(error)[:200]))
                     page.on("console", lambda message: errors.append(message.text[:200]) if message.type == "error" else None)
                     # load-phase (vendor parse/GC) long tasks are kept apart from interaction-phase tasks
-                    page.add_init_script("window.__atlasLoadLongTasks = []; try { new PerformanceObserver(list => { for (const e of list.getEntries()) window.__atlasLoadLongTasks.push({start: e.startTime, duration: e.duration}); }).observe({type: 'longtask', buffered: true}); } catch (error) { window.__atlasLoadLongTasks = null; }")
+                    page.add_init_script("window.__atlasLoadLongTasks = []; try { new PerformanceObserver(list => { for (const e of list.getEntries()) window.__atlasLoadLongTasks.push({start: e.startTime, duration: e.duration}); }).observe({type: 'longtask', buffered: true}); } catch (error) { window.__atlasLoadLongTasks = null; } document.addEventListener('click', event => { if (event.target instanceof Element && event.target.id === 'atlas-connect') window.__atlasConnectClickAt = performance.now(); }, true);")
                     page.goto(base + "/", wait_until="domcontentloaded")
                     page.locator("#atlas-token-input").fill(bootstrap["token"])
                     page.locator("#atlas-connect").click()

@@ -60,3 +60,94 @@
 @media (max-width:600px) { .atlas-selection-legend .atlas-field-legend-row { grid-template-columns:minmax(0,1fr) 3rem 4.8rem; } }
 .atlas-sr-only { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
 .atlas-network { position:relative; }
+/* collection cloud map: wrapper-owned sibling overlay (hulls under the transparent G6 canvas, labels above it) */
+.atlas-circular-wrap { position:relative; }
+.atlas-circular-wrap.atlas-collections-mode { min-height:420px; height:max(420px, calc(100vh - var(--atlas-map-chrome))); }
+/* collections map height: the viewport minus the header/toolbar/map-heading/Advanced-summary chrome (measured: ~245 px wide, ~270 px when the toolbar wraps) */
+#atlas-app { --atlas-map-chrome:250px; }
+@media (max-width:900px) {
+  #atlas-app { --atlas-map-chrome:280px; }
+  /* stacked layout with a cloud selected: the map is capped so the panel below it stays on screen */
+  .atlas-map-row.atlas-collections-mode:has(> .atlas-cloud-panel:not([hidden])) > .atlas-circular-wrap { min-height:260px; height:max(260px, 45vh); }
+  /* ...and the panel is at least the rest of the viewport, so the page can always put the map row at the top (main.js aligns it) */
+  .atlas-map-row.atlas-collections-mode > .atlas-cloud-panel:not([hidden]) { min-height:55vh; }
+}
+.atlas-cloud-hulls, .atlas-cloud-labels { position:absolute; left:0; top:0; pointer-events:none; overflow:hidden; }
+.atlas-cloud-hull { fill:var(--cloud-fill, color-mix(in srgb, var(--atlas-focus) 7%, var(--atlas-panel))); stroke:var(--cloud-stroke, var(--atlas-muted)); stroke-width:1.5; stroke-linejoin:round; vector-effect:non-scaling-stroke; transition:opacity 150ms ease, stroke-width 150ms ease, fill 150ms ease; }
+.atlas-cloud-hull.is-unfiled { fill:var(--cloud-hatch, var(--cloud-fill)); stroke-dasharray:6 4; }
+.atlas-cloud-hull.is-selected { fill:var(--cloud-fill-selected, var(--cloud-fill)); stroke-width:3; }
+.atlas-cloud-hull.is-unfiled.is-selected { fill:var(--cloud-hatch, var(--cloud-fill)); }
+.atlas-cloud-hull.is-hover { stroke-width:2.5; }
+.atlas-cloud-hull.is-selected.is-hover { stroke-width:3.5; }
+.atlas-cloud-hull.is-dimmed { opacity:.22; } /* same rule as dimmed G6 points (fillOpacity 0.22) */
+.atlas-cloud-hatch-bg { fill:var(--cloud-unfiled-fill, var(--atlas-panel)); } .atlas-cloud-hatch-line { stroke:var(--cloud-unfiled-stroke, var(--atlas-muted)); stroke-width:1; opacity:.45; }
+.atlas-cloud-subgroup { fill:color-mix(in oklab, var(--cloud-stroke, var(--atlas-muted)) 10%, var(--cloud-fill, var(--atlas-panel))); stroke:color-mix(in oklab, var(--cloud-stroke, var(--atlas-muted)) 45%, var(--cloud-fill, var(--atlas-panel))); stroke-width:1; stroke-linejoin:round; vector-effect:non-scaling-stroke; opacity:0; transition:opacity 150ms ease; } /* zoomed-in detail: one step stronger than the fill */
+.atlas-cloud-hulls.is-detail .atlas-cloud-subgroup { opacity:1; }
+.atlas-cloud-hull.is-dimmed + .atlas-cloud-subgroups { opacity:.22; }
+.atlas-cloud-label[data-weight-tier="1"] { -webkit-text-stroke:0.45px currentColor; } .atlas-cloud-label[data-weight-tier="2"] { -webkit-text-stroke:0.2px currentColor; } .atlas-cloud-label[data-weight-tier="3"] { -webkit-text-stroke:0; } /* glyph weight tiers by stroke: advance widths, font size and the 16 px height are unchanged, so placement (AC-3) and truncation are identical; font-weight would widen text past its measured box */
+#atlas-field-legend[hidden] { display:none; } /* collections mode: category colours no longer match the map */
+/* Semantic edge layers (plan motion-and-edges §2.2): width / opacity / dash come from TIER_STYLE as presentation attributes; widths stay in screen px. */
+.atlas-cloud-bridge { fill:none; stroke:var(--atlas-muted); stroke-opacity:.38; stroke-linecap:round; vector-effect:non-scaling-stroke; }
+.atlas-cloud-bridge.is-emphasis { stroke-opacity:.8; }
+.atlas-cloud-bridge.is-dimmed { stroke-opacity:.12; }
+.atlas-cloud-edge { fill:none; stroke:var(--edge-stroke, var(--atlas-muted)); stroke-linecap:round; vector-effect:non-scaling-stroke; }
+.atlas-cloud-edge.is-dimmed { opacity:.22; }
+.atlas-cloud-replica { stroke:var(--atlas-focus); stroke-width:1.5; stroke-dasharray:3 3; vector-effect:non-scaling-stroke; }
+.atlas-cloud-leader { stroke:var(--atlas-muted); stroke-width:1; }
+.atlas-cloud-label { position:absolute; left:0; top:0; height:16px; min-height:0; padding:0 4px; border-radius:4px; font-size:12px; line-height:14px; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; pointer-events:auto; color:var(--atlas-text); background:var(--cloud-fill, color-mix(in srgb, var(--atlas-panel) 88%, transparent)); }
+.atlas-cloud-label.is-unfiled { font-style:italic; border-style:dashed; }
+.atlas-cloud-label[aria-pressed="true"] { border-color:var(--atlas-focus); box-shadow:inset 0 -2px var(--atlas-focus); }
+.atlas-cloud-label.is-dimmed { opacity:.6; }
+.atlas-cloud-chips { display:flex; flex-wrap:wrap; gap:6px; align-items:center; padding:6px 10px; border-top:1px solid var(--atlas-border); color:var(--atlas-muted); font-size:12px; }
+.atlas-cloud-chip { min-height:28px; max-width:100%; padding:2px 9px; border-radius:999px; font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.atlas-cloud-chip[aria-pressed="true"] { border-color:var(--atlas-focus); }
+/* cloud panel (AC-7..10): beside the map from 900 px (column reserved in collections mode, so opening the panel never resizes the G6 canvas), under it below 900 px */
+.atlas-cloud-panel { position:relative; display:grid; gap:12px; align-content:start; padding:12px 14px; border-top:1px solid var(--atlas-border); background:var(--atlas-panel); overflow:auto; max-height:70vh; min-width:0; }
+.atlas-cloud-panel[hidden] { display:none; }
+.atlas-cloud-panel-header { display:flex; justify-content:space-between; align-items:start; gap:8px; }
+.atlas-cloud-panel-header h2 { font-size:15px; line-height:1.3; overflow-wrap:anywhere; }
+.atlas-cloud-panel-close { min-width:32px; min-height:32px; padding:0 8px; font-size:18px; line-height:1; }
+.atlas-cloud-panel-section h3 { font-size:12px; color:var(--atlas-muted); margin-bottom:6px; font-weight:650; }
+.atlas-cloud-panel-list { display:grid; gap:5px; }
+.atlas-cloud-subitems-more { margin-top:5px; } .atlas-cloud-subitems-more > summary { cursor:pointer; min-height:32px; display:flex; align-items:center; font-size:12px; color:var(--atlas-muted); } .atlas-cloud-subitems-more > .atlas-cloud-panel-list { margin-top:5px; }
+.atlas-cloud-subitem, .atlas-cloud-paper, .atlas-cloud-related { text-align:left; width:100%; min-height:32px; display:flex; justify-content:space-between; gap:8px; align-items:start; font-size:12px; }
+.atlas-cloud-subitem span, .atlas-cloud-paper span, .atlas-cloud-related span { overflow-wrap:anywhere; min-width:0; }
+.atlas-cloud-subitem small, .atlas-cloud-paper small, .atlas-cloud-related small { color:var(--atlas-muted); white-space:nowrap; }
+.atlas-cloud-subitem[data-auto="true"] span { font-style:italic; }
+.atlas-cloud-subitem[aria-pressed="true"], .atlas-cloud-paper[aria-pressed="true"] { border-color:var(--atlas-focus); box-shadow:inset 3px 0 var(--atlas-focus); }
+.atlas-cloud-panel-chips { display:flex; flex-wrap:wrap; gap:5px; }
+.atlas-cloud-concept { padding:2px 8px; border:1px solid var(--atlas-border); border-radius:999px; font-size:11px; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.atlas-cloud-years { display:grid; gap:3px; font-size:11px; }
+.atlas-cloud-year { display:grid; grid-template-columns:4.5rem minmax(0,1fr) 2.5rem; gap:6px; align-items:center; }
+.atlas-cloud-year small { text-align:right; color:var(--atlas-muted); }
+.atlas-cloud-year-track { height:8px; border-radius:4px; background:var(--atlas-panel-2, #eef2f7); overflow:hidden; }
+.atlas-cloud-year-bar { display:block; height:100%; background:var(--atlas-focus); }
+.atlas-cloud-suggestion { font-size:12px; overflow-wrap:anywhere; }
+.atlas-cloud-edge-legend { display:grid; gap:3px; font-size:12px; } .atlas-cloud-edge-legend-row { display:flex; align-items:center; gap:8px; } .atlas-cloud-edge-sample { stroke:var(--atlas-text); stroke-linecap:round; }
+.atlas-cloud-panel-detail { padding:10px; border:1px solid var(--atlas-focus); border-radius:8px; }
+.atlas-cloud-panel-detail h3 { font-size:14px; line-height:1.35; overflow-wrap:anywhere; }
+.atlas-cloud-panel-detail dl { display:grid; grid-template-columns:72px minmax(0,1fr); gap:5px 8px; font-size:12px; margin:10px 0; }
+.atlas-cloud-panel-detail dt { color:var(--atlas-muted); } .atlas-cloud-panel-detail dd { margin:0; overflow-wrap:anywhere; }
+.atlas-cloud-panel-detail .atlas-abstract { max-height:8em; overflow:auto; }
+@media (min-width:901px) {
+  .atlas-map-row.atlas-collections-mode { display:grid; grid-template-columns:minmax(0,1fr) minmax(260px,300px); }
+  .atlas-map-row.atlas-collections-mode > * { grid-column:1; }
+  .atlas-map-row.atlas-collections-mode > .atlas-cloud-panel { grid-column:2; grid-row:1; border-top:0; border-left:1px solid var(--atlas-border); max-height:max(420px, calc(100vh - var(--atlas-map-chrome))); }
+}
+/* default screen (AC-11): compact title/status, map toolbar, then the map; every other view, control and diagnostic sits in the closed Advanced disclosure */
+.atlas-header { align-items:center; margin-bottom:10px; } .atlas-header h1 { font-size:20px; letter-spacing:-.02em; } .atlas-title { min-width:0; } .atlas-title .atlas-subtitle { overflow-wrap:anywhere; }
+.atlas-toolbar .search-label { display:flex; align-items:center; gap:6px; flex:1 1 220px; min-width:0; color:var(--atlas-muted); font-size:12px; } .atlas-toolbar #atlas-search { flex:1 1 auto; width:100%; min-width:0; }
+.atlas-main { max-width:1440px; margin:0 auto; }
+.atlas-advanced { max-width:1440px; margin:14px auto 0; } .atlas-advanced > summary { cursor:pointer; padding:9px 12px; min-height:34px; border:1px solid var(--atlas-border); border-radius:10px; background:var(--atlas-panel); color:var(--atlas-text); font-size:13px; font-weight:650; } .atlas-advanced > summary:focus-visible { outline:3px solid color-mix(in srgb, var(--atlas-focus) 35%, transparent); outline-offset:1px; } .atlas-advanced-body { margin-top:10px; }
+.atlas-legacy { overflow:hidden; } .atlas-diagnostics p { overflow-wrap:anywhere; margin-top:4px; }
+/* transition decorations (plan motion-and-edges §3.4): never part of the committed state, all removed at motion idle; reduced motion creates none */
+.atlas-map-row { position:relative; }
+.atlas-motion-ghost { fill:none; stroke:var(--edge-stroke, var(--atlas-muted)); stroke-linecap:round; vector-effect:non-scaling-stroke; pointer-events:none; }
+.atlas-motion-outline { fill:none; stroke:var(--cloud-stroke, var(--atlas-focus)); stroke-width:5; stroke-linejoin:round; vector-effect:non-scaling-stroke; pointer-events:none; }
+.atlas-motion-ripple circle { fill:none; stroke:var(--atlas-focus); stroke-width:2.5; vector-effect:non-scaling-stroke; }
+.atlas-motion-travel circle { fill:none; stroke:var(--atlas-focus); stroke-width:3; vector-effect:non-scaling-stroke; }
+.atlas-motion-frame { position:absolute; pointer-events:none; transform-origin:0 0; }
+.atlas-motion-clone { position:absolute; left:0; right:0; overflow:hidden; pointer-events:none; background:var(--atlas-panel); z-index:2; }
+.atlas-motion-clone-inner { display:grid; gap:12px; align-content:start; padding:12px 14px; }
+.atlas-shape-key{padding:4px 8px;font-size:12px;line-height:1.4}
+.atlas-label-toggle{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}

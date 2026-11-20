@@ -168,6 +168,32 @@ def sector_hit_point(page: Any, index: int) -> dict[str, Any] | None:
     }""", index)
 
 
+ADVANCED_RENDERED = "() => { const d = document.getElementById('atlas-advanced'); return Boolean(d?.open) && d.dataset.lowerNetworks === 'rendered'; }"
+
+
+def open_advanced(page: Any) -> None:
+    """Open the 'Advanced' disclosure (closed on the default collection-map screen, AC-11) with a native click; mirrors tests/e2e/v2_support.open_advanced."""
+    page.wait_for_function("() => Boolean(window.AtlasDebug?.getState()?.snapshot)", timeout=READY_TIMEOUT * 1000)
+    if not page.evaluate("() => document.getElementById('atlas-advanced').open"):
+        page.locator("#atlas-advanced > summary").click()
+    page.wait_for_function(ADVANCED_RENDERED, timeout=READY_TIMEOUT * 1000)
+
+
+# Collection-map transition finished (plan motion-and-edges §5.1; mirrors tests/e2e/v2_support.MOTION_IDLE): no camera tween, no
+# decoration animation, update queue idle.  Immediate on views without transitions (ribbon/category, lower networks).
+MOTION_IDLE = "() => { const c = document.querySelector('#atlas-field-network'); return !c || ((c.dataset.motionState || 'idle') === 'idle' && (!c.dataset.cameraState || c.dataset.cameraState === 'idle')); }"
+
+
+def wait_motion_idle(page: Any) -> None:
+    page.wait_for_function(MOTION_IDLE, timeout=READY_TIMEOUT * 1000)
+
+
+def open_ribbon_overview(page: Any) -> None:
+    """Advanced open + the Circular ribbons overview selected explicitly (it was the default before AC-11)."""
+    open_advanced(page)
+    page.locator("#atlas-overview-renderer").select_option("ribbon")
+
+
 def main() -> int:
     a = Assertions()
     fixture = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
@@ -214,6 +240,12 @@ def main() -> int:
                     a.check(f"wrong-origin bootstrap rejected {width}", page.locator("#atlas-connection").is_visible())
                     page.locator("#atlas-token-input").fill(bootstrap["token"])
                     page.locator("#atlas-connect").click()
+                    page.wait_for_function("() => Boolean(window.AtlasDebug?.getState()?.snapshot)", timeout=READY_TIMEOUT * 1000)
+                    page.locator("#atlas-field-network").wait_for(state="visible", timeout=READY_TIMEOUT * 1000)
+                    a.check(f"default screen is the collection map {width}", page.evaluate("window.AtlasDebug.getState().overviewRenderer") == "collections" and page.locator("#atlas-circular").is_hidden())
+                    a.check(f"view selects are not on the first screen {width}", not page.locator("#atlas-overview-renderer").is_visible() and not page.locator("#atlas-renderer").is_visible())
+                    a.check(f"default screen has no horizontal overflow {width}", page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1"))
+                    open_ribbon_overview(page)
                     page.locator("#atlas-circular").wait_for(state="visible", timeout=READY_TIMEOUT * 1000)
                     page.locator("path.atlas-sector").first.wait_for(state="visible", timeout=READY_TIMEOUT * 1000)
                     page.locator("#atlas-sample").fill("100")
@@ -244,6 +276,7 @@ def main() -> int:
                         a.check(f"sector {field_index} resolves to expected physical target {width}", keyboard_fallback or bool(field_point and field_point.get("targetField") == expected_field), f"expected={expected_field} actual={field_point and field_point.get('targetField')}")
                         if field_point and not keyboard_fallback:
                             page.mouse.click(field_point["x"], field_point["y"])
+                        wait_motion_idle(page)
                         current_fields = page.locator('path.atlas-sector[aria-current="true"]')
                         current_id = current_fields.first.get_attribute("data-field-id", timeout=1000) if current_fields.count() else None
                         a.check(f"sector {field_index} selects exact field {width}", current_id == expected_field, f"expected={expected_field} actual={current_id}")
@@ -259,6 +292,7 @@ def main() -> int:
                         a.check(f"ribbon has physical hit target {width}", ribbon_point is not None)
                         if ribbon_point:
                             page.mouse.click(ribbon_point["x"], ribbon_point["y"])
+                        wait_motion_idle(page)
                         pair_state = page.evaluate("window.AtlasDebug.getState()")
                         expected_pair_ids = {paper["id"] for paper in fixture["papers"] if any(field in paper.get("fieldIds", []) for field in pair)}
                         actual_pair_ids = {row["id"] for row in pair_state["detail"]["papers"]}
@@ -272,10 +306,12 @@ def main() -> int:
                 page.goto(base + "/", wait_until="domcontentloaded")
                 page.locator("#atlas-token-input").fill(bootstrap["token"])
                 page.locator("#atlas-connect").click()
+                open_ribbon_overview(page)
                 page.locator("path.atlas-sector").first.wait_for(state="visible", timeout=READY_TIMEOUT * 1000)
                 initial = page.evaluate("window.AtlasDebug.getState()")
                 initial_overview = initial["snapshot"]["overview"]
                 page.locator("#atlas-paper-list button").first.click()
+                wait_motion_idle(page)
                 selected = page.evaluate("window.AtlasDebug.getState()")
                 selected_id = selected["snapshot"]["papers"][0]["id"]
                 page.locator("#atlas-sample").fill("10")
@@ -300,13 +336,16 @@ def main() -> int:
                 page.locator("#atlas-relation").select_option("citation")
                 selected = page.evaluate("window.AtlasDebug.getState()")
                 a.check("paper selection updates exact selected paper", selected["detail"]["papers"][0]["id"] == selected["snapshot"]["papers"][0]["id"])
+                page.locator("#atlas-paper-network").scroll_into_view_if_needed()  # native click coordinates must be on screen
                 paper_point = page.evaluate("""() => { const g=window.AtlasDebug.getPaperGraph(); const n=g.getNodeData()[0]; const p=g.getClientByCanvas(g.getElementPosition(n.id)); return {x:p[0],y:p[1]}; }""")
                 page.mouse.click(paper_point["x"], paper_point["y"])
+                wait_motion_idle(page)
                 a.check("native Cytoscape paper click updates selection", "Paper" in page.locator("#atlas-detail").inner_text())
                 concept_buttons = page.locator("#atlas-concept-list button")
                 if concept_buttons.count():
                     clicked_concept_id = concept_buttons.first.get_attribute("data-entity-id")
                     concept_buttons.first.click()
+                    wait_motion_idle(page)
                     concept_state = page.evaluate("window.AtlasDebug.getState()")
                     concept_id = clicked_concept_id
                     expected_concept_ids = {paper["id"] for paper in fixture["papers"] if concept_id in paper.get("conceptIds", [])}
@@ -314,6 +353,7 @@ def main() -> int:
                     a.check("concept selection filters exact related papers", actual_concept_ids == expected_concept_ids, f"expected={len(expected_concept_ids)} actual={len(actual_concept_ids)}")
                     concept_point = page.evaluate("""() => { const g=window.AtlasDebug.getConceptGraph(); const n=g.getNodeData().find(row => row.kind === 'concept' || row.data?.kind === 'concept') || g.getNodeData()[0]; const p=g.getClientByCanvas(g.getElementPosition(n.id)); return {x:p[0],y:p[1]}; }""")
                     page.mouse.click(concept_point["x"], concept_point["y"])
+                    wait_motion_idle(page)
                     a.check("native Cytoscape concept click updates selection", "Concept" in page.locator("#atlas-detail").inner_text())
                 palette_values = []
                 for palette_id in ("atlas", "calm", "mocha"):
@@ -326,7 +366,7 @@ def main() -> int:
                 a.check("light theme applies", page.locator("#atlas-app").get_attribute("data-atlas-theme") == "light")
                 page.locator("#atlas-theme").select_option("system")
                 a.check("system theme option available", page.locator("#atlas-theme option[value=system]").count() == 1)
-                page.locator("#atlas-taxonomy-form").locator("xpath=ancestor::details").evaluate("details => details.open = true")
+                page.locator("#atlas-taxonomy-form").locator("xpath=ancestor::details[1]").evaluate("details => details.open = true")
                 page.locator("#atlas-threshold").fill("0.91")
                 page.locator("#atlas-save-settings").click()
                 try:
@@ -336,8 +376,9 @@ def main() -> int:
                 page.reload(wait_until="domcontentloaded")
                 page.locator("#atlas-token-input").fill(bootstrap["token"])
                 page.locator("#atlas-connect").click()
+                open_ribbon_overview(page)
                 page.locator("path.atlas-sector").first.wait_for(state="visible", timeout=READY_TIMEOUT * 1000)
-                page.locator("#atlas-taxonomy-form").locator("xpath=ancestor::details").evaluate("details => details.open = true")
+                page.locator("#atlas-taxonomy-form").locator("xpath=ancestor::details[1]").evaluate("details => details.open = true")
                 persisted_threshold = page.locator("#atlas-threshold").input_value()
                 a.check("settings CAS survives reload", persisted_threshold == "0.91", f"observed={persisted_threshold}")
                 taxonomy_errors: list[str] = []

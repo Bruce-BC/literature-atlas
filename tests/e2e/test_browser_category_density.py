@@ -12,6 +12,9 @@ from pathlib import Path
 
 import pytest
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from v2_support import legacy_screen  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = ROOT / "tests" / "fixtures" / "demo-snapshot.json"
 
@@ -57,6 +60,7 @@ def test_category_density_and_expansion_preserve_full_graph_truth():
             page.goto(base + "/", wait_until="domcontentloaded")
             page.locator("#atlas-token-input").fill(bootstrap["token"]); page.locator("#atlas-connect").click()
             wait_for(page, "() => Boolean(window.AtlasDebug?.getState()?.snapshot?.papers?.length)")
+            legacy_screen(page)  # legacy controls live in Advanced (AC-11); Circular ribbons was the default this test was written against
             full = page.evaluate("window.AtlasDebug.getState()")
             source_epoch = full["snapshot"]["source"]["epoch"]
             full_overview = full["snapshot"]["overview"]

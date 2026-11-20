@@ -7,10 +7,28 @@
  *                                                        offer explicit "Fit new content"
  *  - revisit of a valid scope                         -> restore stored camera
  *  - epoch/recipe change                              -> drop everything, fit
- * Zoom is always clamped to [0.2, 3].
+ * Zoom is always clamped to [0.2, 3]; pan is bounded by `clampPan` (nodes never leave the viewport entirely).
  */
 export const ZOOM_RANGE = Object.freeze([0.2, 3]);
 export const clampZoom = value => { const n = Number(value); return Number.isFinite(n) ? Math.max(ZOOM_RANGE[0], Math.min(ZOOM_RANGE[1], n)) : 1; };
+export const PAN_MIN_VISIBLE = 48;
+/**
+ * Bound pan so the node bbox (model coords; screen = model * zoom + pan) overlaps the viewport on each axis by at least
+ * min(48, bbox screen width, bbox screen height, viewport width, viewport height) px (AC-14 floor) AND by
+ * min(half the bbox screen extent, viewport extent): the bbox centre stays on screen, and a bbox larger than the viewport always covers it
+ * (its edges stay reachable).  A 48 px bbox corner alone is often empty of nodes.
+ * Invalid viewport/bbox/zoom (no nodes, hidden container) leaves a finite pan unchanged; a non-finite pan becomes the bbox-centred (or zero) pan.  Idempotent.
+ */
+export function clampPan({viewport, bbox, zoom, pan} = {}) {
+  const width = Number(viewport?.width); const height = Number(viewport?.height); const z = Number(zoom); const [x1, y1, x2, y2] = [bbox?.x1, bbox?.y1, bbox?.x2, bbox?.y2].map(Number);
+  const valid = [width, height, z, x1, y1, x2, y2].every(Number.isFinite) && width > 0 && height > 0 && z > 0 && x2 >= x1 && y2 >= y1;
+  const px = Number(pan?.x); const py = Number(pan?.y);
+  const current = {x: Number.isFinite(px) ? px : (valid ? width / 2 - (x1 + x2) / 2 * z : 0), y: Number.isFinite(py) ? py : (valid ? height / 2 - (y1 + y2) / 2 * z : 0)};
+  if (!valid) return current;
+  const floor = Math.min(PAN_MIN_VISIBLE, (x2 - x1) * z, (y2 - y1) * z, width, height);
+  const axis = (value, lo, hi, size) => { const need = Math.max(floor, Math.min((hi - lo) * z / 2, size)); return Math.max(need - hi * z, Math.min(size - need - lo * z, value)); };
+  return {x: axis(current.x, x1, x2, width), y: axis(current.y, y1, y2, height)};
+}
 
 export const topologySignature = (nodeIds, edgeRows = []) => {
   const ids = [...nodeIds].map(String).sort(); const edges = edgeRows.map(row => Array.isArray(row) ? row.join('>') : String(row)).sort();
@@ -80,5 +98,5 @@ export const positionStats = (positions, nodeIds) => {
   return {finite: true, unique: keys.size, origin, bounds: {minX, maxX, minY, maxY}};
 };
 
-export const AtlasCameraPolicy = {ZOOM_RANGE, clampZoom, topologySignature, createCameraStore, planCamera, saveCamera, resetCameraView, completePositions, hasFullCoverage, positionStats};
+export const AtlasCameraPolicy = {ZOOM_RANGE, clampZoom, PAN_MIN_VISIBLE, clampPan, topologySignature, createCameraStore, planCamera, saveCamera, resetCameraView, completePositions, hasFullCoverage, positionStats};
 if (typeof window !== 'undefined') window.AtlasCameraPolicy = AtlasCameraPolicy;

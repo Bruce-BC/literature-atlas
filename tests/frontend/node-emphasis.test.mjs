@@ -133,3 +133,18 @@ test('camera walk on expansion: pans only towards the content that left the view
   const big = cameraToInclude({x1: -1000, y1: 0, x2: 1500, y2: 400}, camera, viewport); assert.ok(big.zoom < 1, 'too wide: zooms out'); assert.ok(-1000 * big.zoom + big.x >= 59 && 1500 * big.zoom + big.x <= 741, 'and the whole box fits');
   assert.ok(cameraToInclude({x1: 300, y1: 250, x2: 320, y2: 260}, {zoom: 0.5, x: 200, y: 150}, viewport, {maxZoom: 1.4}).zoom === 0.5, 'never zooms in on its own');
 });
+
+test('expanded nodes split the plane like a Voronoi diagram: one expanded node is surrounded, two share the bisector', async () => {
+  const {relayoutTargets, collideRadius} = await import('../../frontend/g6-render.js');
+  const base = {A: {x: -220, y: 160, size: 40}, B: {x: 220, y: -160, size: 40}, C: {x: 0, y: 0, size: 40}, D: {x: 60, y: 50, size: 32}};
+  const make = owners => { const from = {...base}; const edges = []; const ownerOf = new Map(); for (const site of owners) for (let i = 0; i < 24; i += 1) { const id = `${site}${i}`; from[id] = {x: base[site].x + 5 * Math.cos(i), y: base[site].y + 5 * Math.sin(i), size: 14}; edges.push([site, id], [id, 'C']); ownerOf.set(id, site); } return {from, edges, ownerOf}; };
+  const angleGap = (site, to, ids) => { const a = ids.map(id => Math.atan2(to[id].y - to[site].y, to[id].x - to[site].x)).sort((x, y) => x - y); let gap = a[0] + Math.PI * 2 - a[a.length - 1]; for (let i = 1; i < a.length; i += 1) gap = Math.max(gap, a[i] - a[i - 1]); return gap; };
+  // 1) only A expanded: its children go all round it (largest empty direction gap well under a half turn)
+  const one = make(['A']); const t1 = relayoutTargets(one.from, one.edges, new Set(Object.keys(base)), {ownerOf: one.ownerOf});
+  const aIds = [...one.ownerOf.keys()]; assert.ok(angleGap('A', t1, aIds) < Math.PI * 0.75, `A's children surround it (largest gap ${(angleGap('A', t1, aIds) * 180 / Math.PI).toFixed(0)}°)`);
+  for (const id of Object.keys(base)) assert.deepEqual(t1[id], {x: base[id].x, y: base[id].y}, `${id} is pinned`);
+  // 2) A and B expanded: each child is on its own side of the A-B bisector
+  const two = make(['A', 'B']); const t2 = relayoutTargets(two.from, two.edges, new Set(Object.keys(base)), {ownerOf: two.ownerOf});
+  for (const [id, site] of two.ownerOf) { const other = site === 'A' ? 'B' : 'A'; assert.ok(Math.hypot(t2[id].x - base[site].x, t2[id].y - base[site].y) < Math.hypot(t2[id].x - base[other].x, t2[id].y - base[other].y), `${id} stays in ${site}'s half`); }
+  const ids = Object.keys(t2); for (let i = 0; i < ids.length; i += 1) for (let j = i + 1; j < ids.length; j += 1) { const a = ids[i]; const b = ids[j]; if (base[a] && base[b]) continue; const d = Math.hypot(t2[a].x - t2[b].x, t2[a].y - t2[b].y); assert.ok(d >= collideRadius(two.from[a].size) + collideRadius(two.from[b].size) - 3, `${a} and ${b} overlap (${d.toFixed(1)})`); }
+});

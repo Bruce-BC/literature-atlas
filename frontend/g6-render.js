@@ -90,11 +90,62 @@ export function fanSlots(parent, away, ids, childR, obstacles = []) {
   }
   return slots;
 }
-export function relayoutTargets(positions, edges, existingIds = null) {
+export const CELL = Object.freeze({samples: 360, ringGap: 12, slotGap: 6, edgeMargin: 0.5, maxRings: 60});
+/**
+ * Children of every expanded node laid out in that node's Voronoi cell (pure, deterministic).
+ *
+ * `sites` = expanded nodes {id, x, y, r}; `ownerOf` = childId -> siteId; `obstacles` = every other pinned node.  A child of
+ * site S may only sit where it is closer to S than to any other site (by at least half a child radius: the perpendicular
+ * bisector between two expanded nodes is the border of their halves) and clear of every obstacle.  Each site's children
+ * fill concentric rings inside-out; on each ring they are spread evenly over the directions allowed at that radius.  With
+ * a single expanded node its cell is the whole plane, so its children surround it through 360 degrees; a second expanded
+ * node splits the plane along the bisector and each takes its own half.
+ */
+export function cellSlots(sites, ownerOf, childR, obstacles = []) {
+  const slots = {}; const byOwner = new Map(); for (const [child, owner] of ownerOf) (byOwner.get(owner) || byOwner.set(owner, []).get(owner)).push(child);
+  for (const site of [...sites].sort((a, b) => a.id.localeCompare(b.id))) {
+    const children = (byOwner.get(site.id) || []).sort(); if (!children.length) continue; const rivals = sites.filter(other => other.id !== site.id);
+    const r = childR.get(site.id); const step = 2 * r + CELL.slotGap; let index = 0;
+    const allowedAt = (radius, angle) => { const x = site.x + Math.cos(angle) * radius; const y = site.y + Math.sin(angle) * radius; const own = Math.hypot(x - site.x, y - site.y);
+      for (const other of rivals) if (Math.hypot(x - other.x, y - other.y) - own < r * 2 * CELL.edgeMargin) return false;
+      for (const o of obstacles) if (Math.hypot(x - o.x, y - o.y) < o.r + r + CELL.slotGap) return false; return true; };
+    for (let ring = 0; index < children.length; ring += 1) {
+      const radius = site.r + r + CELL.ringGap + ring * (2 * r + CELL.ringGap); const flags = []; for (let k = 0; k < CELL.samples; k += 1) flags.push(allowedAt(radius, (k / CELL.samples) * TAU));
+      const blockedAt = flags.indexOf(false); const order = []; for (let k = 0; k < CELL.samples; k += 1) { const at = (blockedAt < 0 ? k : blockedAt + 1 + k) % CELL.samples; if (flags[at]) order.push(at); } // walk the circle from a blocked direction, so each free arc is one contiguous run
+      const last = ring >= CELL.maxRings; if (!order.length && !last) continue;
+      const usable = order.length ? order : [...Array(CELL.samples).keys()]; const capacity = last ? children.length - index : Math.floor((usable.length / CELL.samples) * TAU * radius / step); if (capacity < 1) continue;
+      const count = Math.min(capacity, children.length - index);
+      for (let j = 0; j < count; j += 1) { const angle = (usable[Math.floor(((j + 0.5) * usable.length) / count)] / CELL.samples) * TAU; slots[children[index + j]] = {x: site.x + Math.cos(angle) * radius, y: site.y + Math.sin(angle) * radius}; }
+      index += count;
+    }
+  }
+  return slots;
+}
+/** Child -> expanded node that produced it, from the G6 field-map data: papers carry `owners` (expanded fields that loaded
+ * them, first wins), visible sub-fields hang off an expanded field by a `hierarchy` edge.  Empty for graphs without expansion. */
+export function ownersOf(nodes, edges) {
+  const expanded = new Set(nodes.filter(node => node.data?.expanded).map(node => node.data.id)); const owner = new Map(); if (!expanded.size) return owner;
+  for (const node of nodes) { const first = (node.data?.owners || []).filter(id => expanded.has(id)).sort()[0]; if (first) owner.set(node.data.id, first); }
+  for (const edge of edges) if (edge.data?.relation === 'hierarchy' && expanded.has(edge.data.source) && !owner.has(edge.data.target)) owner.set(edge.data.target, edge.data.source);
+  return owner;
+}
+export function relayoutTargets(positions, edges, existingIds = null, {ownerOf = null} = {}) {
   const nodes = Object.entries(positions).map(([id, p]) => ({id, x: p.x, y: p.y, r: collideRadius(p.size)})); if (!nodes.length) return {};
   const known = new Set(nodes.map(node => node.id)); const links = edges.filter(([a, b]) => known.has(a) && known.has(b) && a !== b).map(([source, target]) => ({source, target}));
   const byId = new Map(nodes.map(node => [node.id, node])); const ticksFor = simulation => Math.ceil(Math.log(simulation.alphaMin() / RELAYOUT.alpha) / Math.log(1 - RELAYOUT.alphaDecay));
   const fresh = existingIds ? nodes.filter(node => !existingIds.has(node.id)) : [];
+  const ownerIds = ownerOf ? new Set(ownerOf.values()) : null; const owned = ownerOf ? new Map([...ownerOf].filter(([child, owner]) => byId.has(child) && byId.has(owner) && child !== owner && !ownerIds.has(child))) : null; // an expanded sub-field is a site (pinned), not a child
+  if (existingIds && owned && owned.size) {
+    // Expanded nodes known (G6 field map): every expanded node and every other non-child node stays where it is; ALL
+    // children (new and old) are re-laid in their owner's Voronoi cell, then collision settles what sampling missed.
+    const siteIds = new Set(owned.values()); const sites = [...siteIds].map(id => byId.get(id)); const childR = new Map(); for (const [child, owner] of owned) childR.set(owner, Math.max(childR.get(owner) || 0, byId.get(child).r));
+    const obstacles = nodes.filter(node => !owned.has(node.id) && !siteIds.has(node.id)); const slots = cellSlots(sites, owned, childR, obstacles);
+    for (const node of nodes) { if (!owned.has(node.id)) { node.fx = node.x; node.fy = node.y; } else if (slots[node.id]) { node.x = slots[node.id].x; node.y = slots[node.id].y; } }
+    const slotX = forceX(node => slots[node.id]?.x ?? node.x).strength(node => (slots[node.id] ? 0.6 : 0)); const slotY = forceY(node => slots[node.id]?.y ?? node.y).strength(node => (slots[node.id] ? 0.6 : 0));
+    const simulation = forceSimulation(nodes).force('slotX', slotX).force('slotY', slotY).force('collide', forceCollide(node => node.r).iterations(3)).alpha(RELAYOUT.alpha).alphaDecay(RELAYOUT.alphaDecay).stop();
+    simulation.tick(ticksFor(simulation));
+    return Object.fromEntries(nodes.map(node => [node.id, {x: node.x, y: node.y}]));
+  }
   if (existingIds && fresh.length && fresh.length < nodes.length) {
     // Expansion: the nodes already on screen stay exactly where they are; each new node takes a slot in a fan on the far
     // side of the node it grew from (away from the centroid of everything else), then collision alone settles overlaps.
@@ -143,7 +194,7 @@ const yieldToBrowser = () => new Promise(resolve => setTimeout(resolve, 0));
 
 function nodeOptionsFull(style, count = 0) {
   const size = Number(style.nodeSize) > 0 ? Number(style.nodeSize) : 18; const showLabel = style.labels !== false; const showAll = Boolean(style.showAllLabels);
-  return {type: nodeType, style: {size: datum => datum.data?.size ?? (datum.data?.representative ? Math.max(size, 22) : size), fill: datum => safeColor(datum.data?.categoryColor || style.seriesColor || style.focusColor), fillOpacity: datum => datum.data?.dimmed ? 0.22 : 1, strokeOpacity: datum => datum.data?.dimmed ? 0.3 : 1, stroke: datum => datum.data?.outline || (datum.data?.representative ? safeColor(style.textColor) : safeColor(style.panelColor)), lineWidth: datum => datum.data?.levelLineWidth ?? datum.data?.tierLineWidth ?? (datum.data?.representative ? 3 : datum.data?.ring ? 2 : (size < 12 ? 1 : 2)), lineDash: datum => datum.data?.levelDash || 0, ...iconStyle(style, size), label: showAll ? datum => namedWhenShown(datum.data || {}, count) : false, labelText: datum => { const label = String(datum.data?.label || datum.id); return label.length > 26 ? `${label.slice(0, 24)}…` : label; }, labelFill: safeColor(style.textColor), labelFontSize: 11, labelPlacement: 'bottom', labelOffsetY: 5, labelBackground: true, labelBackgroundFill: safeColor(style.panelColor), labelBackgroundRadius: 4, labelBackgroundPadding: [3, 5]}, state: {active: {label: showLabel, lineWidth: 4, stroke: safeColor(style.focusColor)}, selected: {label: showLabel, lineWidth: 5, stroke: safeColor(style.focusColor)}}};
+  return {type: nodeType, style: {size: datum => datum.data?.size ?? (datum.data?.representative ? Math.max(size, 22) : size), fill: datum => safeColor(datum.data?.categoryColor || style.seriesColor || style.focusColor), fillOpacity: datum => datum.data?.dimmed ? 0.22 : 1, strokeOpacity: datum => datum.data?.dimmed ? 0.3 : 1, stroke: datum => datum.data?.outline || (datum.data?.representative ? safeColor(style.textColor) : safeColor(style.panelColor)), lineWidth: datum => datum.data?.levelLineWidth ?? datum.data?.tierLineWidth ?? (datum.data?.representative ? 3 : datum.data?.ring ? 2 : (size < 12 ? 1 : 2)), lineDash: datum => datum.data?.levelDash || 0, ...iconStyle(style, size), label: showAll ? datum => namedWhenShown(datum.data || {}, count) : false, labelText: datum => { const label = String(datum.data?.label || datum.id); return label.length > 26 ? `${label.slice(0, 24)}…` : label; }, labelFill: safeColor(style.textColor), labelFontSize: 11, labelPlacement: 'bottom', labelOffsetY: 5, labelBackground: true, labelBackgroundFill: safeColor(style.panelColor), labelBackgroundRadius: 4, labelBackgroundPadding: [3, 5], labelPointerEvents: 'none', labelBackgroundPointerEvents: 'none'}, state: {active: {label: showLabel, lineWidth: 4, stroke: safeColor(style.focusColor)}, selected: {label: showLabel, lineWidth: 5, stroke: safeColor(style.focusColor)}}};
 }
 /**
  * Icon inside a node (Lucide outline via a data URI, see node-icons.js) and the field level numeral as a corner badge.
@@ -372,8 +423,8 @@ export function renderG6Network(container, nodes, edges, {textColor, panelColor,
     return startTween(target, {duration: reduceMotion() ? 0 : RELAYOUT.duration, easing: easeSpring, kind: 'fit'});
   };
   const stopRelayout = () => { const current = relayout; if (!current) return; relayout = null; cancelFrame(current.frame); clearTimeout(current.guard); current.resolve(); };
-  const startRelayout = (from, edgePairs, existingIds) => {
-    stopRelayout(); const started = nowMs(); const to = relayoutTargets(from, edgePairs, existingIds); const ids = Object.keys(to); if (fitOnRelayout) { fitOnRelayout = false; easedFit(to); } const duration = reduceMotion() ? 0 : RELAYOUT.duration;
+  const startRelayout = (from, edgePairs, existingIds, options = {}) => {
+    stopRelayout(); const started = nowMs(); const to = relayoutTargets(from, edgePairs, existingIds, options); const ids = Object.keys(to); if (fitOnRelayout) { fitOnRelayout = false; easedFit(to); } const duration = reduceMotion() ? 0 : RELAYOUT.duration;
     const place = k => { const live = new Set(graph.getNodeData().map(node => node.id)); const frame = {}; for (const id of ids) if (live.has(id)) frame[id] = [from[id].x + (to[id].x - from[id].x) * k, from[id].y + (to[id].y - from[id].y) * k]; if (Object.keys(frame).length) run(() => graph.translateElementTo(frame, false)); };
     return new Promise(resolve => {
       const finish = () => { if (relayout !== current) return; relayout = null; cancelFrame(current.frame); clearTimeout(current.guard); if (!disposed) { place(1); stats.layoutsFinished += 1; stats.lastRelayoutMs = Math.round(nowMs() - started); markSettled(); schedulePanClamp(); } resolve(); };
@@ -440,7 +491,7 @@ export function renderG6Network(container, nodes, edges, {textColor, panelColor,
         if (topologyChanged || typeof graph.updateNodeData !== 'function') graph.setData(data); else { const plain = graphData(nextNodes, nextEdges, {}, dense ? currentStyle : null); const presetXY = presetLayout ? new Map(data.nodes.map(row => [row.id, row.style])) : null; graph.updateNodeData(plain.nodes.map(({style, ...row}) => { const kept = dense ? Object.fromEntries(Object.entries(style || {}).filter(([key]) => key !== 'x' && key !== 'y')) : null; const xy = presetXY?.get(row.id); return {...row, ...(kept || xy ? {style: {...(kept || {}), ...(xy ? {x: xy.x, y: xy.y} : {})}} : {})}; })); graph.updateEdgeData(plain.edges); }
         graph.setNode(nodeOptions(currentStyle, dense, nextNodes.length)); graph.setEdge(edgeOptions(currentStyle, dense));
         const moving = topologyChanged && !presetLayout && typeof graph.translateElementTo === 'function';
-        if (moving) { const drawn = graph.draw(); const moved = startRelayout(Object.fromEntries(data.nodes.map(row => [row.id, {x: row.style.x, y: row.style.y, size: row.data?.size ?? row.style?.size}])), nextEdges.map(edge => [edge.data.source, edge.data.target]), new Set(Object.keys(before || {}))); await drawn; await moved; } // the fade-in and the move run TOGETHER
+        if (moving) { const drawn = graph.draw(); const moved = startRelayout(Object.fromEntries(data.nodes.map(row => [row.id, {x: row.style.x, y: row.style.y, size: row.data?.size ?? row.style?.size}])), nextEdges.map(edge => [edge.data.source, edge.data.target]), new Set(Object.keys(before || {})), {ownerOf: ownersOf(nextNodes, nextEdges)}); await drawn; await moved; } // the fade-in and the move run TOGETHER
         else await graph.draw();
         await applySelected(); if (fitOnRelayout) { fitOnRelayout = false; easedFit(positionsNow()); } // a requested fit whose update moved nothing
         appliedSignature = signature; appliedDataKey = nextDataKey; appliedStyleKey = nextKey; appliedStyle = {...nextStyle}; // commit only after success
